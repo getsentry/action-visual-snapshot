@@ -26788,12 +26788,14 @@ function run() {
             catch (_b) {
                 core.debug(`Unable to create dir: ${diffPath}`);
             }
-            baseFiles.forEach(file => {
+            baseFiles.forEach(absoluteFile => {
+                const file = path_1.default.relative(outputPath, absoluteFile);
                 baseSnapshots.add(file);
                 missingSnapshots.add(file);
             });
             // Diff snapshots against base branch
-            yield Promise.all(currentFiles.map((file) => __awaiter(this, void 0, void 0, function* () {
+            yield Promise.all(currentFiles.map((absoluteFile) => __awaiter(this, void 0, void 0, function* () {
+                const file = path_1.default.relative(current, absoluteFile);
                 currentSnapshots.add(file);
                 if (baseSnapshots.has(file)) {
                     try {
@@ -26825,9 +26827,7 @@ function run() {
             const gcsBucket = core.getInput('gcs-bucket');
             const diffArtifactUrls = gcsBucket && storage
                 ? yield Promise.all(diffFiles.map((file) => __awaiter(this, void 0, void 0, function* () {
-                    const [File] = yield storage
-                        .bucket(gcsBucket)
-                        .upload(path_1.default.resolve(diffPath, file), {
+                    const [File] = yield storage.bucket(gcsBucket).upload(file, {
                         // Support for HTTP requests made with `Accept-Encoding: gzip`
                         destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${file}`,
                         // public: true,
@@ -26841,7 +26841,7 @@ function run() {
                             cacheControl: 'public, max-age=31536000',
                         },
                     });
-                    console.log(path_1.default.resolve(diffPath, file), File);
+                    console.log(file, File);
                     return {
                         alt: file,
                         image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`,
@@ -26853,6 +26853,7 @@ function run() {
                 : !!newSnapshots.size
                     ? 'neutral'
                     : 'success';
+            core.debug(`conclusion: ${conclusion}`);
             // Create a GitHub check with our results
             yield octokit.checks.create({
                 owner,

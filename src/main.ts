@@ -167,14 +167,16 @@ async function run(): Promise<void> {
       core.debug(`Unable to create dir: ${diffPath}`);
     }
 
-    baseFiles.forEach(file => {
+    baseFiles.forEach(absoluteFile => {
+      const file = path.relative(outputPath, absoluteFile);
       baseSnapshots.add(file);
       missingSnapshots.add(file);
     });
 
     // Diff snapshots against base branch
     await Promise.all(
-      currentFiles.map(async file => {
+      currentFiles.map(async absoluteFile => {
+        const file = path.relative(current, absoluteFile);
         currentSnapshots.add(file);
 
         if (baseSnapshots.has(file)) {
@@ -220,23 +222,21 @@ async function run(): Promise<void> {
       gcsBucket && storage
         ? await Promise.all(
             diffFiles.map(async file => {
-              const [File] = await storage
-                .bucket(gcsBucket)
-                .upload(path.resolve(diffPath, file), {
-                  // Support for HTTP requests made with `Accept-Encoding: gzip`
-                  destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${file}`,
-                  // public: true,
-                  gzip: true,
-                  // By setting the option `destination`, you can change the name of the
-                  // object you are uploading to a bucket.
-                  metadata: {
-                    // Enable long-lived HTTP caching headers
-                    // Use only if the contents of the file will never change
-                    // (If the contents will change, use cacheControl: 'no-cache')
-                    cacheControl: 'public, max-age=31536000',
-                  },
-                });
-              console.log(path.resolve(diffPath, file), File);
+              const [File] = await storage.bucket(gcsBucket).upload(file, {
+                // Support for HTTP requests made with `Accept-Encoding: gzip`
+                destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${file}`,
+                // public: true,
+                gzip: true,
+                // By setting the option `destination`, you can change the name of the
+                // object you are uploading to a bucket.
+                metadata: {
+                  // Enable long-lived HTTP caching headers
+                  // Use only if the contents of the file will never change
+                  // (If the contents will change, use cacheControl: 'no-cache')
+                  cacheControl: 'public, max-age=31536000',
+                },
+              });
+              console.log(file, File);
 
               return {
                 alt: file,
@@ -252,6 +252,8 @@ async function run(): Promise<void> {
         : !!newSnapshots.size
         ? 'neutral'
         : 'success';
+
+    core.debug(`conclusion: ${conclusion}`);
 
     // Create a GitHub check with our results
     await octokit.checks.create({
