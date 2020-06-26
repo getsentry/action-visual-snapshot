@@ -211,7 +211,7 @@ async function run(): Promise<void> {
       ? await Promise.all(
           diffFiles.filter(isSnapshot).map(async entry => {
             const [File] = await storage
-              .bucket("sentry-visual-snapshots")
+              .bucket(gcsBucket)
               .upload(path.resolve(diffPath, entry.name), {
                 // Support for HTTP requests made with `Accept-Encoding: gzip`
                 destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
@@ -230,7 +230,7 @@ async function run(): Promise<void> {
 
             return {
               alt: entry.name,
-              image_url: `https://storage.googleapis.com/sentry-visual-snapshots/${File.name}`
+              image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`
             };
           })
         )
