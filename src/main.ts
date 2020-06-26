@@ -17,6 +17,12 @@ const GITHUB_SHA = process.env.GITHUB_SHA || '';
 const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || '';
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 
+console.log(JSON.stringify(process.env, null, 2));
+
+const event =
+  process.env.GITHUB_EVENT_PATH && require(process.env.GITHUB_EVENT_PATH);
+console.log(event);
+
 const credentials =
   GOOGLE_CREDENTIALS &&
   JSON.parse(Buffer.from(GOOGLE_CREDENTIALS, 'base64').toString('utf8'));
