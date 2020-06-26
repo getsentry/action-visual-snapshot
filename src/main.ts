@@ -213,9 +213,13 @@ async function run(): Promise<void> {
     });
 
     // TODO: Upload diff files where and update check with them
-    const diffFiles = await (
-      await glob.create(`${diffPath}${pngGlob}`, {followSymbolicLinks: false})
-    ).glob();
+    const diffGlobber = await glob.create(`${diffPath}${pngGlob}`, {
+      followSymbolicLinks: false,
+    });
+    const diffFiles = await diffGlobber.glob();
+
+    // @ts-ignore
+    core.debug(diffFiles.map(', '));
 
     const gcsBucket = core.getInput('gcs-bucket');
     const diffArtifactUrls =
@@ -256,7 +260,7 @@ async function run(): Promise<void> {
     core.debug(`conclusion: ${conclusion}`);
 
     // Create a GitHub check with our results
-    await octokit.checks.create({
+    const resp = await octokit.checks.create({
       owner,
       repo,
       name: 'Visual Snapshot',
@@ -283,6 +287,7 @@ ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
         images: diffArtifactUrls,
       },
     });
+    console.log(resp);
   } catch (error) {
     core.setFailed(error.message);
   }

@@ -26823,7 +26823,12 @@ function run() {
                 core.debug(`changed snapshot: ${name}`);
             });
             // TODO: Upload diff files where and update check with them
-            const diffFiles = yield (yield glob.create(`${diffPath}${pngGlob}`, { followSymbolicLinks: false })).glob();
+            const diffGlobber = yield glob.create(`${diffPath}${pngGlob}`, {
+                followSymbolicLinks: false,
+            });
+            const diffFiles = yield diffGlobber.glob();
+            // @ts-ignore
+            core.debug(diffFiles.map(', '));
             const gcsBucket = core.getInput('gcs-bucket');
             const diffArtifactUrls = gcsBucket && storage
                 ? yield Promise.all(diffFiles.map((file) => __awaiter(this, void 0, void 0, function* () {
@@ -26855,7 +26860,7 @@ function run() {
                     : 'success';
             core.debug(`conclusion: ${conclusion}`);
             // Create a GitHub check with our results
-            yield octokit.checks.create({
+            const resp = yield octokit.checks.create({
                 owner,
                 repo,
                 name: 'Visual Snapshot',
@@ -26882,6 +26887,7 @@ ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
                     images: diffArtifactUrls,
                 },
             });
+            console.log(resp);
         }
         catch (error) {
             core.setFailed(error.message);
