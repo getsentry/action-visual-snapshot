@@ -6,6 +6,8 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import {exec} from '@actions/exec';
 import {Storage} from '@google-cloud/storage';
+import * as Sentry from '@sentry/node';
+import {RewriteFrames} from '@sentry/integrations';
 import {PNG} from 'pngjs';
 import pixelmatch from 'pixelmatch';
 
@@ -13,10 +15,15 @@ const fs = fsNs.promises;
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
 const octokit = github.getOctokit(token);
+const GITHUB_WORKFLOW = process.env.GITHUB_WORKFLOW as string;
 const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE as string;
 const GITHUB_EVENT_PATH = process.env.GITHUB_EVENT_PATH as string;
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 
+Sentry.init({
+  dsn: 'https://34b97f5891a044c6ab1f6ce6332733fb@o1.ingest.sentry.io/5246761',
+  integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
+});
 console.log(JSON.stringify(process.env, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
@@ -87,7 +94,7 @@ async function run(): Promise<void> {
       repo,
       // Below is typed incorrectly
       // @ts-ignore
-      workflow_id: process.env.GITHUB_WORKFLOW || '', //core.getInput('base-workflow-id'),
+      workflow_id: `${GITHUB_WORKFLOW}.yml`,
       branch: core.getInput('base-branch'),
     });
 
