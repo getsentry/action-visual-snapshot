@@ -2,14 +2,29 @@ name: 'action-visual-snapshot'
 description: 'Visual snapshot tester for GitHub Actions'
 author: 'Sentry'
 inputs:
-  base:
-    description: 'path to the base snapshots (e.g. main branch)'
-  current:
-    description: 'path to the current set of snapshots'
-  diff:
+  base-workflow-id:
+    required: true
+    description: 'id of the workflow that saves your base snapshots (the name of the yaml file including extension)'
+  snapshot-path:
+    required: true
+    description: 'path where snapshots are saved'
+  diff-path:
+    required: true
     description: 'path to write snapshot diffs'
+
+  base-branch:
+    required: false
+    description: 'name of the branch to use as base comparison'
+    default: 'master'
+  base-artifact-name:
+    required: false
+    description: 'the artifact name'
+    default: 'visual-snapshots'
   githubToken:
     description: 'github token'
+outputs:
+  diff-path:
+    description: 'path to write snapshot diffs'
 runs:
   using: 'node12'
   main: 'dist/index.js'
