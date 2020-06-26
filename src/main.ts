@@ -13,15 +13,13 @@ const fs = fsNs.promises;
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
 const octokit = github.getOctokit(token);
-const GITHUB_SHA = process.env.GITHUB_SHA || '';
-const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || '';
+const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE as string;
+const GITHUB_EVENT_PATH = process.env.GITHUB_EVENT_PATH as string;
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 
 console.log(JSON.stringify(process.env, null, 2));
 
-const event =
-  process.env.GITHUB_EVENT_PATH && require(process.env.GITHUB_EVENT_PATH);
-console.log(event);
+const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
 const credentials =
   GOOGLE_CREDENTIALS &&
@@ -89,7 +87,7 @@ async function run(): Promise<void> {
       repo,
       // Below is typed incorrectly
       // @ts-ignore
-      workflow_id: core.getInput('base-workflow-id'),
+      workflow_id: process.env.GITHUB_WORKFLOW || '', //core.getInput('base-workflow-id'),
       branch: core.getInput('base-branch'),
     });
 
@@ -256,7 +254,7 @@ async function run(): Promise<void> {
             diffFiles.map(async file => {
               const [File] = await storage.bucket(gcsBucket).upload(file, {
                 // Support for HTTP requests made with `Accept-Encoding: gzip`
-                destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${file}`,
+                destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/diff/${file}`,
                 // public: true,
                 gzip: true,
                 // By setting the option `destination`, you can change the name of the
@@ -286,13 +284,14 @@ async function run(): Promise<void> {
         : 'success';
 
     core.debug(`conclusion: ${conclusion}`);
+    core.debug(GITHUB_EVENT.pull_request.head.sha);
 
     // Create a GitHub check with our results
     const resp = await octokit.checks.create({
       owner,
       repo,
       name: 'Visual Snapshot',
-      head_sha: GITHUB_SHA,
+      head_sha: GITHUB_EVENT.pull_request.head.sha,
       status: 'completed',
       conclusion,
       output: {
