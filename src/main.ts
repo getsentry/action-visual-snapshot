@@ -206,34 +206,36 @@ async function run(): Promise<void> {
         withFileTypes: true
       })) || [];
 
-    const diffArtifactUrls = await Promise.all(
-      diffFiles.filter(isSnapshot).map(async entry => {
-        const [File] = await storage
-          .bucket("sentry-visual-snapshots")
-          .upload(path.resolve(diffPath, entry.name), {
-            // Support for HTTP requests made with `Accept-Encoding: gzip`
-            destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
-            // public: true,
-            gzip: true,
-            // By setting the option `destination`, you can change the name of the
-            // object you are uploading to a bucket.
-            metadata: {
-              // Enable long-lived HTTP caching headers
-              // Use only if the contents of the file will never change
-              // (If the contents will change, use cacheControl: 'no-cache')
-              cacheControl: "public, max-age=31536000"
-            }
-          });
-        console.log(path.resolve(diffPath, entry.name), File);
+    const gcsBucket = core.getInput("gcs-bucket");
+    const diffArtifactUrls = gcsBucket
+      ? await Promise.all(
+          diffFiles.filter(isSnapshot).map(async entry => {
+            const [File] = await storage
+              .bucket("sentry-visual-snapshots")
+              .upload(path.resolve(diffPath, entry.name), {
+                // Support for HTTP requests made with `Accept-Encoding: gzip`
+                destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
+                // public: true,
+                gzip: true,
+                // By setting the option `destination`, you can change the name of the
+                // object you are uploading to a bucket.
+                metadata: {
+                  // Enable long-lived HTTP caching headers
+                  // Use only if the contents of the file will never change
+                  // (If the contents will change, use cacheControl: 'no-cache')
+                  cacheControl: "public, max-age=31536000"
+                }
+              });
+            console.log(path.resolve(diffPath, entry.name), File);
 
-        return {
-          alt: entry.name,
-          image_url: `https://storage.googleapis.com/sentry-visual-snapshots/${File.name}`
-        };
-      })
-    );
+            return {
+              alt: entry.name,
+              image_url: `https://storage.googleapis.com/sentry-visual-snapshots/${File.name}`
+            };
+          })
+        )
+      : [];
 
-    console.log(diffArtifactUrls);
     const conclusion =
       !!changedSnapshots.size || !!missingSnapshots.size
         ? "failure"

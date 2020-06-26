@@ -20,6 +20,9 @@ inputs:
     required: false
     description: 'the artifact name'
     default: 'visual-snapshots'
+  gcs-bucket:
+    require: false
+    description: 'if this is set, upload to google cloud storage'
   githubToken:
     description: 'github token'
 outputs:

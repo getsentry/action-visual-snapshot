@@ -32,6 +32,7 @@
     "@actions/exec": "^1.0.4",
     "@actions/github": "^3.0.0",
     "@actions/glob": "^0.1.0",
+    "@google-cloud/storage": "^5.1.1",
     "pixelmatch": "^5.2.0",
     "pngjs": "^5.0.0"
   },
