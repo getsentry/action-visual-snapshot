@@ -218,8 +218,7 @@ async function run(): Promise<void> {
     });
     const diffFiles = await diffGlobber.glob();
 
-    // @ts-ignore
-    core.debug(diffFiles.map(', '));
+    core.debug(diffFiles.join(', '));
 
     const gcsBucket = core.getInput('gcs-bucket');
     const diffArtifactUrls =

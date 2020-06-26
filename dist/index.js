@@ -26827,8 +26827,7 @@ function run() {
                 followSymbolicLinks: false,
             });
             const diffFiles = yield diffGlobber.glob();
-            // @ts-ignore
-            core.debug(diffFiles.map(', '));
+            core.debug(diffFiles.join(', '));
             const gcsBucket = core.getInput('gcs-bucket');
             const diffArtifactUrls = gcsBucket && storage
                 ? yield Promise.all(diffFiles.map((file) => __awaiter(this, void 0, void 0, function* () {
