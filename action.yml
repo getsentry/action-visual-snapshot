@@ -20,11 +20,17 @@ inputs:
     required: false
     description: 'the artifact name'
     default: 'visual-snapshots'
+
+  githubToken:
+    required: true
+    description: 'github token'
+
+  gcp-service-account-key:
+    required: false
+    description: 'Google Cloud service account key (base64)'
   gcs-bucket:
     require: false
     description: 'if this is set, upload to google cloud storage'
-  githubToken:
-    description: 'github token'
 outputs:
   diff-path:
     description: 'path to write snapshot diffs'

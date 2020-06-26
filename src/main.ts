@@ -14,14 +14,14 @@ const token = core.getInput("githubToken");
 const octokit = github.getOctokit(token);
 const GITHUB_SHA = process.env.GITHUB_SHA || "";
 const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || "";
-const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS || "";
+const GOOGLE_CREDENTIALS = core.getInput("gcp-service-account-key");
 
-const credentials = JSON.parse(
-  Buffer.from(GOOGLE_CREDENTIALS, "base64").toString("utf8")
-);
+const credentials =
+  GOOGLE_CREDENTIALS &&
+  JSON.parse(Buffer.from(GOOGLE_CREDENTIALS, "base64").toString("utf8"));
 
 // Creates a client
-const storage = new Storage({ credentials });
+const storage = credentials && new Storage({ credentials });
 
 function isSnapshot(dirent: fsNs.Dirent) {
   // Only png atm
@@ -207,34 +207,35 @@ async function run(): Promise<void> {
       })) || [];
 
     const gcsBucket = core.getInput("gcs-bucket");
-    const diffArtifactUrls = gcsBucket
-      ? await Promise.all(
-          diffFiles.filter(isSnapshot).map(async entry => {
-            const [File] = await storage
-              .bucket(gcsBucket)
-              .upload(path.resolve(diffPath, entry.name), {
-                // Support for HTTP requests made with `Accept-Encoding: gzip`
-                destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
-                // public: true,
-                gzip: true,
-                // By setting the option `destination`, you can change the name of the
-                // object you are uploading to a bucket.
-                metadata: {
-                  // Enable long-lived HTTP caching headers
-                  // Use only if the contents of the file will never change
-                  // (If the contents will change, use cacheControl: 'no-cache')
-                  cacheControl: "public, max-age=31536000"
-                }
-              });
-            console.log(path.resolve(diffPath, entry.name), File);
+    const diffArtifactUrls =
+      gcsBucket && storage
+        ? await Promise.all(
+            diffFiles.filter(isSnapshot).map(async entry => {
+              const [File] = await storage
+                .bucket(gcsBucket)
+                .upload(path.resolve(diffPath, entry.name), {
+                  // Support for HTTP requests made with `Accept-Encoding: gzip`
+                  destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
+                  // public: true,
+                  gzip: true,
+                  // By setting the option `destination`, you can change the name of the
+                  // object you are uploading to a bucket.
+                  metadata: {
+                    // Enable long-lived HTTP caching headers
+                    // Use only if the contents of the file will never change
+                    // (If the contents will change, use cacheControl: 'no-cache')
+                    cacheControl: "public, max-age=31536000"
+                  }
+                });
+              console.log(path.resolve(diffPath, entry.name), File);
 
-            return {
-              alt: entry.name,
-              image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`
-            };
-          })
-        )
-      : [];
+              return {
+                alt: entry.name,
+                image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`
+              };
+            })
+          )
+        : [];
 
     const conclusion =
       !!changedSnapshots.size || !!missingSnapshots.size
