@@ -26775,13 +26775,12 @@ function run() {
                 baseGlobber.glob(),
                 currentGlobber.glob(),
             ]);
-            // read dirs
-            // const [currentDir, baseDir] = await Promise.all([
-            // fs.readdir(current, { withFileTypes: true }),
-            // fs.readdir(path.resolve(outputPath), {
-            // withFileTypes: true
-            // })
-            // ]);
+            if (!baseFiles.length) {
+                core.debug('No snapshots found for base branch');
+            }
+            if (!currentFiles.length) {
+                core.debug('No snapshots found for current branch');
+            }
             // make output dir if not exists
             try {
                 yield fs.mkdir(diffPath, { recursive: true });
@@ -26793,6 +26792,7 @@ function run() {
                 baseSnapshots.add(file);
                 missingSnapshots.add(file);
             });
+            // Diff snapshots against base branch
             yield Promise.all(currentFiles.map((file) => __awaiter(this, void 0, void 0, function* () {
                 currentSnapshots.add(file);
                 if (baseSnapshots.has(file)) {

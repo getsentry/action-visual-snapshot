@@ -152,13 +152,13 @@ async function run(): Promise<void> {
       currentGlobber.glob(),
     ]);
 
-    // read dirs
-    // const [currentDir, baseDir] = await Promise.all([
-    // fs.readdir(current, { withFileTypes: true }),
-    // fs.readdir(path.resolve(outputPath), {
-    // withFileTypes: true
-    // })
-    // ]);
+    if (!baseFiles.length) {
+      core.debug('No snapshots found for base branch');
+    }
+
+    if (!currentFiles.length) {
+      core.debug('No snapshots found for current branch');
+    }
 
     // make output dir if not exists
     try {
@@ -172,6 +172,7 @@ async function run(): Promise<void> {
       missingSnapshots.add(file);
     });
 
+    // Diff snapshots against base branch
     await Promise.all(
       currentFiles.map(async file => {
         currentSnapshots.add(file);
