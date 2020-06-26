@@ -9,7 +9,7 @@
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
-    "dist": "yarn ncc build",
+    "dist": "yarn build && yarn ncc build",
     "test": "yarn jest",
     "all": "yarn build && yarn format && yarn lint && yarn test && yarn dist"
   },
@@ -33,6 +33,8 @@
     "@actions/github": "^3.0.0",
     "@actions/glob": "^0.1.0",
     "@google-cloud/storage": "^5.1.1",
+    "@types/pixelmatch": "^5.2.1",
+    "@types/pngjs": "^3.4.2",
     "pixelmatch": "^5.2.0",
     "pngjs": "^5.0.0"
   },

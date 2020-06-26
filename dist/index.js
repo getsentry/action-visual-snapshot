@@ -25725,30 +25725,31 @@ const pngjs_1 = __webpack_require__(275);
 const pixelmatch_1 = __importDefault(__webpack_require__(313));
 const fs = fsNs.promises;
 const { owner, repo } = github.context.repo;
-const token = core.getInput('githubToken');
+const token = core.getInput("githubToken");
 const octokit = github.getOctokit(token);
-const GITHUB_SHA = process.env.GITHUB_SHA || '';
-const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || '';
-const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS || '';
-const credentials = JSON.parse(Buffer.from(GOOGLE_CREDENTIALS, 'base64').toString('utf8'));
+const GITHUB_SHA = process.env.GITHUB_SHA || "";
+const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || "";
+const GOOGLE_CREDENTIALS = core.getInput("gcp-service-account-key");
+const credentials = GOOGLE_CREDENTIALS &&
+    JSON.parse(Buffer.from(GOOGLE_CREDENTIALS, "base64").toString("utf8"));
 // Creates a client
-const storage = new storage_1.Storage({ credentials });
+const storage = credentials && new storage_1.Storage({ credentials });
 function isSnapshot(dirent) {
     // Only png atm
-    return dirent.isFile() && dirent.name.endsWith('.png');
+    return dirent.isFile() && dirent.name.endsWith(".png");
 }
 function createDiff(snapshotName, output, file1, file2) {
     return __awaiter(this, void 0, void 0, function* () {
         const [fileContent1, fileContent2] = yield Promise.all([
             fs.readFile(file1),
-            fs.readFile(file2),
+            fs.readFile(file2)
         ]);
         const img1 = pngjs_1.PNG.sync.read(fileContent1);
         const img2 = pngjs_1.PNG.sync.read(fileContent2);
         const { width, height } = img1;
         const diff = new pngjs_1.PNG({ width, height });
         const result = pixelmatch_1.default(img1.data, img2.data, diff.data, width, height, {
-            threshold: 0.1,
+            threshold: 0.1
         });
         if (result > 0) {
             yield fs.writeFile(path_1.default.resolve(output, snapshotName), pngjs_1.PNG.sync.write(diff));
@@ -25759,12 +25760,11 @@ function createDiff(snapshotName, output, file1, file2) {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const base = core.getInput('base');
-            const current = core.getInput('current');
-            const diff = core.getInput('diff');
-            core.debug(`${base} vs ${current} vs ${diff}`);
+            const current = core.getInput("snapshot-path");
+            const diff = core.getInput("diff-path");
+            core.debug(`${current} vs ${diff}`);
             core.debug(GITHUB_WORKSPACE);
-            core.setOutput('diff-path', diff);
+            core.setOutput("diff-path", diff);
             const newSnapshots = new Set([]);
             const changedSnapshots = new Set([]);
             const missingSnapshots = new Map([]);
@@ -25773,26 +25773,27 @@ function run() {
             // fetch artifact from main branch
             // this is hacky since github actions do not support downloading
             // artifacts from different workflows
-            const { data: { workflow_runs: [workflowRun], }, } = yield octokit.actions.listWorkflowRuns({
+            const { data: { workflow_runs: [workflowRun] } } = yield octokit.actions.listWorkflowRuns({
                 owner,
                 repo,
+                // Below is typed incorrectly
                 // @ts-ignore
-                workflow_id: 'acceptance.yml',
-                branch: 'master',
+                workflow_id: core.getInput("base-workflow-id"),
+                branch: core.getInput("base-branch")
             });
             if (!workflowRun) {
-                core.debug('No workflow run found');
+                core.debug("No base workflow run found");
             }
-            const { data: { artifacts }, } = yield octokit.actions.listWorkflowRunArtifacts({
+            const { data: { artifacts } } = yield octokit.actions.listWorkflowRunArtifacts({
                 owner,
                 repo,
-                run_id: workflowRun.id,
+                run_id: workflowRun.id
             });
             core.debug(JSON.stringify(artifacts));
             // filter artifacts for `visual-snapshots-main`
-            const mainSnapshotArtifact = artifacts.find(artifact => artifact.name === 'visual-snapshots-main');
+            const mainSnapshotArtifact = artifacts.find(artifact => artifact.name === core.getInput("base-artifact-name"));
             if (!mainSnapshotArtifact) {
-                core.debug('Artifact not found');
+                core.debug("Artifact not found");
                 return;
             }
             // Download the artifact
@@ -25800,24 +25801,24 @@ function run() {
                 owner,
                 repo,
                 artifact_id: mainSnapshotArtifact.id,
-                archive_format: 'zip',
+                archive_format: "zip"
             });
             core.debug(JSON.stringify(download));
-            const outputPath = path_1.default.resolve('/tmp/visual-snapshots-base');
+            const outputPath = path_1.default.resolve("/tmp/visual-snapshots-base");
             try {
                 yield fs.mkdir(outputPath, { recursive: true });
             }
             catch (_a) {
                 core.debug(`Unable to create dir: ${outputPath}`);
             }
-            yield exec_1.exec(`curl -L -o ${path_1.default.resolve(outputPath, 'visual-snapshots-base.zip')} ${download.url}`);
-            yield exec_1.exec(`unzip -d ${outputPath} ${path_1.default.resolve(outputPath, 'visual-snapshots-base.zip')}`);
+            yield exec_1.exec(`curl -L -o ${path_1.default.resolve(outputPath, "visual-snapshots-base.zip")} ${download.url}`);
+            yield exec_1.exec(`unzip -d ${outputPath} ${path_1.default.resolve(outputPath, "visual-snapshots-base.zip")}`);
             // read dirs
             const [currentDir, baseDir] = yield Promise.all([
                 fs.readdir(current, { withFileTypes: true }),
                 fs.readdir(path_1.default.resolve(outputPath), {
-                    withFileTypes: true,
-                }),
+                    withFileTypes: true
+                })
             ]);
             // make output dir if not exists
             const diffPath = path_1.default.resolve(GITHUB_WORKSPACE, diff);
@@ -25860,47 +25861,49 @@ function run() {
             });
             // TODO: Upload diff files where and update check with them
             const diffFiles = (yield fs.readdir(diffPath, {
-                withFileTypes: true,
+                withFileTypes: true
             })) || [];
-            const diffArtifactUrls = yield Promise.all(diffFiles.filter(isSnapshot).map((entry) => __awaiter(this, void 0, void 0, function* () {
-                const [File] = yield storage
-                    .bucket('sentry-visual-snapshots')
-                    .upload(path_1.default.resolve(diffPath, entry.name), {
-                    // Support for HTTP requests made with `Accept-Encoding: gzip`
-                    destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
-                    // public: true,
-                    gzip: true,
-                    // By setting the option `destination`, you can change the name of the
-                    // object you are uploading to a bucket.
-                    metadata: {
-                        // Enable long-lived HTTP caching headers
-                        // Use only if the contents of the file will never change
-                        // (If the contents will change, use cacheControl: 'no-cache')
-                        cacheControl: 'public, max-age=31536000',
-                    },
-                });
-                console.log(path_1.default.resolve(diffPath, entry.name), File);
-                return {
-                    alt: entry.name,
-                    image_url: `https://storage.googleapis.com/sentry-visual-snapshots/${File.name}`,
-                };
-            })));
-            console.log(diffArtifactUrls);
+            const gcsBucket = core.getInput("gcs-bucket");
+            const diffArtifactUrls = gcsBucket && storage
+                ? yield Promise.all(diffFiles.filter(isSnapshot).map((entry) => __awaiter(this, void 0, void 0, function* () {
+                    const [File] = yield storage
+                        .bucket(gcsBucket)
+                        .upload(path_1.default.resolve(diffPath, entry.name), {
+                        // Support for HTTP requests made with `Accept-Encoding: gzip`
+                        destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
+                        // public: true,
+                        gzip: true,
+                        // By setting the option `destination`, you can change the name of the
+                        // object you are uploading to a bucket.
+                        metadata: {
+                            // Enable long-lived HTTP caching headers
+                            // Use only if the contents of the file will never change
+                            // (If the contents will change, use cacheControl: 'no-cache')
+                            cacheControl: "public, max-age=31536000"
+                        }
+                    });
+                    console.log(path_1.default.resolve(diffPath, entry.name), File);
+                    return {
+                        alt: entry.name,
+                        image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`
+                    };
+                })))
+                : [];
             const conclusion = !!changedSnapshots.size || !!missingSnapshots.size
-                ? 'failure'
+                ? "failure"
                 : !!newSnapshots.size
-                    ? 'neutral'
-                    : 'success';
+                    ? "neutral"
+                    : "success";
             // Create a GitHub check with our results
             yield octokit.checks.create({
                 owner,
                 repo,
-                name: 'Visual Snapshot',
+                name: "Visual Snapshot",
                 head_sha: GITHUB_SHA,
-                status: 'completed',
+                status: "completed",
                 conclusion,
                 output: {
-                    title: 'Visual Snapshots',
+                    title: "Visual Snapshots",
                     summary: `Summary:
 * **${changedSnapshots.size}** changed snapshots
 * **${missingSnapshots.size}** missing snapshots
@@ -25908,16 +25911,16 @@ function run() {
 `,
                     text: `
 ## Changed snapshots
-${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
+${[...changedSnapshots].map(name => `* ${name}`).join("\n")}
 
 ## Missing snapshots
-${[...missingSnapshots].map(([name]) => `* ${name}`).join('\n')}
+${[...missingSnapshots].map(([name]) => `* ${name}`).join("\n")}
 
 ## New snapshots
-${[...newSnapshots].map(name => `* ${name}`).join('\n')}
+${[...newSnapshots].map(name => `* ${name}`).join("\n")}
 `,
-                    images: diffArtifactUrls,
-                },
+                    images: diffArtifactUrls
+                }
             });
         }
         catch (error) {
