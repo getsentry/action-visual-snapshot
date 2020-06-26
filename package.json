@@ -1,0 +1,54 @@
+{
+  "name": "action-visual-snapshot",
+  "version": "0.0.1",
+  "private": true,
+  "description": "GitHub Action to diff images",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "yarn tsc",
+    "format": "yarn prettier --write **/*.ts",
+    "format-check": "yarn prettier --check **/*.ts",
+    "lint": "eslint src/**/*.ts",
+    "dist": "yarn ncc build",
+    "test": "yarn jest",
+    "all": "yarn build && yarn format && yarn lint && yarn test && yarn dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getsentry/action-visual-snapshot.git"
+  },
+  "keywords": [
+    "actions",
+    "node",
+    "visual-snapshot",
+    "snapshot",
+    "testing",
+    "visual-regression"
+  ],
+  "author": "Sentry",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.2.4",
+    "@actions/exec": "^1.0.4",
+    "@actions/github": "^3.0.0",
+    "pixelmatch": "^5.2.0",
+    "pngjs": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.23",
+    "@types/node": "^14.0.14",
+    "@typescript-eslint/eslint-plugin": "^3.4.0",
+    "@typescript-eslint/parser": "^3.4.0",
+    "@zeit/ncc": "^0.20.5",
+    "eslint": "^5.16.0",
+    "eslint-config-sentry": "^1.41.0",
+    "eslint-plugin-jest": "^22.21.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "jest": "^24.9.0",
+    "jest-circus": "^24.9.0",
+    "js-yaml": "^3.13.1",
+    "prettier": "^1.19.1",
+    "ts-jest": "^24.2.0",
+    "typescript": "^3.6.4"
+  }
+}
