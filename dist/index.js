@@ -26800,7 +26800,10 @@ function run() {
                 ...currentFiles.map(getChildPaths.bind(null, current)),
                 ...baseFiles.map(getChildPaths.bind(null, outputPath)),
             ]);
-            yield Promise.all([...childPaths].map((childPath) => __awaiter(this, void 0, void 0, function* () { return fs.mkdir(path_1.default.resolve(GITHUB_WORKSPACE, diff, childPath)); })));
+            try {
+                yield Promise.all([...childPaths].map((childPath) => __awaiter(this, void 0, void 0, function* () { return fs.mkdir(path_1.default.resolve(GITHUB_WORKSPACE, diff, childPath)); })));
+            }
+            catch (_c) { }
             // Diff snapshots against base branch
             yield Promise.all(currentFiles.map((absoluteFile) => __awaiter(this, void 0, void 0, function* () {
                 const file = path_1.default.relative(current, absoluteFile);

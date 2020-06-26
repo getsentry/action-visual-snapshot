@@ -185,11 +185,16 @@ async function run(): Promise<void> {
       ...currentFiles.map(getChildPaths.bind(null, current)),
       ...baseFiles.map(getChildPaths.bind(null, outputPath)),
     ]);
-    await Promise.all(
-      [...childPaths].map(async childPath =>
-        fs.mkdir(path.resolve(GITHUB_WORKSPACE, diff, childPath))
-      )
-    );
+
+    try {
+      await Promise.all(
+        [...childPaths].map(async childPath =>
+          fs.mkdir(path.resolve(GITHUB_WORKSPACE, diff, childPath))
+        )
+      );
+    } catch {
+      // ignore mkdir errors
+    }
 
     // Diff snapshots against base branch
     await Promise.all(
