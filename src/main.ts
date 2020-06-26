@@ -173,6 +173,24 @@ async function run(): Promise<void> {
       missingSnapshots.add(file);
     });
 
+    const getChildPaths = (fullPathToFile: string, basePath: string) =>
+      path.relative(
+        basePath,
+        fullPathToFile.replace(path.basename(fullPathToFile), '')
+      );
+
+    // Since we recurse in the directories looking for pngs, we need to replicate
+    // directory structure in the diff directory
+    const childPaths = new Set([
+      ...currentFiles.map(getChildPaths.bind(null, current)),
+      ...baseFiles.map(getChildPaths.bind(null, outputPath)),
+    ]);
+    await Promise.all(
+      [...childPaths].map(async childPath =>
+        fs.mkdir(path.resolve(GITHUB_WORKSPACE, diff, childPath))
+      )
+    );
+
     // Diff snapshots against base branch
     await Promise.all(
       currentFiles.map(async absoluteFile => {
@@ -278,7 +296,7 @@ async function run(): Promise<void> {
 ${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
 
 ## Missing snapshots
-${[...missingSnapshots].map(([name]) => `* ${name}`).join('\n')}
+${[...missingSnapshots].map(name => `* ${name}`).join('\n')}
 
 ## New snapshots
 ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
