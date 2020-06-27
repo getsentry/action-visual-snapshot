@@ -184,7 +184,7 @@ async function run(): Promise<void> {
       missingSnapshots.add(file);
     });
 
-    const getChildPaths = (fullPathToFile: string, basePath: string) =>
+    const getChildPaths = (basePath: string, fullPathToFile: string) =>
       path.relative(
         basePath,
         fullPathToFile.replace(path.basename(fullPathToFile), '')
@@ -197,6 +197,8 @@ async function run(): Promise<void> {
       ...baseFiles.map(getChildPaths.bind(null, outputPath)),
     ]);
 
+    console.log(childPaths, current, outputPath);
+
     try {
       await Promise.all(
         [...childPaths].map(async childPath => {
@@ -208,8 +210,6 @@ async function run(): Promise<void> {
     } catch {
       // ignore mkdir errors
     }
-
-    console.log(baseSnapshots);
 
     // Diff snapshots against base branch
     await Promise.all(
