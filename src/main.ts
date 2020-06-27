@@ -199,13 +199,17 @@ async function run(): Promise<void> {
 
     try {
       await Promise.all(
-        [...childPaths].map(async childPath =>
-          fs.mkdir(path.resolve(GITHUB_WORKSPACE, diff, childPath))
-        )
+        [...childPaths].map(async childPath => {
+          console.log(path.resolve(GITHUB_WORKSPACE, diff, childPath));
+
+          fs.mkdir(path.resolve(GITHUB_WORKSPACE, diff, childPath));
+        })
       );
     } catch {
       // ignore mkdir errors
     }
+
+    console.log(baseSnapshots);
 
     // Diff snapshots against base branch
     await Promise.all(
@@ -213,6 +217,7 @@ async function run(): Promise<void> {
         const file = path.relative(current, absoluteFile);
         currentSnapshots.add(file);
 
+        console.log('diffing', file);
         if (baseSnapshots.has(file)) {
           try {
             const isDiff = await createDiff(
