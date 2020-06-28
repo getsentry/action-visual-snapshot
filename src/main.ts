@@ -271,7 +271,7 @@ async function run(): Promise<void> {
       gcsBucket && storage
         ? await Promise.all(
             diffFiles.map(async file => {
-              const relativeFilePath = getChildPaths(diffPath, file);
+              const relativeFilePath = path.relative(diffPath, file);
               const [File] = await storage.bucket(gcsBucket).upload(file, {
                 // Support for HTTP requests made with `Accept-Encoding: gzip`
                 destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/diff/${relativeFilePath}`,
