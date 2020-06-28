@@ -242,6 +242,7 @@ async function run(): Promise<void> {
             missingSnapshots.delete(file);
           } catch (err) {
             core.debug(`Unable to diff: ${err.message}`);
+            Sentry.captureException(err);
           }
         } else {
           newSnapshots.add(file);
