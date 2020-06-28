@@ -58,7 +58,7 @@ async function createDiff(
 
   if (result > 0) {
     const combinedWidth = width * 3;
-    const combined = new PNG({width: combinedWidth, height: height * 3});
+    const combined = new PNG({width: combinedWidth, height});
 
     // original -> new -> diff
     const images = [img1, img2, diff]; //.forEach((img, i) => {
