@@ -69,6 +69,7 @@ async function createDiff(
         const targetIdx = (width * y + x) << 2;
         const img = images[x / width];
 
+        console.log({x, y, width});
         // invert color
         combined.data[targetIdx] = img.data[idx];
         combined.data[targetIdx + 1] = img.data[idx + 1];
