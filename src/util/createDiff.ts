@@ -21,7 +21,7 @@ export async function createDiff(
   const diff = new PNG({width, height});
 
   const result = pixelmatch(img1.data, img2.data, diff.data, width, height, {
-    threshold: 0.1,
+    threshold: 0.2,
   });
 
   if (result > 0) {
