@@ -1,5 +1,4 @@
 /* eslint-env node */
-import * as fsNs from 'fs';
 import path from 'path';
 import * as core from '@actions/core';
 import {exec} from '@actions/exec';
@@ -9,10 +8,9 @@ import * as io from '@actions/io';
 import {Storage} from '@google-cloud/storage';
 import * as Sentry from '@sentry/node';
 import {RewriteFrames} from '@sentry/integrations';
-import {PNG} from 'pngjs';
-import pixelmatch from 'pixelmatch';
 
-const fs = fsNs.promises;
+import {createDiff} from './util/createDiff';
+
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
 const octokit = github.getOctokit(token);
@@ -35,56 +33,6 @@ const credentials =
 
 // Creates a client
 const storage = credentials && new Storage({credentials});
-
-async function createDiff(
-  snapshotName: string,
-  output: string,
-  file1: string,
-  file2: string
-) {
-  const [fileContent1, fileContent2] = await Promise.all([
-    fs.readFile(file1),
-    fs.readFile(file2),
-  ]);
-
-  const img1 = PNG.sync.read(fileContent1);
-  const img2 = PNG.sync.read(fileContent2);
-  const {width, height} = img1;
-  const diff = new PNG({width, height});
-
-  const result = pixelmatch(img1.data, img2.data, diff.data, width, height, {
-    threshold: 0.1,
-  });
-
-  if (result > 0) {
-    const combinedWidth = width * 3;
-    const combined = new PNG({width: combinedWidth, height});
-
-    // original -> new -> diff
-    const images = [img1, img2, diff]; //.forEach((img, i) => {
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < combinedWidth; x++) {
-        const idx = (width * y + (x % width)) << 2;
-        const targetIdx = (width * y + x) << 2;
-        const img = images[Math.floor(x / width)];
-
-        // invert color
-        combined.data[targetIdx] = img.data[idx];
-        combined.data[targetIdx + 1] = img.data[idx + 1];
-        combined.data[targetIdx + 2] = img.data[idx + 2];
-        combined.data[targetIdx + 3] = img.data[idx + 3];
-      }
-    }
-
-    await fs.writeFile(
-      path.resolve(output, snapshotName),
-      PNG.sync.write(combined)
-    );
-  }
-
-  return result;
-}
 
 async function run(): Promise<void> {
   try {
