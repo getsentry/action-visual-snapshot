@@ -122,7 +122,7 @@ async function run(): Promise<void> {
     try {
       await Promise.all(
         [...childPaths].map(async childPath =>
-          io.mkdirP(path.resolve(GITHUB_WORKSPACE, diff, childPath))
+          io.mkdirP(path.resolve(diffPath, childPath))
         )
       );
     } catch {
@@ -139,9 +139,9 @@ async function run(): Promise<void> {
           try {
             const isDiff = await createDiff(
               file,
-              path.resolve(GITHUB_WORKSPACE, diff),
-              path.resolve(GITHUB_WORKSPACE, current, file),
-              path.resolve(basePath, file)
+              diffPath,
+              path.resolve(basePath, file),
+              path.resolve(GITHUB_WORKSPACE, current, file)
             );
             if (isDiff) {
               changedSnapshots.add(file);
