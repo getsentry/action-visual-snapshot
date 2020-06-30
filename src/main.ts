@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/node';
 import {RewriteFrames} from '@sentry/integrations';
 
 import {createDiff} from './util/createDiff';
+import {downloadArtifact} from './api/downloadArtifact';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
@@ -39,10 +40,14 @@ async function run(): Promise<void> {
     const current: string = core.getInput('snapshot-path');
     const diff: string = core.getInput('diff-path');
     const diffPath = path.resolve(GITHUB_WORKSPACE, diff);
+    const basePath = path.resolve('/tmp/visual-snapshots-base');
+    const baseBranch = core.getInput('base-branch');
+    const baseArtifactName = core.getInput('base-artifact-name');
 
     core.debug(`${current} vs ${diff}`);
-
     core.debug(GITHUB_WORKSPACE);
+
+    // Forward `diff-path` to outputs
     core.setOutput('diff-path', diff);
 
     const newSnapshots = new Set<string>([]);
@@ -51,77 +56,24 @@ async function run(): Promise<void> {
     const currentSnapshots = new Set<string>([]);
     const baseSnapshots = new Set<string>([]);
 
-    // fetch artifact from main branch
-    // this is hacky since github actions do not support downloading
-    // artifacts from different workflows
-    const {
-      data: {
-        workflow_runs: [workflowRun, otherRuns],
-      },
-    } = await octokit.actions.listWorkflowRuns({
+    const didDownload = await downloadArtifact(octokit, {
       owner,
       repo,
-      // Below is typed incorrectly
-      // @ts-ignore
+      branch: baseBranch,
       workflow_id: `${GITHUB_WORKFLOW}.yml`,
-      branch: core.getInput('base-branch'),
+      artifactName: baseArtifactName,
+      downloadPath: basePath,
     });
 
-    console.log(workflowRun, otherRuns);
-
-    if (!workflowRun) {
-      core.debug('No base workflow run found');
+    if (!didDownload) {
+      core.debug('Unable to download artifact from base branch');
       return;
     }
-
-    const {
-      data: {artifacts},
-    } = await octokit.actions.listWorkflowRunArtifacts({
-      owner,
-      repo,
-      run_id: workflowRun.id,
-    });
-
-    core.debug(JSON.stringify(artifacts));
-    // filter artifacts for `visual-snapshots-main`
-    const mainSnapshotArtifact = artifacts.find(
-      artifact => artifact.name === core.getInput('base-artifact-name')
-    );
-
-    if (!mainSnapshotArtifact) {
-      core.debug('Artifact not found');
-      return;
-    }
-
-    // Download the artifact
-    const download = await octokit.actions.downloadArtifact({
-      owner,
-      repo,
-      artifact_id: mainSnapshotArtifact.id,
-      archive_format: 'zip',
-    });
-
-    core.debug(JSON.stringify(download));
-
-    const outputPath = path.resolve('/tmp/visual-snapshots-base');
-    await io.mkdirP(outputPath);
-
-    await exec(
-      `curl -L -o ${path.resolve(outputPath, 'visual-snapshots-base.zip')} ${
-        download.url
-      }`
-    );
-    await exec(
-      `unzip -d ${outputPath} ${path.resolve(
-        outputPath,
-        'visual-snapshots-base.zip'
-      )}`
-    );
 
     // globs
     const pngGlob = '/**/*.png';
     const [baseGlobber, currentGlobber] = await Promise.all([
-      glob.create(`${outputPath}${pngGlob}`, {followSymbolicLinks: false}),
+      glob.create(`${basePath}${pngGlob}`, {followSymbolicLinks: false}),
       glob.create(`${current}${pngGlob}`, {followSymbolicLinks: false}),
     ]);
 
@@ -142,14 +94,14 @@ async function run(): Promise<void> {
     await io.mkdirP(diffPath);
 
     baseFiles.forEach(absoluteFile => {
-      const file = path.relative(outputPath, absoluteFile);
+      const file = path.relative(basePath, absoluteFile);
       baseSnapshots.add(file);
       missingSnapshots.add(file);
     });
 
-    const getChildPaths = (basePath: string, fullPathToFile: string) =>
+    const getChildPaths = (base: string, fullPathToFile: string) =>
       path.relative(
-        basePath,
+        base,
         fullPathToFile.replace(path.basename(fullPathToFile), '')
       );
 
@@ -157,7 +109,7 @@ async function run(): Promise<void> {
     // directory structure in the diff directory
     const childPaths = new Set([
       ...currentFiles.map(getChildPaths.bind(null, current)),
-      ...baseFiles.map(getChildPaths.bind(null, outputPath)),
+      ...baseFiles.map(getChildPaths.bind(null, basePath)),
     ]);
 
     try {
@@ -182,7 +134,7 @@ async function run(): Promise<void> {
               file,
               path.resolve(GITHUB_WORKSPACE, diff),
               path.resolve(GITHUB_WORKSPACE, current, file),
-              path.resolve(outputPath, file)
+              path.resolve(basePath, file)
             );
             if (isDiff) {
               changedSnapshots.add(file);
@@ -253,7 +205,7 @@ async function run(): Promise<void> {
     // // for each diffFile, we need to copy the base and current files
     // const relativeFilePath = getChildPaths(diffPath, file);
     // return [
-    // io.cp(path.resolve(outputPath, relativeFilePath), path.resolve(
+    // io.cp(path.resolve(basePath, relativeFilePath), path.resolve(
     // }))
 
     const conclusion =
@@ -262,6 +214,9 @@ async function run(): Promise<void> {
         : !!newSnapshots.size
         ? 'neutral'
         : 'success';
+
+    const unchanged =
+      baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
 
     // Create a GitHub check with our results
     await octokit.checks.create({
@@ -274,7 +229,7 @@ async function run(): Promise<void> {
       output: {
         title: 'Visual Snapshots',
         summary: `Summary:
-* **${changedSnapshots.size}** changed snapshots
+* **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
 `,
