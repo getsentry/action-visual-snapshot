@@ -35,14 +35,27 @@ const credentials =
 // Creates a client
 const storage = credentials && new Storage({credentials});
 
+/**
+ * Given a base path and a full path to file, we want to find
+ * the subdirectories "between" `base` and `fullPathToFile`
+ */
+const getChildPaths = (base: string, fullPathToFile: string) =>
+  path.relative(
+    base,
+    fullPathToFile.replace(path.basename(fullPathToFile), '')
+  );
+
 async function run(): Promise<void> {
   try {
     const current: string = core.getInput('snapshot-path');
     const diff: string = core.getInput('diff-path');
-    const diffPath = path.resolve(GITHUB_WORKSPACE, diff);
-    const basePath = path.resolve('/tmp/visual-snapshots-base');
     const baseBranch = core.getInput('base-branch');
     const baseArtifactName = core.getInput('base-artifact-name');
+    const gcsBucket = core.getInput('gcs-bucket');
+
+    const diffPath = path.resolve(GITHUB_WORKSPACE, diff);
+    const basePath = path.resolve('/tmp/visual-snapshots-base');
+    const resultsPath = path.resolve('/tmp/visual-snapshop-results');
 
     core.debug(`${current} vs ${diff}`);
     core.debug(GITHUB_WORKSPACE);
@@ -98,12 +111,6 @@ async function run(): Promise<void> {
       baseSnapshots.add(file);
       missingSnapshots.add(file);
     });
-
-    const getChildPaths = (base: string, fullPathToFile: string) =>
-      path.relative(
-        base,
-        fullPathToFile.replace(path.basename(fullPathToFile), '')
-      );
 
     // Since we recurse in the directories looking for pngs, we need to replicate
     // directory structure in the diff directory
@@ -168,7 +175,6 @@ async function run(): Promise<void> {
     });
     const diffFiles = await diffGlobber.glob();
 
-    const gcsBucket = core.getInput('gcs-bucket');
     const diffArtifactUrls =
       gcsBucket && storage
         ? await Promise.all(
@@ -197,7 +203,6 @@ async function run(): Promise<void> {
         : [];
 
     // Create results artifact dir
-    const resultsPath = '/tmp/visual-snapshop-results';
     await io.mkdirP(resultsPath);
     await io.cp(diffPath, resultsPath, {recursive: true});
     await exec(`ls ${resultsPath}`);
