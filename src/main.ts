@@ -1,199 +1,168 @@
 /* eslint-env node */
-import * as fsNs from "fs";
-import path from "path";
-import * as github from "@actions/github";
-import * as core from "@actions/core";
-import { exec } from "@actions/exec";
-import { Storage } from "@google-cloud/storage";
-import { PNG } from "pngjs";
-import pixelmatch from "pixelmatch";
+import path from 'path';
+import * as core from '@actions/core';
+import {exec} from '@actions/exec';
+import * as glob from '@actions/glob';
+import * as github from '@actions/github';
+import * as io from '@actions/io';
+import {Storage} from '@google-cloud/storage';
+import * as Sentry from '@sentry/node';
+import {RewriteFrames} from '@sentry/integrations';
 
-const fs = fsNs.promises;
-const { owner, repo } = github.context.repo;
-const token = core.getInput("githubToken");
+import {createDiff} from './util/createDiff';
+import {downloadArtifact} from './api/downloadArtifact';
+
+const {owner, repo} = github.context.repo;
+const token = core.getInput('githubToken');
 const octokit = github.getOctokit(token);
-const GITHUB_SHA = process.env.GITHUB_SHA || "";
-const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE || "";
-const GOOGLE_CREDENTIALS = core.getInput("gcp-service-account-key");
+const GITHUB_WORKFLOW = process.env.GITHUB_WORKFLOW as string;
+const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE as string;
+const GITHUB_EVENT_PATH = process.env.GITHUB_EVENT_PATH as string;
+const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
+
+Sentry.init({
+  dsn: 'https://34b97f5891a044c6ab1f6ce6332733fb@o1.ingest.sentry.io/5246761',
+  integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
+});
+console.log(JSON.stringify(process.env, null, 2));
+
+const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
 const credentials =
   GOOGLE_CREDENTIALS &&
-  JSON.parse(Buffer.from(GOOGLE_CREDENTIALS, "base64").toString("utf8"));
+  JSON.parse(Buffer.from(GOOGLE_CREDENTIALS, 'base64').toString('utf8'));
 
 // Creates a client
-const storage = credentials && new Storage({ credentials });
+const storage = credentials && new Storage({credentials});
 
-function isSnapshot(dirent: fsNs.Dirent) {
-  // Only png atm
-  return dirent.isFile() && dirent.name.endsWith(".png");
-}
-
-async function createDiff(
-  snapshotName: string,
-  output: string,
-  file1: string,
-  file2: string
-) {
-  const [fileContent1, fileContent2] = await Promise.all([
-    fs.readFile(file1),
-    fs.readFile(file2)
-  ]);
-
-  const img1 = PNG.sync.read(fileContent1);
-  const img2 = PNG.sync.read(fileContent2);
-  const { width, height } = img1;
-  const diff = new PNG({ width, height });
-
-  const result = pixelmatch(img1.data, img2.data, diff.data, width, height, {
-    threshold: 0.1
-  });
-
-  if (result > 0) {
-    await fs.writeFile(
-      path.resolve(output, snapshotName),
-      PNG.sync.write(diff)
-    );
-  }
-
-  return result;
-}
+/**
+ * Given a base path and a full path to file, we want to find
+ * the subdirectories "between" `base` and `fullPathToFile`
+ */
+const getChildPaths = (base: string, fullPathToFile: string) =>
+  path.relative(
+    base,
+    fullPathToFile.replace(path.basename(fullPathToFile), '')
+  );
 
 async function run(): Promise<void> {
   try {
-    const current: string = core.getInput("snapshot-path");
-    const diff: string = core.getInput("diff-path");
-    core.debug(`${current} vs ${diff}`);
+    const current: string = core.getInput('snapshot-path');
+    const diff: string = core.getInput('diff-path');
+    const baseBranch = core.getInput('base-branch');
+    const baseArtifactName = core.getInput('base-artifact-name');
+    const gcsBucket = core.getInput('gcs-bucket');
 
+    const diffPath = path.resolve(GITHUB_WORKSPACE, diff);
+    const basePath = path.resolve('/tmp/visual-snapshots-base');
+    const resultsPath = path.resolve('/tmp/visual-snapshop-results');
+
+    core.debug(`${current} vs ${diff}`);
     core.debug(GITHUB_WORKSPACE);
-    core.setOutput("diff-path", diff);
+
+    // Forward `diff-path` to outputs
+    core.setOutput('diff-path', diff);
 
     const newSnapshots = new Set<string>([]);
     const changedSnapshots = new Set<string>([]);
-    const missingSnapshots = new Map<string, fsNs.Dirent>([]);
-    const currentSnapshots = new Map<string, fsNs.Dirent>([]);
-    const baseSnapshots = new Map<string, fsNs.Dirent>([]);
+    const missingSnapshots = new Set<string>([]);
+    const currentSnapshots = new Set<string>([]);
+    const baseSnapshots = new Set<string>([]);
 
-    // fetch artifact from main branch
-    // this is hacky since github actions do not support downloading
-    // artifacts from different workflows
-    const {
-      data: {
-        workflow_runs: [workflowRun]
-      }
-    } = await octokit.actions.listWorkflowRuns({
+    const didDownload = await downloadArtifact(octokit, {
       owner,
       repo,
-      // Below is typed incorrectly
-      // @ts-ignore
-      workflow_id: core.getInput("base-workflow-id"),
-      branch: core.getInput("base-branch")
+      branch: baseBranch,
+      workflow_id: `${GITHUB_WORKFLOW}.yml`,
+      artifactName: baseArtifactName,
+      downloadPath: basePath,
     });
 
-    if (!workflowRun) {
-      core.debug("No base workflow run found");
-    }
-
-    const {
-      data: { artifacts }
-    } = await octokit.actions.listWorkflowRunArtifacts({
-      owner,
-      repo,
-      run_id: workflowRun.id
-    });
-
-    core.debug(JSON.stringify(artifacts));
-    // filter artifacts for `visual-snapshots-main`
-    const mainSnapshotArtifact = artifacts.find(
-      artifact => artifact.name === core.getInput("base-artifact-name")
-    );
-
-    if (!mainSnapshotArtifact) {
-      core.debug("Artifact not found");
+    if (!didDownload) {
+      core.debug('Unable to download artifact from base branch');
       return;
     }
 
-    // Download the artifact
-    const download = await octokit.actions.downloadArtifact({
-      owner,
-      repo,
-      artifact_id: mainSnapshotArtifact.id,
-      archive_format: "zip"
-    });
-
-    core.debug(JSON.stringify(download));
-
-    const outputPath = path.resolve("/tmp/visual-snapshots-base");
-    try {
-      await fs.mkdir(outputPath, { recursive: true });
-    } catch {
-      core.debug(`Unable to create dir: ${outputPath}`);
-    }
-
-    await exec(
-      `curl -L -o ${path.resolve(outputPath, "visual-snapshots-base.zip")} ${
-        download.url
-      }`
-    );
-    await exec(
-      `unzip -d ${outputPath} ${path.resolve(
-        outputPath,
-        "visual-snapshots-base.zip"
-      )}`
-    );
-
-    // read dirs
-    const [currentDir, baseDir] = await Promise.all([
-      fs.readdir(current, { withFileTypes: true }),
-      fs.readdir(path.resolve(outputPath), {
-        withFileTypes: true
-      })
+    // globs
+    const pngGlob = '/**/*.png';
+    const [baseGlobber, currentGlobber] = await Promise.all([
+      glob.create(`${basePath}${pngGlob}`, {followSymbolicLinks: false}),
+      glob.create(`${current}${pngGlob}`, {followSymbolicLinks: false}),
     ]);
 
-    // make output dir if not exists
-    const diffPath = path.resolve(GITHUB_WORKSPACE, diff);
+    const [baseFiles, currentFiles] = await Promise.all([
+      baseGlobber.glob(),
+      currentGlobber.glob(),
+    ]);
 
-    try {
-      await fs.mkdir(diffPath, { recursive: true });
-    } catch {
-      core.debug(`Unable to create dir: ${diffPath}`);
+    if (!baseFiles.length) {
+      core.debug('No snapshots found for base branch');
     }
 
-    baseDir.filter(isSnapshot).forEach(entry => {
-      baseSnapshots.set(entry.name, entry);
-      missingSnapshots.set(entry.name, entry);
+    if (!currentFiles.length) {
+      core.debug('No snapshots found for current branch');
+    }
+
+    // make diff dir if not exists
+    await io.mkdirP(diffPath);
+
+    baseFiles.forEach(absoluteFile => {
+      const file = path.relative(basePath, absoluteFile);
+      baseSnapshots.add(file);
+      missingSnapshots.add(file);
     });
 
-    await Promise.all(
-      currentDir.filter(isSnapshot).map(async entry => {
-        currentSnapshots.set(entry.name, entry);
+    // Since we recurse in the directories looking for pngs, we need to replicate
+    // directory structure in the diff directory
+    const childPaths = new Set([
+      ...currentFiles.map(getChildPaths.bind(null, current)),
+      ...baseFiles.map(getChildPaths.bind(null, basePath)),
+    ]);
 
-        if (baseSnapshots.has(entry.name)) {
+    try {
+      await Promise.all(
+        [...childPaths].map(async childPath =>
+          io.mkdirP(path.resolve(GITHUB_WORKSPACE, diff, childPath))
+        )
+      );
+    } catch {
+      // ignore mkdir errors
+    }
+
+    // Diff snapshots against base branch
+    await Promise.all(
+      currentFiles.map(async absoluteFile => {
+        const file = path.relative(current, absoluteFile);
+        currentSnapshots.add(file);
+
+        if (baseSnapshots.has(file)) {
           try {
             const isDiff = await createDiff(
-              entry.name,
+              file,
               path.resolve(GITHUB_WORKSPACE, diff),
-              path.resolve(GITHUB_WORKSPACE, current, entry.name),
-              path.resolve(outputPath, entry.name)
+              path.resolve(GITHUB_WORKSPACE, current, file),
+              path.resolve(basePath, file)
             );
             if (isDiff) {
-              changedSnapshots.add(entry.name);
+              changedSnapshots.add(file);
             }
-            missingSnapshots.delete(entry.name);
+            missingSnapshots.delete(file);
           } catch (err) {
             core.debug(`Unable to diff: ${err.message}`);
+            Sentry.captureException(err);
           }
         } else {
-          newSnapshots.add(entry.name);
+          newSnapshots.add(file);
         }
       })
     );
 
-    missingSnapshots.forEach(entry => {
-      core.debug(`missing snapshot: ${entry.name}`);
+    missingSnapshots.forEach(file => {
+      core.debug(`missing snapshot: ${file}`);
     });
 
-    newSnapshots.forEach(entryName => {
-      core.debug(`new snapshot: ${entryName}`);
+    newSnapshots.forEach(fileName => {
+      core.debug(`new snapshot: ${fileName}`);
     });
 
     changedSnapshots.forEach(name => {
@@ -201,76 +170,86 @@ async function run(): Promise<void> {
     });
 
     // TODO: Upload diff files where and update check with them
-    const diffFiles =
-      (await fs.readdir(diffPath, {
-        withFileTypes: true
-      })) || [];
+    const diffGlobber = await glob.create(`${diffPath}${pngGlob}`, {
+      followSymbolicLinks: false,
+    });
+    const diffFiles = await diffGlobber.glob();
 
-    const gcsBucket = core.getInput("gcs-bucket");
     const diffArtifactUrls =
       gcsBucket && storage
         ? await Promise.all(
-            diffFiles.filter(isSnapshot).map(async entry => {
-              const [File] = await storage
-                .bucket(gcsBucket)
-                .upload(path.resolve(diffPath, entry.name), {
-                  // Support for HTTP requests made with `Accept-Encoding: gzip`
-                  destination: `${owner}/${repo}/${GITHUB_SHA}/diff/${entry.name}`,
-                  // public: true,
-                  gzip: true,
-                  // By setting the option `destination`, you can change the name of the
-                  // object you are uploading to a bucket.
-                  metadata: {
-                    // Enable long-lived HTTP caching headers
-                    // Use only if the contents of the file will never change
-                    // (If the contents will change, use cacheControl: 'no-cache')
-                    cacheControl: "public, max-age=31536000"
-                  }
-                });
-              console.log(path.resolve(diffPath, entry.name), File);
+            diffFiles.map(async file => {
+              const relativeFilePath = path.relative(diffPath, file);
+              const [File] = await storage.bucket(gcsBucket).upload(file, {
+                // Support for HTTP requests made with `Accept-Encoding: gzip`
+                destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/diff/${relativeFilePath}`,
+                gzip: true,
+                // By setting the option `destination`, you can change the name of the
+                // object you are uploading to a bucket.
+                metadata: {
+                  // Enable long-lived HTTP caching headers
+                  // Use only if the contents of the file will never change
+                  // (If the contents will change, use cacheControl: 'no-cache')
+                  cacheControl: 'public, max-age=31536000',
+                },
+              });
 
               return {
-                alt: entry.name,
-                image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`
+                alt: relativeFilePath,
+                image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`,
               };
             })
           )
         : [];
 
+    // Create results artifact dir
+    await io.mkdirP(resultsPath);
+    await io.cp(diffPath, resultsPath, {recursive: true});
+    await exec(`ls ${resultsPath}`);
+    // await Promise.all(diffFiles.map(async file => {
+    // // for each diffFile, we need to copy the base and current files
+    // const relativeFilePath = getChildPaths(diffPath, file);
+    // return [
+    // io.cp(path.resolve(basePath, relativeFilePath), path.resolve(
+    // }))
+
     const conclusion =
       !!changedSnapshots.size || !!missingSnapshots.size
-        ? "failure"
+        ? 'failure'
         : !!newSnapshots.size
-        ? "neutral"
-        : "success";
+        ? 'neutral'
+        : 'success';
+
+    const unchanged =
+      baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
 
     // Create a GitHub check with our results
     await octokit.checks.create({
       owner,
       repo,
-      name: "Visual Snapshot",
-      head_sha: GITHUB_SHA,
-      status: "completed",
+      name: 'Visual Snapshot',
+      head_sha: GITHUB_EVENT.pull_request.head.sha,
+      status: 'completed',
       conclusion,
       output: {
-        title: "Visual Snapshots",
+        title: 'Visual Snapshots',
         summary: `Summary:
-* **${changedSnapshots.size}** changed snapshots
+* **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
 `,
         text: `
 ## Changed snapshots
-${[...changedSnapshots].map(name => `* ${name}`).join("\n")}
+${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
 
 ## Missing snapshots
-${[...missingSnapshots].map(([name]) => `* ${name}`).join("\n")}
+${[...missingSnapshots].map(name => `* ${name}`).join('\n')}
 
 ## New snapshots
-${[...newSnapshots].map(name => `* ${name}`).join("\n")}
+${[...newSnapshots].map(name => `* ${name}`).join('\n')}
 `,
-        images: diffArtifactUrls
-      }
+        images: diffArtifactUrls,
+      },
     });
   } catch (error) {
     core.setFailed(error.message);
