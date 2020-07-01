@@ -21,7 +21,7 @@ export async function getArtifactsForBranchAndWorkflow(
 ) {
   const {
     data: {
-      workflow_runs: [workflowRun],
+      workflow_runs: [workflowRun, ...otherRuns],
     },
   } = await octokit.actions.listWorkflowRuns({
     owner,
@@ -36,6 +36,10 @@ export async function getArtifactsForBranchAndWorkflow(
     core.debug(`Workflow ${workflow_id} not found in branch ${branch}`);
     return null;
   }
+
+  console.log(workflowRun);
+  console.log('other workflow run: ');
+  console.log(otherRuns);
 
   const {
     data: {artifacts},
