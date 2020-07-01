@@ -4,19 +4,16 @@ import path from 'path';
 import {PNG} from 'pngjs';
 import pixelmatch from 'pixelmatch';
 
+import {fileToPng} from './fileToPng';
+
 export async function createDiff(
   snapshotName: string,
   output: string,
   file1: string,
   file2: string
 ) {
-  const [fileContent1, fileContent2] = await Promise.all([
-    fs.readFile(file1),
-    fs.readFile(file2),
-  ]);
+  const [img1, img2] = await Promise.all([fileToPng(file1), fileToPng(file2)]);
 
-  const img1 = PNG.sync.read(fileContent1);
-  const img2 = PNG.sync.read(fileContent2);
   const {width, height} = img1;
   const diff = new PNG({width, height});
 

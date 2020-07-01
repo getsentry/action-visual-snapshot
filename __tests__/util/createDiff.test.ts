@@ -2,11 +2,46 @@ import fs from 'fs';
 import {PNG} from 'pngjs';
 import pixelmatch from 'pixelmatch';
 
+import {fileToPng} from '@app/util/fileToPng';
 import {createDiff} from '@app/util/createDiff';
+
+const PNG_DATA = [
+  1,
+  1,
+  1,
+  1,
+  2,
+  2,
+  2,
+  1,
+  3,
+  3,
+  3,
+  1,
+  4,
+  4,
+  4,
+  1,
+  5,
+  5,
+  5,
+  1,
+  6,
+  6,
+  6,
+  1,
+];
+
+jest.mock('@app/util/fileToPng', () => ({
+  fileToPng: jest.fn(() => ({
+    width: 3,
+    height: 2,
+    data: PNG_DATA,
+  })),
+}));
 
 jest.mock('fs', () => ({
   promises: {
-    readFile: jest.fn(),
     writeFile: jest.fn(),
   },
 }));
@@ -28,32 +63,7 @@ jest.mock('pngjs', () => {
     read: jest.fn(() => ({
       width: 3,
       height: 2,
-      data: [
-        1,
-        1,
-        1,
-        1,
-        2,
-        2,
-        2,
-        1,
-        3,
-        3,
-        3,
-        1,
-        4,
-        4,
-        4,
-        1,
-        5,
-        5,
-        5,
-        1,
-        6,
-        6,
-        6,
-        1,
-      ],
+      data: PNG_DATA,
     })),
   };
 
@@ -75,8 +85,8 @@ describe('createDiff', function() {
     );
     await createDiff('snapshotName', './', './img1.png', './img2.png');
 
-    expect(fs.promises.readFile).toHaveBeenCalledWith('./img1.png');
-    expect(PNG.sync.read).toHaveBeenCalledTimes(2);
+    expect(fileToPng).toHaveBeenCalledWith('./img1.png');
+    expect(fileToPng).toHaveBeenCalledWith('./img2.png');
 
     expect(mockPngConstructor).toHaveBeenCalledWith({width: 3, height: 2});
     expect(mockPngConstructor).toHaveBeenCalledWith({width: 9, height: 2});
