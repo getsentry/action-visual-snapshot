@@ -25,6 +25,7 @@ Sentry.init({
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
 });
 console.log(JSON.stringify(process.env, null, 2));
+console.log(JSON.stringify(github, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
