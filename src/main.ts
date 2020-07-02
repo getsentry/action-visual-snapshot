@@ -48,6 +48,29 @@ const getChildPaths = (base: string, fullPathToFile: string) =>
     fullPathToFile.replace(path.basename(fullPathToFile), '')
   );
 
+async function getMergeBase(base: string, head: string) {
+  let output = '';
+  let error = '';
+  await exec('git', ['merge-base', base, head], {
+    cwd: GITHUB_WORKSPACE,
+    listeners: {
+      stdout: (data: Buffer) => {
+        output += data.toString();
+      },
+      stderr: (data: Buffer) => {
+        error += data.toString();
+      },
+    },
+  });
+
+  if (error) {
+    console.error(error);
+    // throw new Error(error);
+  }
+
+  return output;
+}
+
 async function run(): Promise<void> {
   try {
     const resultsRootPath: string = core.getInput('results-path');
