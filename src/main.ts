@@ -18,6 +18,7 @@ const octokit = github.getOctokit(token);
 const GITHUB_WORKFLOW = process.env.GITHUB_WORKFLOW as string;
 const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE as string;
 const GITHUB_EVENT_PATH = process.env.GITHUB_EVENT_PATH as string;
+const {GITHUB_BASE_REF, GITHUB_HEAD_REF} = process.env;
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 
 Sentry.init({
@@ -25,7 +26,7 @@ Sentry.init({
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
 });
 console.log(JSON.stringify(process.env, null, 2));
-console.log(JSON.stringify(github, null, 2));
+// console.log(JSON.stringify(github, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
@@ -60,6 +61,8 @@ async function run(): Promise<void> {
 
     core.debug(`${current} vs ${diff}`);
     core.debug(GITHUB_WORKSPACE);
+
+    await exec(`git merge-base ${GITHUB_BASE_REF} ${GITHUB_HEAD_REF}`);
 
     // Forward `diff-path` to outputs
     core.setOutput('diff-path', diff);
