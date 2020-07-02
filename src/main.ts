@@ -88,10 +88,7 @@ async function run(): Promise<void> {
     core.debug(`${current} vs ${diff}`);
     core.debug(GITHUB_WORKSPACE);
 
-    const mergeBaseSha = await getMergeBase(GITHUB_BASE_REF, GITHUB_HEAD_REF);
-    const baseSha = github.context.payload.pull_request?.base?.sha;
-
-    console.log({baseSha, mergeBaseSha});
+    const mergeBaseSha = github.context.payload.pull_request?.base?.sha;
 
     // Forward `diff-path` to outputs
     core.setOutput('diff-path', diff);
