@@ -15,10 +15,13 @@ import {downloadArtifact} from './api/downloadArtifact';
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
 const octokit = github.getOctokit(token);
-const GITHUB_WORKFLOW = process.env.GITHUB_WORKFLOW as string;
-const GITHUB_WORKSPACE = process.env.GITHUB_WORKSPACE as string;
-const GITHUB_EVENT_PATH = process.env.GITHUB_EVENT_PATH as string;
-const {GITHUB_BASE_REF, GITHUB_HEAD_REF} = process.env;
+const {
+  GITHUB_BASE_REF,
+  GITHUB_HEAD_REF,
+  GITHUB_EVENT_PATH,
+  GITHUB_WORKSPACE,
+  GITHUB_WORKFLOW,
+} = process.env;
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 
 Sentry.init({
@@ -26,7 +29,7 @@ Sentry.init({
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
 });
 console.log(JSON.stringify(process.env, null, 2));
-// console.log(JSON.stringify(github, null, 2));
+console.log(JSON.stringify(github, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
@@ -47,6 +50,29 @@ const getChildPaths = (base: string, fullPathToFile: string) =>
     fullPathToFile.replace(path.basename(fullPathToFile), '')
   );
 
+async function getMergeBase(base: string, head: string) {
+  let output = '';
+  let error = '';
+  await exec('git', ['merge-base', base, head], {
+    cwd: GITHUB_WORKSPACE,
+    listeners: {
+      stdout: (data: Buffer) => {
+        output += data.toString();
+      },
+      stderr: (data: Buffer) => {
+        error += data.toString();
+      },
+    },
+  });
+
+  if (error) {
+    console.error(error);
+    // throw new Error(error);
+  }
+
+  return output;
+}
+
 async function run(): Promise<void> {
   try {
     const current: string = core.getInput('snapshot-path');
@@ -62,7 +88,10 @@ async function run(): Promise<void> {
     core.debug(`${current} vs ${diff}`);
     core.debug(GITHUB_WORKSPACE);
 
-    await exec(`git merge-base ${GITHUB_BASE_REF} ${GITHUB_HEAD_REF}`);
+    const mergeBaseSha = await getMergeBase(GITHUB_BASE_REF, GITHUB_HEAD_REF);
+    const baseSha = github.context.payload.pull_request?.base?.sha;
+
+    console.log({baseSha, mergeBaseSha});
 
     // Forward `diff-path` to outputs
     core.setOutput('diff-path', diff);
