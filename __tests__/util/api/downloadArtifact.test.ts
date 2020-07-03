@@ -36,9 +36,13 @@ test('downloads and extracts artifact', async function() {
 
   expect(io.mkdirP).toHaveBeenCalledWith('.artifacts');
   expect(exec.exec).toHaveBeenCalledWith(
-    'curl -L -o / http://artifact-download'
+    'curl',
+    ['-L', '-o', '/', 'http://artifact-download'],
+    {silent: true}
   );
-  expect(exec.exec).toHaveBeenCalledWith('unzip -d .artifacts /');
+  expect(exec.exec).toHaveBeenCalledWith('unzip', ['-d', '.artifacts', '/'], {
+    silent: true,
+  });
 
   expect(downloadResult).toBe(true);
 });

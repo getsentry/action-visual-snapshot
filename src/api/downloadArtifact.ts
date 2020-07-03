@@ -50,7 +50,7 @@ export async function downloadArtifact(
 
   const downloadFile = path.resolve(downloadPath, FILENAME);
 
-  await exec(`curl -L -o ${downloadFile} ${artifact.url}`);
+  await exec('curl', ['-L', '-o', downloadFile, artifact.url], {silent: true});
   await exec('unzip', ['-d', downloadPath, downloadFile], {silent: true});
 
   return true;
