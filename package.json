@@ -33,6 +33,9 @@
     }
   },
   "lint-staged": {
+    "*.{html,ejs}": [
+      "yarn prettier --parser html --write"
+    ],
     "*.{js,jsx,ts,tsx}": [
       "yarn eslint --fix",
       "yarn prettier --write"
