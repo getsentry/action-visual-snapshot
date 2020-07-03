@@ -87,7 +87,7 @@ async function run(): Promise<void> {
         branch: baseBranch,
         workflow_id: `${GITHUB_WORKFLOW}.yml`,
         artifactName: baseArtifactName,
-        downloadPath: basePath,
+        downloadPath: mergeBasePath,
         commit: mergeBaseSha,
       }),
     ]);
