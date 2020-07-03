@@ -23,7 +23,7 @@ Sentry.init({
   dsn: 'https://34b97f5891a044c6ab1f6ce6332733fb@o1.ingest.sentry.io/5246761',
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
 });
-console.log(JSON.stringify(process.env, null, 2));
+// console.log(JSON.stringify(process.env, null, 2));
 // console.log(JSON.stringify(github, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
@@ -244,13 +244,6 @@ async function run(): Promise<void> {
     // Create results artifact dir
     await io.mkdirP(resultsPath);
     await io.cp(diffPath, resultsPath, {recursive: true});
-    // await exec(`ls ${resultsPath}`);
-    // await Promise.all(diffFiles.map(async file => {
-    // // for each diffFile, we need to copy the base and current files
-    // const relativeFilePath = getChildPaths(diffPath, file);
-    // return [
-    // io.cp(path.resolve(basePath, relativeFilePath), path.resolve(
-    // }))
 
     const conclusion =
       !!changedSnapshots.size || !!missingSnapshots.size
