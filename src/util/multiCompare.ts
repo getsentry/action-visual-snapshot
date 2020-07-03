@@ -29,10 +29,14 @@ export async function multiCompare({
     fileToPng(branchHead),
   ]);
 
-  // diff baseHeadImage and branchBaseImage
+  // diff baseHeadImage and branchBaseImage -- alpha must be 0 so that we can
+  // correctly identify the diffed pixels
   const {diff: branchBaseBaseHeadDiffImage} = await getDiff(
     branchBase,
-    baseHead
+    baseHead,
+    {
+      alpha: 0,
+    }
   );
 
   // Find pixel locations that have changed from branch base ---> head
