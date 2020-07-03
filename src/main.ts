@@ -1,7 +1,6 @@
 /* eslint-env node */
 import path from 'path';
 import * as core from '@actions/core';
-import {exec} from '@actions/exec';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
 import * as io from '@actions/io';
@@ -12,6 +11,7 @@ import {RewriteFrames} from '@sentry/integrations';
 import {createDiff} from './util/createDiff';
 import {downloadArtifact} from './api/downloadArtifact';
 import {multiCompare} from './util/multiCompare';
+import {generateImageGallery} from './util/generateImageGallery';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
@@ -48,23 +48,28 @@ const getChildPaths = (base: string, fullPathToFile: string) =>
 async function run(): Promise<void> {
   try {
     const current: string = core.getInput('snapshot-path');
-    const diff: string = core.getInput('diff-path');
+    const resultsRootPath: string = core.getInput('results-path');
     const baseBranch = core.getInput('base-branch');
     const baseArtifactName = core.getInput('base-artifact-name');
     const gcsBucket = core.getInput('gcs-bucket');
 
-    const diffPath = path.resolve(GITHUB_WORKSPACE, diff);
+    const resultsPath = path.resolve(
+      resultsRootPath,
+      'visual-snapshots-results'
+    );
+    const diffPath = path.resolve(resultsPath, 'diffs');
     const basePath = path.resolve('/tmp/visual-snapshots-base');
-    const resultsPath = path.resolve('/tmp/visual-snapshop-results');
     const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
-    core.debug(`${current} vs ${diff}`);
+    core.debug(`${current} vs ${resultsPath}`);
     core.debug(GITHUB_WORKSPACE);
 
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
 
-    // Forward `diff-path` to outputs
-    core.setOutput('diff-path', diff);
+    // Forward `results-path` to outputs
+    core.setOutput('results-path', resultsRootPath);
+    core.setOutput('base-images-path', basePath);
+    core.setOutput('merge-base-images-path', mergeBasePath);
 
     const newSnapshots = new Set<string>([]);
     const changedSnapshots = new Set<string>([]);
@@ -241,9 +246,13 @@ async function run(): Promise<void> {
           )
         : [];
 
-    // Create results artifact dir
-    await io.mkdirP(resultsPath);
-    await io.cp(diffPath, resultsPath, {recursive: true});
+    const changedArray = [...changedSnapshots];
+
+    await generateImageGallery(path.resolve(resultsPath, 'index.html'), {
+      changed: Object.fromEntries(
+        changedArray.map(file => [path.basename(file, '.png'), file])
+      ),
+    });
 
     const conclusion =
       !!changedSnapshots.size || !!missingSnapshots.size
@@ -265,20 +274,36 @@ async function run(): Promise<void> {
       conclusion,
       output: {
         title: 'Visual Snapshots',
-        summary: `Summary:
+        summary: `
 * **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
 `,
         text: `
+${
+  changedSnapshots.size
+    ? `## Changed snapshots
 ## Changed snapshots
 ${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
+`
+    : ''
+}
 
-## Missing snapshots
+${
+  missingSnapshots.size
+    ? `## Missing snapshots
 ${[...missingSnapshots].map(name => `* ${name}`).join('\n')}
+`
+    : ''
+}
 
-## New snapshots
+${
+  newSnapshots.size
+    ? `## New snapshots
 ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
+`
+    : ''
+}
 `,
         images: diffArtifactUrls,
       },
