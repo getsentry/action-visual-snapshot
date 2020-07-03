@@ -162,7 +162,7 @@ async function run(): Promise<void> {
 
             // If merge base snapshot exists, do a 3way diff
             if (mergeBaseSnapshots.has(file)) {
-              isDiff = multiCompare({
+              isDiff = await multiCompare({
                 branchBase: path.resolve(mergeBasePath, file),
                 baseHead: path.resolve(basePath, file),
                 branchHead: path.resolve(GITHUB_WORKSPACE, current, file),
