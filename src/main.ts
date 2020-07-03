@@ -244,7 +244,7 @@ async function run(): Promise<void> {
     // Create results artifact dir
     await io.mkdirP(resultsPath);
     await io.cp(diffPath, resultsPath, {recursive: true});
-    await exec(`ls ${resultsPath}`);
+    // await exec(`ls ${resultsPath}`);
     // await Promise.all(diffFiles.map(async file => {
     // // for each diffFile, we need to copy the base and current files
     // const relativeFilePath = getChildPaths(diffPath, file);
