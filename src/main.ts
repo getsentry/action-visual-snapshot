@@ -193,6 +193,10 @@ async function run(): Promise<void> {
     );
 
     missingSnapshots.forEach(file => {
+      if (!mergeBaseSnapshots.has(file)) {
+        missingSnapshots.delete(file);
+        return;
+      }
       core.debug(`missing snapshot: ${file}`);
     });
 
