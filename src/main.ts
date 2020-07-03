@@ -11,17 +11,12 @@ import {RewriteFrames} from '@sentry/integrations';
 
 import {createDiff} from './util/createDiff';
 import {downloadArtifact} from './api/downloadArtifact';
+import {multiCompare} from './util/multiCompare';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
 const octokit = github.getOctokit(token);
-const {
-  GITHUB_BASE_REF,
-  GITHUB_HEAD_REF,
-  GITHUB_EVENT_PATH,
-  GITHUB_WORKSPACE,
-  GITHUB_WORKFLOW,
-} = process.env;
+const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 
 Sentry.init({
@@ -29,7 +24,7 @@ Sentry.init({
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
 });
 console.log(JSON.stringify(process.env, null, 2));
-console.log(JSON.stringify(github, null, 2));
+// console.log(JSON.stringify(github, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
@@ -50,29 +45,6 @@ const getChildPaths = (base: string, fullPathToFile: string) =>
     fullPathToFile.replace(path.basename(fullPathToFile), '')
   );
 
-async function getMergeBase(base: string, head: string) {
-  let output = '';
-  let error = '';
-  await exec('git', ['merge-base', base, head], {
-    cwd: GITHUB_WORKSPACE,
-    listeners: {
-      stdout: (data: Buffer) => {
-        output += data.toString();
-      },
-      stderr: (data: Buffer) => {
-        error += data.toString();
-      },
-    },
-  });
-
-  if (error) {
-    console.error(error);
-    // throw new Error(error);
-  }
-
-  return output;
-}
-
 async function run(): Promise<void> {
   try {
     const current: string = core.getInput('snapshot-path');
@@ -84,11 +56,12 @@ async function run(): Promise<void> {
     const diffPath = path.resolve(GITHUB_WORKSPACE, diff);
     const basePath = path.resolve('/tmp/visual-snapshots-base');
     const resultsPath = path.resolve('/tmp/visual-snapshop-results');
+    const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
     core.debug(`${current} vs ${diff}`);
     core.debug(GITHUB_WORKSPACE);
 
-    const mergeBaseSha = github.context.payload.pull_request?.base?.sha;
+    const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
 
     // Forward `diff-path` to outputs
     core.setOutput('diff-path', diff);
@@ -99,30 +72,43 @@ async function run(): Promise<void> {
     const currentSnapshots = new Set<string>([]);
     const baseSnapshots = new Set<string>([]);
 
-    const didDownload = await downloadArtifact(octokit, {
-      owner,
-      repo,
-      branch: baseBranch,
-      workflow_id: `${GITHUB_WORKFLOW}.yml`,
-      artifactName: baseArtifactName,
-      downloadPath: basePath,
-    });
+    const [didDownloadLatest] = await Promise.all([
+      downloadArtifact(octokit, {
+        owner,
+        repo,
+        branch: baseBranch,
+        workflow_id: `${GITHUB_WORKFLOW}.yml`,
+        artifactName: baseArtifactName,
+        downloadPath: basePath,
+      }),
+      downloadArtifact(octokit, {
+        owner,
+        repo,
+        branch: baseBranch,
+        workflow_id: `${GITHUB_WORKFLOW}.yml`,
+        artifactName: baseArtifactName,
+        downloadPath: basePath,
+        commit: mergeBaseSha,
+      }),
+    ]);
 
-    if (!didDownload) {
+    if (!didDownloadLatest) {
       core.debug('Unable to download artifact from base branch');
       return;
     }
 
     // globs
     const pngGlob = '/**/*.png';
-    const [baseGlobber, currentGlobber] = await Promise.all([
+    const [baseGlobber, currentGlobber, mergeBaseGlobber] = await Promise.all([
       glob.create(`${basePath}${pngGlob}`, {followSymbolicLinks: false}),
       glob.create(`${current}${pngGlob}`, {followSymbolicLinks: false}),
+      glob.create(`${mergeBasePath}${pngGlob}`, {followSymbolicLinks: false}),
     ]);
 
-    const [baseFiles, currentFiles] = await Promise.all([
+    const [baseFiles, currentFiles, mergeBaseFiles] = await Promise.all([
       baseGlobber.glob(),
       currentGlobber.glob(),
+      mergeBaseGlobber.glob(),
     ]);
 
     if (!baseFiles.length) {
@@ -141,6 +127,11 @@ async function run(): Promise<void> {
       baseSnapshots.add(file);
       missingSnapshots.add(file);
     });
+
+    // index merge base files as well
+    const mergeBaseSnapshots = new Set(
+      mergeBaseFiles.map(absolute => path.relative(mergeBasePath, absolute))
+    );
 
     // Since we recurse in the directories looking for pngs, we need to replicate
     // directory structure in the diff directory
@@ -167,12 +158,26 @@ async function run(): Promise<void> {
 
         if (baseSnapshots.has(file)) {
           try {
-            const isDiff = await createDiff(
-              file,
-              diffPath,
-              path.resolve(basePath, file),
-              path.resolve(GITHUB_WORKSPACE, current, file)
-            );
+            let isDiff;
+
+            // If merge base snapshot exists, do a 3way diff
+            if (mergeBaseSnapshots.has(file)) {
+              isDiff = multiCompare({
+                branchBase: path.resolve(mergeBasePath, file),
+                baseHead: path.resolve(basePath, file),
+                branchHead: path.resolve(GITHUB_WORKSPACE, current, file),
+                output: diffPath,
+                snapshotName: file,
+              });
+            } else {
+              isDiff = await createDiff(
+                file,
+                diffPath,
+                path.resolve(basePath, file),
+                path.resolve(GITHUB_WORKSPACE, current, file)
+              );
+            }
+
             if (isDiff) {
               changedSnapshots.add(file);
             }

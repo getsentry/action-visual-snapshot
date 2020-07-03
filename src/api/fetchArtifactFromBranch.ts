@@ -19,6 +19,7 @@ export async function fetchArtifactFromBranch(
     artifactName,
     workflow_id,
     branch,
+    commit,
   }: FetchArtifactFromBranchParams
 ) {
   const artifacts = await getArtifactsForBranchAndWorkflow(octokit, {
@@ -26,6 +27,7 @@ export async function fetchArtifactFromBranch(
     repo,
     workflow_id,
     branch,
+    commit,
   });
 
   if (!artifacts) {

@@ -7,6 +7,7 @@ export type GetArtifactsForBranchAndWorkflow = {
   repo: string;
   branch: string;
   workflow_id: string;
+  commit?: string;
 };
 
 /**
@@ -17,12 +18,10 @@ export type GetArtifactsForBranchAndWorkflow = {
  */
 export async function getArtifactsForBranchAndWorkflow(
   octokit: ReturnType<typeof github.getOctokit>,
-  {owner, repo, workflow_id, branch}: GetArtifactsForBranchAndWorkflow
+  {owner, repo, workflow_id, branch, commit}: GetArtifactsForBranchAndWorkflow
 ) {
   const {
-    data: {
-      workflow_runs: [workflowRun, ...otherRuns],
-    },
+    data: {workflow_runs: workflowRuns},
   } = await octokit.actions.listWorkflowRuns({
     owner,
     repo,
@@ -32,14 +31,26 @@ export async function getArtifactsForBranchAndWorkflow(
     branch,
   });
 
-  if (!workflowRun) {
+  if (!workflowRuns.length) {
     core.debug(`Workflow ${workflow_id} not found in branch ${branch}`);
     return null;
   }
 
-  console.log(workflowRun);
-  console.log('other workflow run: ');
-  console.log(otherRuns);
+  // Either find a workflow run for a specific commit, or use the latest run
+  const workflowRun = commit
+    ? workflowRuns.find(
+        (run: typeof workflowRuns[number]) => run.head_sha === commit
+      )
+    : workflowRuns[0];
+
+  if (!workflowRun) {
+    core.debug(
+      `Workflow ${workflow_id} not found in branch: ${branch}${
+        commit ? ` and commit: ${commit}` : ''
+      }`
+    );
+    return null;
+  }
 
   const {
     data: {artifacts},
