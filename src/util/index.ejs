@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <title>Visual Snapshots</title>
+
+  <head>
+    <script>
+      const __images = <%- images %>
+    </script>
+
+    <style>
+      body {
+        margin: 0;
+      }
+
+      .app {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        padding: 12px;
+      }
+
+      .snapshots {
+
+      }
+
+      .header {
+        display: grid;
+        grid-auto-flow: column;
+        justify-content: space-between;
+        align-items: center;
+        grid-gap: 12px;
+      }
+
+      .button-bar {
+        display: grid;
+        grid-auto-flow: column;
+        grid-gap: 6px;
+      }
+      .button {
+        padding: 6px;
+      }
+      .button.selected {
+        color: white;
+        background-color: black
+      }
+
+      .img {
+        overflow: hidden;
+        max-width: 100%;
+      }
+      .image {
+        max-width: 300%;
+      } 
+    </style>
+
+  <script type="module">
+    import { html, Component, render } from 'https://unpkg.com/htm/preact/standalone.module.js';
+
+    const States = [
+      'Original',
+      'New',
+      'Diff',
+    ];
+
+    class App extends Component {
+      state = {
+        images: {},
+      }
+      componentDidMount() {
+        console.log('mount')
+      }
+      addTodo() {
+        const { todos = [] } = this.state;
+        this.setState({ todos: todos.concat(`Item ${todos.length}`) });
+      }
+
+      handleImageLoaded = (e) => {
+        console.log('loaded', e.target.width);
+        if (!this.state.width) {
+          this.setState({width: e.target.width / 3});
+        }
+      }
+
+      navigate(img, direction) {
+        this.setState(state => ({
+          images: {
+            ...state.images,
+            [img]: ((state.images[img] || 0) + direction) % 3,
+          }
+        }))
+      }
+
+      handleSelectState = (img, newViewState) => {
+        this.setState(state => ({
+          images: {
+            ...state.images,
+            [img]: States.indexOf(newViewState)
+          }
+        }))
+      }
+
+      handleImageClick = (img, e) => {
+        this.navigate(img, 1)
+      }
+
+      handleKeyDown = (img, e) => {
+        e.preventDefault();
+        const direction = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : null;
+        if (!direction) {
+          return null;
+        }
+
+        this.navigate(img, direction)
+      }
+
+      render({ page }, { todos = [] }) {
+        return html`
+          <div class="app">
+            <div class="snapshots">
+              ${Object.entries(__images.changed).map(([img, src], i) => html`
+              <h3 class="header">
+                ${img}
+                <div class="button-bar">
+                  ${States.map((state, i) => html`
+                    <button
+                      class="${`button${i === (this.state.images[img]||0) ? ' selected' : ''}`}"
+                      type="button"
+                      onKeyDown="${(e) => this.handleKeyDown(img, e)}"
+                      onClick="${() => this.handleSelectState(img, state)}"
+                    >
+                    ${state}
+                    </button>
+                  `)}
+                </div>
+              </h3>
+              <div class="img">
+                  <img
+                    tabIndex="${i}"
+                    class="image"
+                    key="${img}"
+                    alt="${img}"
+                    src="${src}"
+                    style="${{transform: `translateX(${(this.state.images[img]||0) * -33.33}%)`}}"
+                    onLoad="${this.handleImageLoaded}"
+                    onClick="${(e) => this.handleImageClick(img, e)}"
+                    onKeyDown="${(e) => this.handleKeyDown(img, e)}"
+                  />
+              </div>
+              `)}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    const Header = ({ name }) => html`<h1>${name}</h1>`
+
+    const Footer = props => html`<footer ...${props} />`
+
+    render(html`<${App} page="All" />`, document.body);
+  </script>
+  </head>
+
+  <body>
+  </body>
+</html>
