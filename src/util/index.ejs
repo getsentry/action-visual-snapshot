@@ -20,7 +20,6 @@
       }
 
       .snapshots {
-
       }
 
       .header {
@@ -41,7 +40,7 @@
       }
       .button.selected {
         color: white;
-        background-color: black
+        background-color: black;
       }
 
       .img {
@@ -50,117 +49,140 @@
       }
       .image {
         max-width: 300%;
-      } 
+      }
     </style>
 
-  <script type="module">
-    import { html, Component, render } from 'https://unpkg.com/htm/preact/standalone.module.js';
+    <script type="module">
+      import {
+        html,
+        Component,
+        render,
+      } from 'https://unpkg.com/htm/preact/standalone.module.js';
 
-    const States = [
-      'Original',
-      'New',
-      'Diff',
-    ];
+      const States = ['Original', 'New', 'Diff'];
 
-    class App extends Component {
-      state = {
-        images: {},
-      }
-      componentDidMount() {
-        console.log('mount')
-      }
-      addTodo() {
-        const { todos = [] } = this.state;
-        this.setState({ todos: todos.concat(`Item ${todos.length}`) });
-      }
-
-      handleImageLoaded = (e) => {
-        console.log('loaded', e.target.width);
-        if (!this.state.width) {
-          this.setState({width: e.target.width / 3});
+      class App extends Component {
+        state = {
+          images: {},
+        };
+        componentDidMount() {
+          console.log('mount');
         }
-      }
-
-      navigate(img, direction) {
-        this.setState(state => ({
-          images: {
-            ...state.images,
-            [img]: ((state.images[img] || 0) + direction) % 3,
-          }
-        }))
-      }
-
-      handleSelectState = (img, newViewState) => {
-        this.setState(state => ({
-          images: {
-            ...state.images,
-            [img]: States.indexOf(newViewState)
-          }
-        }))
-      }
-
-      handleImageClick = (img, e) => {
-        this.navigate(img, 1)
-      }
-
-      handleKeyDown = (img, e) => {
-        e.preventDefault();
-        const direction = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : null;
-        if (!direction) {
-          return null;
+        addTodo() {
+          const {todos = []} = this.state;
+          this.setState({todos: todos.concat(`Item ${todos.length}`)});
         }
 
-        this.navigate(img, direction)
-      }
+        handleImageLoaded = e => {
+          console.log('loaded', e.target.width);
+          if (!this.state.width) {
+            this.setState({width: e.target.width / 3});
+          }
+        };
 
-      render({ page }, { todos = [] }) {
-        return html`
-          <div class="app">
-            <div class="snapshots">
-              ${Object.entries(__images.changed).map(([img, src], i) => html`
-              <h3 class="header">
-                ${img}
-                <div class="button-bar">
-                  ${States.map((state, i) => html`
-                    <button
-                      class="${`button${i === (this.state.images[img]||0) ? ' selected' : ''}`}"
-                      type="button"
-                      onKeyDown="${(e) => this.handleKeyDown(img, e)}"
-                      onClick="${() => this.handleSelectState(img, state)}"
-                    >
-                    ${state}
-                    </button>
-                  `)}
-                </div>
-              </h3>
-              <div class="img">
-                  <img
-                    tabIndex="${i}"
-                    class="image"
-                    key="${img}"
-                    alt="${img}"
-                    src="${src}"
-                    style="${{transform: `translateX(${(this.state.images[img]||0) * -33.33}%)`}}"
-                    onLoad="${this.handleImageLoaded}"
-                    onClick="${(e) => this.handleImageClick(img, e)}"
-                    onKeyDown="${(e) => this.handleKeyDown(img, e)}"
-                  />
+        navigate(img, direction) {
+          this.setState(state => ({
+            images: {
+              ...state.images,
+              [img]: ((state.images[img] || 0) + direction) % 3,
+            },
+          }));
+        }
+
+        handleSelectState = (img, newViewState) => {
+          this.setState(state => ({
+            images: {
+              ...state.images,
+              [img]: States.indexOf(newViewState),
+            },
+          }));
+        };
+
+        handleImageClick = (img, e) => {
+          this.navigate(img, 1);
+        };
+
+        handleKeyDown = (img, e) => {
+          e.preventDefault();
+          const direction =
+            e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : null;
+          if (!direction) {
+            return null;
+          }
+
+          this.navigate(img, direction);
+        };
+
+        render({page}, {todos = []}) {
+          return html`
+            <div class="app">
+              <div class="snapshots">
+                ${Object.entries(__images.changed).map(
+                  ([img, src], i) => html`
+                    <h3 class="header">
+                      ${img}
+                      <div class="button-bar">
+                        ${States.map(
+                          (state, i) => html`
+                            <button
+                              class="${`button${
+                                i === (this.state.images[img] || 0)
+                                  ? ' selected'
+                                  : ''
+                              }`}"
+                              type="button"
+                              onKeyDown="${e => this.handleKeyDown(img, e)}"
+                              onClick="${() =>
+                                this.handleSelectState(img, state)}"
+                            >
+                              ${state}
+                            </button>
+                          `
+                        )}
+                      </div>
+                    </h3>
+                    <div class="img">
+                      <img
+                        tabindex="${i}"
+                        class="image"
+                        key="${img}"
+                        alt="${img}"
+                        src="${src}"
+                        style="${{
+                          transform: `translateX(${(this.state.images[img] ||
+                            0) * -33.33}%)`,
+                        }}"
+                        onLoad="${this.handleImageLoaded}"
+                        onClick="${e => this.handleImageClick(img, e)}"
+                        onKeyDown="${e => this.handleKeyDown(img, e)}"
+                      />
+                    </div>
+                  `
+                )}
               </div>
-              `)}
             </div>
-          </div>
-        `;
+          `;
+        }
       }
-    }
 
-    const Header = ({ name }) => html`<h1>${name}</h1>`
+      const Header = ({name}) =>
+        html`
+          <h1>${name}</h1>
+        `;
 
-    const Footer = props => html`<footer ...${props} />`
+      const Footer = props =>
+        html`
+          <footer ...${props} />
+        `;
 
-    render(html`<${App} page="All" />`, document.body);
-  </script>
+      render(
+        html`
+          <${App} page="All" />
+        `,
+        document.body
+      );
+    </script>
   </head>
 
-  <body>
-  </body>
+  <body></body>
 </html>
