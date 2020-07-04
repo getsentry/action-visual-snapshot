@@ -24,30 +24,35 @@ export async function multiCompare({
   baseHead,
   branchHead,
 }: Options) {
-  const [baseHeadImage, branchHeadImage] = await Promise.all([
+  const [
+    baseHeadImage,
+    branchHeadImage,
+    branchHeadMergedImage,
+  ] = await Promise.all([
     fileToPng(baseHead),
+    fileToPng(branchHead),
     fileToPng(branchHead),
   ]);
 
   // diff baseHeadImage and branchBaseImage -- alpha must be 0 so that we can
   // correctly identify the diffed pixels
-  const {diff: branchBaseBaseHeadDiffImage} = await getDiff(
-    branchBase,
-    baseHead,
-    {
-      alpha: 0,
-    }
-  );
-
-  // Find pixel locations that have changed from branch base ---> head
-  const changedPixels = findChangedPixels(branchBaseBaseHeadDiffImage);
-
-  // Apply pixel locations from head snapshot to branch head snapshot
-  changedPixels.forEach(idx => {
-    copyPixel(idx, baseHeadImage, branchHeadImage);
+  const {
+    result: baseDiffResult,
+    diff: branchBaseBaseHeadDiffImage,
+  } = await getDiff(branchBase, baseHead, {
+    alpha: 0,
   });
 
-  // `branchHeadImage` is now merged between baseHead and branchHeadImage
+  if (baseDiffResult > 0) {
+    // Find pixel locations that have changed from branch base ---> head
+    const changedPixels = findChangedPixels(branchBaseBaseHeadDiffImage);
+
+    // Apply pixel locations from head snapshot to branch head snapshot
+    // `branchHeadMergedImage` is now merged between baseHead and branchHeadImage
+    changedPixels.forEach(idx => {
+      copyPixel(idx, baseHeadImage, branchHeadMergedImage);
+    });
+  }
 
   // await fs.writeFile(
   // path.resolve('./3waymerge.png'),
@@ -55,12 +60,12 @@ export async function multiCompare({
   // );
 
   // diff branch head snapshot against head snapshot
-  const {width, height} = branchHeadImage;
+  const {width, height} = branchHeadMergedImage;
   const diff = new PNG({width, height});
 
   const result = pixelmatch(
     baseHeadImage.data,
-    branchHeadImage.data,
+    branchHeadMergedImage.data,
     diff.data,
     width,
     height,
@@ -79,10 +84,12 @@ export async function multiCompare({
       diff
     );
 
-    await fs.writeFile(
-      path.resolve(output, snapshotName),
-      PNG.sync.write(combined)
-    );
+    await Promise.all([
+      fs.writeFile(
+        path.resolve(output, snapshotName),
+        PNG.sync.write(combined)
+      ),
+    ]);
   }
 
   return result;
