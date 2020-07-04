@@ -7,7 +7,7 @@ export async function generateImageGallery(
   target: string,
   data: {changed: Record<string, string>}
 ) {
-  const html = ejs.render(template, {
+  const html = ejs.render(template.html, {
     images: JSON.stringify(data),
   });
 

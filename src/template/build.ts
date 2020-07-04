@@ -7,8 +7,8 @@ async function main() {
     'utf8'
   );
   return await fs.writeFile(
-    path.resolve(__dirname, './index.js'),
-    `export default const template = ${html}`
+    path.resolve(__dirname, './index.ts'),
+    `const template = ${JSON.stringify({html})}; export default template`
   );
 }
 
