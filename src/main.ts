@@ -254,6 +254,16 @@ async function run(): Promise<void> {
       ),
     });
 
+    const [imageGalleryFile] = await storage
+      .bucket(gcsBucket)
+      .upload(path.resolve(resultsPath, 'index.html'), {
+        destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/index.html`,
+        gzip: true,
+        metadata: {
+          cacheControl: 'public, max-age=31536000',
+        },
+      });
+
     const conclusion =
       !!changedSnapshots.size || !!missingSnapshots.size
         ? 'failure'
@@ -275,6 +285,9 @@ async function run(): Promise<void> {
       output: {
         title: 'Visual Snapshots',
         summary: `
+
+[View Image Gallery](https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name})
+
 * **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
@@ -283,7 +296,6 @@ async function run(): Promise<void> {
 ${
   changedSnapshots.size
     ? `## Changed snapshots
-## Changed snapshots
 ${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
 `
     : ''
