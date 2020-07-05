@@ -76,7 +76,10 @@
         handleImageLoaded = e => {
           console.log('loaded', e.target.width);
           if (!this.state.width) {
-            this.setState({width: e.target.width / 3});
+            this.setState({
+              maxWidth: e.target.width,
+              width: e.target.width / 3,
+            });
           }
         };
 
@@ -141,7 +144,12 @@
                         )}
                       </div>
                     </h3>
-                    <div class="img">
+                    <div
+                      class="img"
+                      style="${{
+                        maxWidth: `${this.state.maxWidth}px`,
+                      }}"
+                    >
                       <img
                         tabindex="${i}"
                         class="image"

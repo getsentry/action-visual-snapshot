@@ -6,10 +6,11 @@
   "main": "lib/main.js",
   "scripts": {
     "build": "yarn tsc",
+    "build-template": "yarn ts-node src/template/build",
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
-    "dist": "yarn build && yarn ncc build",
+    "dist": "yarn build && yarn build-template && yarn ncc build",
     "test": "yarn jest",
     "all": "yarn build && yarn format && yarn lint && yarn test && yarn dist"
   },
@@ -74,6 +75,7 @@
     "lint-staged": "^10.2.11",
     "prettier": "^1.19.1",
     "ts-jest": "^24.2.0",
+    "ts-node": "^8.10.2",
     "typescript": "^3.6.4"
   }
 }
