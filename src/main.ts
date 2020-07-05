@@ -226,7 +226,7 @@ async function run(): Promise<void> {
               const relativeFilePath = path.relative(diffPath, file);
               const [File] = await storage.bucket(gcsBucket).upload(file, {
                 // Support for HTTP requests made with `Accept-Encoding: gzip`
-                destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/diff/${relativeFilePath}`,
+                destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/diffs/${relativeFilePath}`,
                 gzip: true,
                 // By setting the option `destination`, you can change the name of the
                 // object you are uploading to a bucket.
