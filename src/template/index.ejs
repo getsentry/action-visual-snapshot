@@ -77,7 +77,6 @@
           console.log('loaded', e.target.width);
           if (!this.state.width) {
             this.setState({
-              maxWidth: e.target.width,
               width: e.target.width / 3,
             });
           }
@@ -147,7 +146,7 @@
                     <div
                       class="img"
                       style="${{
-                        maxWidth: `${this.state.maxWidth}px`,
+                        maxWidth: `${this.state.width}px`,
                       }}"
                     >
                       <img
