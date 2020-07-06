@@ -43,11 +43,18 @@
         grid-gap: 6px;
       }
       .button {
+        cursor: pointer;
         padding: 6px;
       }
       .button.selected {
+        cursor: default;
         color: white;
         background-color: black;
+      }
+
+      .button.disabled {
+        cursor: default;
+        opacity: 0.2;
       }
 
       .image-wrapper {
@@ -56,6 +63,12 @@
       }
       .image {
         width: 100%;
+      }
+
+      .top-nav {
+        display: grid;
+        grid-gap: 12px;
+        grid-auto-flow: column;
       }
     </style>
 
@@ -67,15 +80,12 @@
       } from 'https://unpkg.com/htm/preact/standalone.module.js';
 
       const States = ['Diff', 'Original', 'New'];
-      const IMAGE_DIRS = ['diffs', 'original', 'changed'];
+      const IMAGE_DIRS = ['diffs', 'original', 'changed', 'new'];
 
       class App extends Component {
         state = {
           images: {},
         };
-        componentDidMount() {
-          console.log('mount');
-        }
         addTodo() {
           const {todos = []} = this.state;
           this.setState({todos: todos.concat(`Item ${todos.length}`)});
@@ -123,15 +133,35 @@
         };
 
         render({page}, {todos = []}) {
+          const added = Object.entries(__images.added);
+          const missing = Object.entries(__images.missing);
+          const changed = Object.entries(__images.changed);
+          const differentSize = Object.entries(__images.differentSize);
+
           return html`
             <div class="app">
-              <div
-                class="snapshots"
-                style="${{
-                  maxWidth: `${this.state.width}px`,
-                }}"
-              >
-                ${Object.entries(__images.changed).map(([img, src], i) => {
+              <nav class="top-nav">
+                <h3>
+                  <a href="#changed">Changed (${changed.length})</a>
+                </h3>
+                <h3>
+                  <a href="#changed-sizes"
+                    >Changed (different sizes) (${changed.length})</a
+                  >
+                </h3>
+                <h3>
+                  <a href="#added">Added (${added.length})</a>
+                </h3>
+                <h3>
+                  <a href="#missing">Missing (${missing.length})</a>
+                </h3>
+              </nav>
+
+              <h2 id="changed">
+                Changed
+              </h2>
+              <div class="snapshots">
+                ${changed.map(([img, src], i) => {
                   const typeIndex = this.state.images[img] || 0;
 
                   return html`
@@ -165,6 +195,130 @@
                         onLoad="${this.handleImageLoaded}"
                         onClick="${e => this.handleImageClick(img, e)}"
                         onKeyDown="${e => this.handleKeyDown(img, e)}"
+                      />
+                    </div>
+                  `;
+                })}
+              </div>
+
+              <h2 id="changed-sizes">
+                Changed (Size changed, diffs unavailable)
+              </h2>
+              <div class="snapshots">
+                ${differentSize.map(([img, src], i) => {
+                  const typeIndex = this.state.images[img] || 2;
+
+                  return html`
+                    <h3 class="header">
+                      ${img}
+                      <div class="button-bar">
+                        ${States.map(
+                          (state, i) => html`
+                            <button
+                              class="${`button${
+                                i === typeIndex ? ' selected' : ''
+                              }${state === 'Diff' ? ' disabled' : ''}`}"
+                              type="button"
+                              onKeyDown="${e => this.handleKeyDown(img, e)}"
+                              onClick="${() =>
+                                this.handleSelectState(img, state)}"
+                            >
+                              ${state}
+                            </button>
+                          `
+                        )}
+                      </div>
+                    </h3>
+                    <div class="image-wrapper">
+                      <img
+                        tabindex="${i}"
+                        class="image"
+                        key="${img}"
+                        alt="${img}"
+                        src="results/${IMAGE_DIRS[typeIndex]}/${src}"
+                        onLoad="${this.handleImageLoaded}"
+                        onClick="${e => this.handleImageClick(img, e)}"
+                        onKeyDown="${e => this.handleKeyDown(img, e)}"
+                      />
+                    </div>
+                  `;
+                })}
+              </div>
+
+              <h2 id="added">
+                Added
+              </h2>
+              <div class="snapshots">
+                ${added.map(([img, src], i) => {
+                  const typeIndex = this.state.images[img] || 0;
+
+                  return html`
+                    <h3 class="header">
+                      ${img}
+                      <div class="button-bar">
+                        ${States.map(
+                          state => html`
+                            <button
+                              class="${`button${
+                                state === 'New' ? ' selected' : ''
+                              }${state !== 'New' ? ' disabled' : ''}`}"
+                              type="button"
+                            >
+                              ${state}
+                            </button>
+                          `
+                        )}
+                      </div>
+                    </h3>
+                    <div class="image-wrapper">
+                      <img
+                        tabindex="${i}"
+                        class="image"
+                        key="${img}"
+                        alt="${img}"
+                        src="results/${IMAGE_DIRS[
+                          IMAGE_DIRS.indexOf('new')
+                        ]}/${src}"
+                      />
+                    </div>
+                  `;
+                })}
+              </div>
+
+              <h2 id="missing">
+                Missing
+              </h2>
+              <div class="snapshots">
+                ${missing.map(([img, src], i) => {
+                  const typeIndex = this.state.images[img] || 0;
+
+                  return html`
+                    <h3 class="header">
+                      ${img}
+                      <div class="button-bar">
+                        ${States.map(
+                          state => html`
+                            <button
+                              class="${`button${
+                                state === 'Original' ? ' selected' : ''
+                              }${state !== 'Original' ? ' disabled' : ''}`}"
+                              type="button"
+                            >
+                              ${state}
+                            </button>
+                          `
+                        )}
+                      </div>
+                    </h3>
+                    <div class="image-wrapper">
+                      <img
+                        tabindex="${i}"
+                        class="image"
+                        key="${img}"
+                        alt="${img}"
+                        src="results/${IMAGE_DIRS[
+                          IMAGE_DIRS.indexOf('original')
+                        ]}/${src}"
                       />
                     </div>
                   `;

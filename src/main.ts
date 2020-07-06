@@ -6,13 +6,13 @@ import * as github from '@actions/github';
 import * as Sentry from '@sentry/node';
 import {RewriteFrames} from '@sentry/integrations';
 
-import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 import {generateImageGallery} from './util/generateImageGallery';
 import {saveSnapshots} from './util/saveSnapshots';
 import {downloadSnapshots} from './util/downloadSnapshots';
 import {uploadToGcs} from './util/uploadToGcs';
 import {getStorageClient} from './util/getStorageClient';
 import {diffSnapshots} from './util/diffSnapshots';
+import {retrieveBaseSnapshots} from './api/retrieveBaseSnapshots';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
@@ -21,8 +21,9 @@ const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const pngGlob = '/**/*.png';
 
 Sentry.init({
-  dsn: 'https://34b97f5891a044c6ab1f6ce6332733fb@o1.ingest.sentry.io/5246761',
+  dsn: 'https://6b971d11c2af4b468105f079294e372c@o1.ingest.sentry.io/5324467',
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
+  release: process.env.VERSION,
 });
 // console.log(JSON.stringify(process.env, null, 2));
 // console.log(JSON.stringify(github, null, 2));
@@ -68,30 +69,34 @@ async function run(): Promise<void> {
     }
 
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
-    const [didDownloadLatest] = await Promise.all([
-      downloadOtherWorkflowArtifact(octokit, {
-        owner,
-        repo,
-        branch: baseBranch,
-        workflow_id: `${GITHUB_WORKFLOW}.yml`,
-        artifactName,
-        downloadPath: basePath,
-      }),
-      downloadOtherWorkflowArtifact(octokit, {
-        owner,
-        repo,
-        branch: baseBranch,
-        workflow_id: `${GITHUB_WORKFLOW}.yml`,
-        artifactName,
-        downloadPath: mergeBasePath,
-        commit: mergeBaseSha,
-      }),
-    ]);
+
+    core.debug(`Merge base SHA is: ${mergeBaseSha}`);
+
+    const [
+      didDownloadLatest,
+      didDownloadMergeBase,
+    ] = await retrieveBaseSnapshots(octokit, {
+      owner,
+      repo,
+      branch: baseBranch,
+      workflow_id: `${GITHUB_WORKFLOW}.yml`,
+      artifactName,
+      basePath,
+      mergeBasePath,
+      mergeBaseSha,
+    });
 
     if (!didDownloadLatest) {
       core.warning('Unable to download artifact from base branch');
       return;
     }
+
+    if (!didDownloadMergeBase) {
+      // We can still diff against base
+      core.warning('Unable to download artifact from merge base sha');
+    }
+
+    core.debug('Downloading current snapshots');
 
     // Download snapshots from current branch
     const resp = await downloadSnapshots({
@@ -106,6 +111,7 @@ async function run(): Promise<void> {
       changedSnapshots,
       missingSnapshots,
       newSnapshots,
+      differentSizeSnapshots,
     } = await diffSnapshots({
       basePath,
       mergeBasePath,
@@ -128,9 +134,10 @@ async function run(): Promise<void> {
     const changedArray = [...changedSnapshots];
 
     await generateImageGallery(path.resolve(resultsPath, 'index.html'), {
-      changed: Object.fromEntries(
-        changedArray.map(file => [path.basename(file, '.png'), file])
-      ),
+      changed: setToObject(changedArray),
+      missing: setToObject(missingSnapshots),
+      added: setToObject(newSnapshots),
+      differentSize: setToObject(differentSizeSnapshots),
     });
 
     const storage = getStorageClient();
@@ -147,14 +154,19 @@ async function run(): Promise<void> {
       : [];
 
     const conclusion =
-      !!changedSnapshots.size || !!missingSnapshots.size
+      !!changedSnapshots.size ||
+      !!missingSnapshots.size ||
+      !!differentSizeSnapshots.size
         ? 'failure'
         : !!newSnapshots.size
         ? 'neutral'
         : 'success';
 
     const unchanged =
-      baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
+      baseFiles.length -
+      (changedSnapshots.size +
+        missingSnapshots.size +
+        differentSizeSnapshots.size);
 
     await Promise.all([
       saveSnapshots({
@@ -180,15 +192,18 @@ ${
     : ''
 }
 
-* **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
+* **${changedSnapshots.size +
+            differentSizeSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
 `,
           text: `
 ${
-  changedSnapshots.size
+  changedSnapshots.size || differentSizeSnapshots.size
     ? `## Changed snapshots
-${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
+${[...changedSnapshots, ...differentSizeSnapshots]
+  .map(name => `* ${name}`)
+  .join('\n')}
 `
     : ''
 }
@@ -217,6 +232,13 @@ ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
     Sentry.captureException(error);
     core.setFailed(error.message);
   }
+}
+
+function setToObject(set: Set<string> | string[]) {
+  return Object.fromEntries([...set].map(nameToFileEntry));
+}
+function nameToFileEntry(file: string) {
+  return [path.basename(file, '.png'), file];
 }
 
 run();

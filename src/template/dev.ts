@@ -25,11 +25,17 @@ async function main() {
           'acceptance/project-settings-service-hooks-details.png',
         'project-settings-service-hooks-empty-list':
           'acceptance/project-settings-service-hooks-empty-list.png',
-        'project-settings-service-hooks-list-with-entries':
-          'acceptance/project-settings-service-hooks-list-with-entries.png',
+      },
+      missing: {
         'project-settings-tags-after-remove':
           'acceptance/project-settings-tags-after-remove.png',
+      },
+      added: {
         'project-settings-tags': 'acceptance/project-settings-tags.png',
+      },
+      differentSize: {
+        'project-settings-service-hooks-list-with-entries':
+          'acceptance/project-settings-service-hooks-list-with-entries.png',
       },
     }
   );

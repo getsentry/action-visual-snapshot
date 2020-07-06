@@ -1,0 +1,58 @@
+name: test
+
+on: push
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: yarn install
+      run: |
+        echo "::add-path::$(yarn global bin)"
+        yarn install --frozen-lockfile
+        yarn global add @sentry/cli
+
+    - name: Get version
+      id: get-version
+      run: echo "::set-output name=version::$(sentry-cli releases propose-version)"
+
+
+    - run: yarn lint
+
+    - run: yarn test
+
+    - name: build
+      env:
+        SENTRY_VERSION: ${{ steps.get-version.outputs.version }}
+      run: |
+        yarn dist
+        git config user.email "github-actions-bot@sentry.io"
+        git config user.name "github-actions[bot]"
+        git add dist/index.js
+        git add dist/sourcemap-register.js
+        git add src/template/index.ts
+        git commit -m "chore(): Updating dist"
+        git push
+
+    - name: Sentry Release
+      env:
+        VERSION: ${{ steps.get-version.outputs.version }}
+        DEPLOY_START: ${{ steps.deploy.outputs.deploy-start }}
+      run: |
+        echo "$VERSION"
+        now=$(date +%s)
+        sentry-cli releases new "$VERSION"
+        sentry-cli releases set-commits "$VERSION" --auto
+        sentry-cli releases files "$VERSION" upload-sourcemaps './dist'
+        sentry-cli releases deploys "$VERSION" new -e production -t $((now-DEPLOY_START))
+        sentry-cli releases finalize "$VERSION"

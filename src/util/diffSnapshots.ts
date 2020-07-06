@@ -53,6 +53,7 @@ export async function diffSnapshots({
   const currentSnapshots = new Set<string>([]);
   const baseSnapshots = new Set<string>([]);
   const potentialFlakes = new Set<string>([]);
+  const differentSizeSnapshots = new Set<string>([]);
 
   // globs
   const [baseGlobber, currentGlobber, mergeBaseGlobber] = await Promise.all([
@@ -69,6 +70,10 @@ export async function diffSnapshots({
 
   if (!baseFiles.length) {
     core.warning('No snapshots found for base branch');
+  }
+
+  if (!mergeBaseFiles.length) {
+    core.warning('No snapshots found for merge base');
   }
 
   if (!currentFiles.length) {
@@ -92,8 +97,6 @@ export async function diffSnapshots({
     [currentPath, currentFiles],
     [basePath, baseFiles],
   ]);
-
-  console.log({childPaths});
 
   // We need these as we'll move the images that were used to compare into corresponding dirs
   const outputDiffPath = path.resolve(outputPath, diffDirName);
@@ -128,11 +131,11 @@ export async function diffSnapshots({
     currentSnapshots.add(file);
 
     if (baseSnapshots.has(file)) {
+      const baseHead = path.resolve(basePath, file);
+      const branchHead = path.resolve(currentPath, file);
+
       try {
         let isDiff;
-
-        const baseHead = path.resolve(basePath, file);
-        const branchHead = path.resolve(currentPath, file);
 
         // If merge base snapshot exists, do a 3way diff
         if (mergeBaseSnapshots.has(file)) {
@@ -159,8 +162,19 @@ export async function diffSnapshots({
 
         missingSnapshots.delete(file);
       } catch (err) {
-        core.debug(`Unable to diff: ${err.message}`);
-        throw err;
+        if (err.message !== 'Image sizes do not match') {
+          core.debug(`Unable to diff: ${err.message}`);
+          throw err;
+        }
+
+        // Image sizes do not match, we can't show diff but we can show
+        // the original vs new images
+        missingSnapshots.delete(file);
+        differentSizeSnapshots.add(file);
+        await Promise.all([
+          io.cp(baseHead, path.resolve(outputBasePath, file)),
+          io.cp(branchHead, path.resolve(outputCurrentPath, file)),
+        ]);
       }
     } else {
       newSnapshots.add(file);
@@ -216,5 +230,6 @@ export async function diffSnapshots({
     newSnapshots,
     changedSnapshots,
     potentialFlakes,
+    differentSizeSnapshots,
   };
 }
