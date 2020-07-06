@@ -36,6 +36,8 @@ inputs:
     require: false
     description: 'if this is set, upload to google cloud storage'
 outputs:
+  snapshot-path:
+    description: 'path where snapshots are saved'
   results-path:
     description: 'path where results are saved'
   base-images-path:
