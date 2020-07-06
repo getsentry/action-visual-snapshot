@@ -50,7 +50,6 @@ const getChildPaths = (base: string, fullPathToFile: string) =>
 
 async function run(): Promise<void> {
   try {
-    const current: string = core.getInput('snapshot-path');
     const resultsRootPath: string = core.getInput('results-path');
     const baseBranch = core.getInput('base-branch');
     const artifactName = core.getInput('artifact-name');
@@ -65,7 +64,7 @@ async function run(): Promise<void> {
     const basePath = path.resolve('/tmp/visual-snapshots-base');
     const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
-    core.debug(`${current} vs ${resultsPath}`);
+    core.debug(`resultsPath: ${resultsPath}`);
     core.debug(GITHUB_WORKSPACE);
 
     // Forward `results-path` to outputs
@@ -73,11 +72,10 @@ async function run(): Promise<void> {
     core.setOutput('diff-path', resultsRootPath); // XXX temp
     core.setOutput('base-images-path', basePath);
     core.setOutput('merge-base-images-path', mergeBasePath);
-    core.setOutput('snapshot-path', current);
 
-    // Only needs to
-    console.log({shouldSaveOnly}, typeof shouldSaveOnly);
-    if (!!shouldSaveOnly) {
+    // Only needs to upload snapshots
+    if (shouldSaveOnly !== 'false') {
+      const current: string = core.getInput('snapshot-path');
       await saveSnapshots({
         artifactName,
         rootDirectory: current,
@@ -123,10 +121,11 @@ async function run(): Promise<void> {
     }
 
     // Download snapshots from current branch
-    await downloadSnapshots({
+    const resp = await downloadSnapshots({
       artifactName,
-      rootDirectory: current,
+      rootDirectory: '/tmp/visual-snapshots',
     });
+    const current = resp.downloadPath;
 
     // globs
     const [baseGlobber, currentGlobber, mergeBaseGlobber] = await Promise.all([
@@ -299,17 +298,23 @@ async function run(): Promise<void> {
     const unchanged =
       baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
 
-    // Create a GitHub check with our results
-    await octokit.checks.create({
-      owner,
-      repo,
-      name: 'Visual Snapshot',
-      head_sha: GITHUB_EVENT.pull_request.head.sha,
-      status: 'completed',
-      conclusion,
-      output: {
-        title: 'Visual Snapshots',
-        summary: `
+    await Promise.all([
+      saveSnapshots({
+        artifactName: `${artifactName}-results`,
+        rootDirectory: resultsRootPath,
+      }),
+
+      // Create a GitHub check with our results
+      octokit.checks.create({
+        owner,
+        repo,
+        name: 'Visual Snapshot',
+        head_sha: GITHUB_EVENT.pull_request.head.sha,
+        status: 'completed',
+        conclusion,
+        output: {
+          title: 'Visual Snapshots',
+          summary: `
 
 [View Image Gallery](https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name})
 
@@ -317,7 +322,7 @@ async function run(): Promise<void> {
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
 `,
-        text: `
+          text: `
 ${
   changedSnapshots.size
     ? `## Changed snapshots
@@ -342,9 +347,10 @@ ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
     : ''
 }
 `,
-        images: diffArtifactUrls,
-      },
-    });
+          images: diffArtifactUrls,
+        },
+      }),
+    ]);
   } catch (error) {
     core.setFailed(error.message);
   }
