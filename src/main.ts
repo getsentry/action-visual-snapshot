@@ -9,10 +9,11 @@ import * as Sentry from '@sentry/node';
 import {RewriteFrames} from '@sentry/integrations';
 
 import {createDiff} from './util/createDiff';
-import {downloadArtifact} from './api/downloadArtifact';
+import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 import {multiCompare} from './util/multiCompare';
 import {generateImageGallery} from './util/generateImageGallery';
 import {saveSnapshots} from './util/saveSnapshots';
+import {downloadSnapshots} from './util/downloadSnapshots';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
@@ -75,8 +76,8 @@ async function run(): Promise<void> {
     core.setOutput('snapshot-path', current);
 
     // Only needs to
-    if (shouldSaveOnly) {
-      core.debug('saving...');
+    console.log({shouldSaveOnly}, typeof shouldSaveOnly);
+    if (!!shouldSaveOnly) {
       await saveSnapshots({
         artifactName,
         rootDirectory: current,
@@ -97,7 +98,7 @@ async function run(): Promise<void> {
 
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
     const [didDownloadLatest] = await Promise.all([
-      downloadArtifact(octokit, {
+      downloadOtherWorkflowArtifact(octokit, {
         owner,
         repo,
         branch: baseBranch,
@@ -105,7 +106,7 @@ async function run(): Promise<void> {
         artifactName,
         downloadPath: basePath,
       }),
-      downloadArtifact(octokit, {
+      downloadOtherWorkflowArtifact(octokit, {
         owner,
         repo,
         branch: baseBranch,
@@ -120,6 +121,12 @@ async function run(): Promise<void> {
       core.warning('Unable to download artifact from base branch');
       return;
     }
+
+    // Download snapshots from current branch
+    await downloadSnapshots({
+      artifactName,
+      rootDirectory: current,
+    });
 
     // globs
     const [baseGlobber, currentGlobber, mergeBaseGlobber] = await Promise.all([
