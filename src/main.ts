@@ -52,7 +52,7 @@ async function run(): Promise<void> {
     const current: string = core.getInput('snapshot-path');
     const resultsRootPath: string = core.getInput('results-path');
     const baseBranch = core.getInput('base-branch');
-    const artifactName = core.getInput('base-artifact-name');
+    const artifactName = core.getInput('artifact-name');
     const gcsBucket = core.getInput('gcs-bucket');
     const shouldSaveOnly = core.getInput('save-only');
 
