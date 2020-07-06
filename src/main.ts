@@ -16,7 +16,7 @@ import {saveSnapshots} from './util/saveSnapshots';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
-const octokit = github.getOctokit(token);
+const octokit = token && github.getOctokit(token);
 const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 const pngGlob = '/**/*.png';
@@ -82,6 +82,10 @@ async function run(): Promise<void> {
       });
 
       return;
+    }
+
+    if (!octokit) {
+      throw new Error('`githubToken` missing');
     }
 
     const newSnapshots = new Set<string>([]);
