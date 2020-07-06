@@ -5,15 +5,14 @@ inputs:
   snapshot-path:
     required: true
     description: 'path where snapshots are saved'
-  results-path:
-    required: false
-    description: 'path to write snapshot diffs'
-    default: '/tmp/visual-snapshot-results'
-
   githubToken:
     required: true
     description: 'github token'
 
+  results-path:
+    required: false
+    description: 'path to write snapshot diffs'
+    default: '/tmp/visual-snapshot-results'
   save-only:
     required: false
     default: false
@@ -37,8 +36,6 @@ inputs:
     require: false
     description: 'if this is set, upload to google cloud storage'
 outputs:
-  snapshot-path:
-    description: 'path where snapshots are saved'
   results-path:
     description: 'path where results are saved'
   base-images-path:
