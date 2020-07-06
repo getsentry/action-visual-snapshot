@@ -16,7 +16,7 @@
         display: flex;
         flex-direction: column;
         height: 100vh;
-        padding: 12px;
+        padding: 0 12px;
       }
 
       .snapshots {
@@ -28,6 +28,13 @@
         justify-content: space-between;
         align-items: center;
         grid-gap: 12px;
+
+        position: sticky;
+        top: 0;
+        margin: 0;
+        padding: 12px 0;
+        background-color: white;
+        z-index: 1;
       }
 
       .button-bar {
