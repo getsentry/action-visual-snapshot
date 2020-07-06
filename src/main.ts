@@ -49,7 +49,6 @@ async function run(): Promise<void> {
 
     // Forward `results-path` to outputs
     core.setOutput('results-path', resultsRootPath);
-    core.setOutput('diff-path', resultsRootPath); // XXX temp
     core.setOutput('base-images-path', basePath);
     core.setOutput('merge-base-images-path', mergeBasePath);
 
