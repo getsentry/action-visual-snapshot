@@ -5,9 +5,10 @@ inputs:
   snapshot-path:
     required: true
     description: 'path where snapshots are saved'
-  diff-path:
-    required: true
+  results-path:
+    required: false
     description: 'path to write snapshot diffs'
+    default: '/tmp/visual-snapshot-results'
 
   githubToken:
     required: true
@@ -32,8 +33,12 @@ inputs:
     require: false
     description: 'if this is set, upload to google cloud storage'
 outputs:
-  diff-path:
-    description: 'path to write snapshot diffs'
+  results-path:
+    description: 'path where results are saved'
+  base-images-path:
+    description: 'path where base images are saved'
+  merge-base-images-path:
+    description: 'path where merge base images are saved'
 runs:
   using: 'node12'
   main: 'dist/index.js'

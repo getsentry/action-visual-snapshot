@@ -29,6 +29,7 @@ export async function downloadArtifact(
     workflow_id,
     branch,
     downloadPath,
+    commit,
   }: DownloadArtifactParams
 ) {
   const artifact = await fetchArtifactFromBranch(octokit, {
@@ -37,6 +38,7 @@ export async function downloadArtifact(
     artifactName,
     workflow_id,
     branch,
+    commit,
   });
 
   if (!artifact) {
@@ -48,8 +50,8 @@ export async function downloadArtifact(
 
   const downloadFile = path.resolve(downloadPath, FILENAME);
 
-  await exec(`curl -L -o ${downloadFile} ${artifact.url}`);
-  await exec(`unzip -d ${downloadPath} ${downloadFile}`);
+  await exec('curl', ['-L', '-o', downloadFile, artifact.url], {silent: true});
+  await exec('unzip', ['-d', downloadPath, downloadFile], {silent: true});
 
   return true;
 }
