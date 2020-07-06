@@ -56,6 +56,8 @@ async function run(): Promise<void> {
 
     // Only needs to
     if (shouldSaveOnly) {
+      console.log(artifactName);
+      core.debug(artifactName);
       await saveSnapshots({
         artifactName,
         rootDirectory: current,
