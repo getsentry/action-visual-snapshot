@@ -56,8 +56,8 @@ async function run(): Promise<void> {
     core.setOutput('snapshot-path', current);
 
     // Only needs to
-    if (shouldSaveOnly) {
-      core.debug('saving...');
+    console.log({shouldSaveOnly}, typeof shouldSaveOnly);
+    if (!!shouldSaveOnly) {
       await saveSnapshots({
         artifactName,
         rootDirectory: current,
