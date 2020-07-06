@@ -1,75 +1,57 @@
-<p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
-</p>
+# action-visual-snapshot ![test](https://github.com/getsentry/action-visual-snapshot/workflows/test/badge.svg)
+WIP
 
-# Create a JavaScript Action using TypeScript
+## Usage
 
-Use this template to bootstrap the creation of a JavaScript action.:rocket:
+There are two steps required in your GitHub workflow. First, upload your snapshots as GitHub Action artifact. `path` needs to reference the path where your snapshots are saved and `name` is the name of the artifact for GitHub.
 
-This template includes compilication support, tests, a validation workflow, publishing, and versioning guidance.  
-
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
-
-## Create an action from this template
-
-Click the `Use this Template` and provide the new repo details for your action
-
-## Code in Master
-
-Install the dependencies  
-```bash
-$ yarn install
+```yml
+  - name: Save snapshots
+    if: always()
+    uses: actions/upload-artifact@v2
+    with:
+      name: visual-snapshots
+      path: .artifacts/visual-snapshots
 ```
 
-Build the typescript and package it for distribution
-```bash
-$ yarn dist
+Then you'll need to run the action to compare the snapshots:
+
+```yml
+    visual-diff:
+      if: ${{ github.ref != 'refs/heads/master' }}
+      needs: acceptance
+      runs-on: ubuntu-16.04
+
+      steps:
+        - name: Download base snapshots
+          uses: actions/download-artifact@v2
+          with:
+            name: visual-snapshots
+            path: .artifacts/visual-snapshots
+
+        - name: Diff snapshots
+          id: visual-snapshots-diff
+          uses: getsentry/action-visual-snapshot@v1
+          with:
+            githubToken: ${{ secrets.GITHUB_TOKEN }}
+            snapshot-path: .artifacts/visual-snapshots
+            gcs-bucket: 'sentry-visual-snapshots'
+            gcp-service-account-key: ${{ secrets.SNAPSHOT_GOOGLE_SERVICE_ACCOUNT_KEY }}
+
+        - name: Save diffed snapshots
+          uses: actions/upload-artifact@v2
+          with:
+            name: visual-snapshots-diff
+            path: ${{ steps.visual-snapshots-diff.outputs.diff-path }}
 ```
 
-Run the tests :heavy_check_mark:  
-```bash
-$ yarn test
+(Note this will be simplified soon)
 
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
+## Contributing
 
-...
-```
+WIP
 
-## Change action.yml
-
-The action.yml contains defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
+### Publishing
 Actions are run from GitHub repos so we will checkin the packed dist folder. 
 
 Then run [ncc](https://github.com/zeit/ncc) and push the results:
@@ -83,19 +65,3 @@ $ git push origin releases/v1
 Your action is now published! :rocket: 
 
 See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml)])
-
-```yaml
-uses: ./
-with:
-  milliseconds: 1000
-```
-
-See the [actions tab](https://github.com/actions/javascript-action/actions) for runs of this action! :rocket:
-
-## Usage:
-
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
