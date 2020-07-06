@@ -12,12 +12,14 @@ import {createDiff} from './util/createDiff';
 import {downloadArtifact} from './api/downloadArtifact';
 import {multiCompare} from './util/multiCompare';
 import {generateImageGallery} from './util/generateImageGallery';
+import {saveSnapshots} from './util/saveSnapshots';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
 const octokit = github.getOctokit(token);
 const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
+const pngGlob = '/**/*.png';
 
 Sentry.init({
   dsn: 'https://34b97f5891a044c6ab1f6ce6332733fb@o1.ingest.sentry.io/5246761',
@@ -50,8 +52,9 @@ async function run(): Promise<void> {
     const current: string = core.getInput('snapshot-path');
     const resultsRootPath: string = core.getInput('results-path');
     const baseBranch = core.getInput('base-branch');
-    const baseArtifactName = core.getInput('base-artifact-name');
+    const artifactName = core.getInput('base-artifact-name');
     const gcsBucket = core.getInput('gcs-bucket');
+    const shouldSaveOnly = core.getInput('save-only');
 
     const resultsPath = path.resolve(
       resultsRootPath,
@@ -64,13 +67,22 @@ async function run(): Promise<void> {
     core.debug(`${current} vs ${resultsPath}`);
     core.debug(GITHUB_WORKSPACE);
 
-    const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
-
     // Forward `results-path` to outputs
     core.setOutput('results-path', resultsRootPath);
     core.setOutput('diff-path', resultsRootPath); // XXX temp
     core.setOutput('base-images-path', basePath);
     core.setOutput('merge-base-images-path', mergeBasePath);
+    core.setOutput('snapshot-path', current);
+
+    // Only needs to
+    if (shouldSaveOnly) {
+      await saveSnapshots({
+        artifactName,
+        rootDirectory: current,
+      });
+
+      return;
+    }
 
     const newSnapshots = new Set<string>([]);
     const changedSnapshots = new Set<string>([]);
@@ -78,13 +90,14 @@ async function run(): Promise<void> {
     const currentSnapshots = new Set<string>([]);
     const baseSnapshots = new Set<string>([]);
 
+    const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
     const [didDownloadLatest] = await Promise.all([
       downloadArtifact(octokit, {
         owner,
         repo,
         branch: baseBranch,
         workflow_id: `${GITHUB_WORKFLOW}.yml`,
-        artifactName: baseArtifactName,
+        artifactName,
         downloadPath: basePath,
       }),
       downloadArtifact(octokit, {
@@ -92,7 +105,7 @@ async function run(): Promise<void> {
         repo,
         branch: baseBranch,
         workflow_id: `${GITHUB_WORKFLOW}.yml`,
-        artifactName: baseArtifactName,
+        artifactName,
         downloadPath: mergeBasePath,
         commit: mergeBaseSha,
       }),
@@ -104,7 +117,6 @@ async function run(): Promise<void> {
     }
 
     // globs
-    const pngGlob = '/**/*.png';
     const [baseGlobber, currentGlobber, mergeBaseGlobber] = await Promise.all([
       glob.create(`${basePath}${pngGlob}`, {followSymbolicLinks: false}),
       glob.create(`${current}${pngGlob}`, {followSymbolicLinks: false}),
