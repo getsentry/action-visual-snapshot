@@ -53,11 +53,10 @@ async function run(): Promise<void> {
     core.setOutput('diff-path', resultsRootPath); // XXX temp
     core.setOutput('base-images-path', basePath);
     core.setOutput('merge-base-images-path', mergeBasePath);
-    core.setOutput('snapshot-path', current);
 
-    // Only needs to
-    console.log({shouldSaveOnly}, typeof shouldSaveOnly);
-    if (!!shouldSaveOnly) {
+    // Only needs to upload snapshots
+    if (shouldSaveOnly !== 'false') {
+      const current: string = core.getInput('snapshot-path');
       await saveSnapshots({
         artifactName,
         rootDirectory: current,
