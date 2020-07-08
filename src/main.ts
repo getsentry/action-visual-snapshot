@@ -4,7 +4,6 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
 import * as io from '@actions/io';
-import {Storage} from '@google-cloud/storage';
 import * as Sentry from '@sentry/node';
 import {RewriteFrames} from '@sentry/integrations';
 
@@ -14,12 +13,13 @@ import {multiCompare} from './util/multiCompare';
 import {generateImageGallery} from './util/generateImageGallery';
 import {saveSnapshots} from './util/saveSnapshots';
 import {downloadSnapshots} from './util/downloadSnapshots';
+import {uploadToGcs} from './util/uploadToGcs';
+import {getStorageClient} from './util/getStorageClient';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
 const octokit = token && github.getOctokit(token);
 const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
-const GOOGLE_CREDENTIALS = core.getInput('gcp-service-account-key');
 const pngGlob = '/**/*.png';
 
 Sentry.init({
@@ -30,13 +30,6 @@ Sentry.init({
 // console.log(JSON.stringify(github, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
-
-const credentials =
-  GOOGLE_CREDENTIALS &&
-  JSON.parse(Buffer.from(GOOGLE_CREDENTIALS, 'base64').toString('utf8'));
-
-// Creates a client
-const storage = credentials && new Storage({credentials});
 
 /**
  * Given a base path and a full path to file, we want to find
@@ -179,46 +172,53 @@ async function run(): Promise<void> {
     }
 
     // Diff snapshots against base branch
-    await Promise.all(
-      currentFiles.map(async absoluteFile => {
-        const file = path.relative(current, absoluteFile);
-        currentSnapshots.add(file);
+    const tasks: Promise<any>[] = currentFiles.map(async absoluteFile => {
+      const file = path.relative(current, absoluteFile);
+      currentSnapshots.add(file);
 
-        if (baseSnapshots.has(file)) {
-          try {
-            let isDiff;
+      if (baseSnapshots.has(file)) {
+        try {
+          let isDiff;
 
-            // If merge base snapshot exists, do a 3way diff
-            if (mergeBaseSnapshots.has(file)) {
-              isDiff = await multiCompare({
-                branchBase: path.resolve(mergeBasePath, file),
-                baseHead: path.resolve(basePath, file),
-                branchHead: path.resolve(GITHUB_WORKSPACE, current, file),
-                output: diffPath,
-                snapshotName: file,
-              });
-            } else {
-              isDiff = await createDiff(
-                file,
-                diffPath,
-                path.resolve(basePath, file),
-                path.resolve(GITHUB_WORKSPACE, current, file)
-              );
-            }
-
-            if (isDiff) {
-              changedSnapshots.add(file);
-            }
-            missingSnapshots.delete(file);
-          } catch (err) {
-            core.debug(`Unable to diff: ${err.message}`);
-            Sentry.captureException(err);
+          // If merge base snapshot exists, do a 3way diff
+          if (mergeBaseSnapshots.has(file)) {
+            isDiff = await multiCompare({
+              branchBase: path.resolve(mergeBasePath, file),
+              baseHead: path.resolve(basePath, file),
+              branchHead: path.resolve(GITHUB_WORKSPACE, current, file),
+              output: diffPath,
+              snapshotName: file,
+            });
+          } else {
+            isDiff = await createDiff(
+              file,
+              diffPath,
+              path.resolve(basePath, file),
+              path.resolve(GITHUB_WORKSPACE, current, file)
+            );
           }
-        } else {
-          newSnapshots.add(file);
+
+          if (isDiff) {
+            changedSnapshots.add(file);
+          }
+          missingSnapshots.delete(file);
+        } catch (err) {
+          core.debug(`Unable to diff: ${err.message}`);
+          Sentry.captureException(err);
         }
-      })
-    );
+      } else {
+        newSnapshots.add(file);
+      }
+    });
+
+    // This is to make sure we run the above tasks serially, otherwise we will
+    // face OOM issues
+    await tasks.reduce(async (promiseChain, currentTask) => {
+      const chainResults = await promiseChain;
+      const currentResult = await currentTask;
+
+      return [...chainResults, currentResult];
+    }, Promise.resolve([]));
 
     missingSnapshots.forEach(file => {
       if (!mergeBaseSnapshots.has(file)) {
@@ -242,33 +242,13 @@ async function run(): Promise<void> {
     });
     const diffFiles = await diffGlobber.glob();
 
-    const diffArtifactUrls =
-      gcsBucket && storage
-        ? await Promise.all(
-            diffFiles.map(async file => {
-              const relativeFilePath = path.relative(diffPath, file);
-              const [File] = await storage.bucket(gcsBucket).upload(file, {
-                // Support for HTTP requests made with `Accept-Encoding: gzip`
-                destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/diffs/${relativeFilePath}`,
-                gzip: true,
-                // By setting the option `destination`, you can change the name of the
-                // object you are uploading to a bucket.
-                metadata: {
-                  // Enable long-lived HTTP caching headers
-                  // Use only if the contents of the file will never change
-                  // (If the contents will change, use cacheControl: 'no-cache')
-                  cacheControl: 'public, max-age=31536000',
-                },
-              });
-
-              return {
-                alt: relativeFilePath,
-                image_url: `https://storage.googleapis.com/${gcsBucket}/${File.name}`,
-              };
-            })
-          )
-        : [];
-
+    const gcsDestination = `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}`;
+    const diffArtifactUrls = await uploadToGcs({
+      files: diffFiles,
+      root: diffPath,
+      bucket: gcsBucket,
+      destinationRoot: `${gcsDestination}/diffs`,
+    });
     const changedArray = [...changedSnapshots];
 
     await generateImageGallery(path.resolve(resultsPath, 'index.html'), {
@@ -277,15 +257,18 @@ async function run(): Promise<void> {
       ),
     });
 
-    const [imageGalleryFile] = await storage
-      .bucket(gcsBucket)
-      .upload(path.resolve(resultsPath, 'index.html'), {
-        destination: `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}/index.html`,
-        gzip: true,
-        metadata: {
-          cacheControl: 'public, max-age=31536000',
-        },
-      });
+    const storage = getStorageClient();
+    const [imageGalleryFile] = storage
+      ? await storage
+          .bucket(gcsBucket)
+          .upload(path.resolve(resultsPath, 'index.html'), {
+            destination: `${gcsDestination}/index.html`,
+            gzip: true,
+            metadata: {
+              cacheControl: 'public, max-age=31536000',
+            },
+          })
+      : [];
 
     const conclusion =
       !!changedSnapshots.size || !!missingSnapshots.size
@@ -315,7 +298,11 @@ async function run(): Promise<void> {
           title: 'Visual Snapshots',
           summary: `
 
-[View Image Gallery](https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name})
+${
+  imageGalleryFile
+    ? `[View Image Gallery](https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name})`
+    : ''
+}
 
 * **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
