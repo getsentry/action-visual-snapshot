@@ -21,7 +21,9 @@ export async function uploadToGcs({
     return Promise.resolve([]);
   }
 
-  const tasks: Promise<any>[] = files.map(async file => {
+  const results = [];
+
+  for (const file of files) {
     const relativeFilePath = path.relative(root, file);
     const [File] = await storage.bucket(bucket).upload(file, {
       destination: `${destinationRoot}/${relativeFilePath}`,
@@ -31,16 +33,11 @@ export async function uploadToGcs({
       },
     });
 
-    return {
+    results.push({
       alt: relativeFilePath,
       image_url: `https://storage.googleapis.com/${bucket}/${File.name}`,
-    };
-  });
+    });
+  }
 
-  return await tasks.reduce(async (promiseChain, currentTask) => {
-    const chainResults = await promiseChain;
-    const currentResult = await currentTask;
-
-    return [...chainResults, currentResult];
-  }, Promise.resolve([]));
+  return results;
 }
