@@ -172,7 +172,9 @@ async function run(): Promise<void> {
     }
 
     // Diff snapshots against base branch
-    const tasks: Promise<any>[] = currentFiles.map(async absoluteFile => {
+    // This is to make sure we run the above tasks serially, otherwise we will
+    // face OOM issues
+    for (const absoluteFile of currentFiles) {
       const file = path.relative(current, absoluteFile);
       currentSnapshots.add(file);
 
@@ -209,16 +211,7 @@ async function run(): Promise<void> {
       } else {
         newSnapshots.add(file);
       }
-    });
-
-    // This is to make sure we run the above tasks serially, otherwise we will
-    // face OOM issues
-    await tasks.reduce(async (promiseChain, currentTask) => {
-      const chainResults = await promiseChain;
-      const currentResult = await currentTask;
-
-      return [...chainResults, currentResult];
-    }, Promise.resolve([]));
+    }
 
     missingSnapshots.forEach(file => {
       if (!mergeBaseSnapshots.has(file)) {
