@@ -203,7 +203,6 @@ async function run(): Promise<void> {
           if (isDiff) {
             changedSnapshots.add(file);
           }
-          core.debug(`diffed: ${file}: ${isDiff}`);
           missingSnapshots.delete(file);
         } catch (err) {
           core.debug(`Unable to diff: ${err.message}`);
