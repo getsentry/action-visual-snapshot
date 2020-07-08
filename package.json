@@ -5,7 +5,7 @@
   "description": "GitHub Action to diff images",
   "main": "lib/main.js",
   "scripts": {
-    "build": "yarn tsc",
+    "build": "yarn tsc --build tsconfig.build.json",
     "build-template": "yarn ts-node src/template/build",
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
