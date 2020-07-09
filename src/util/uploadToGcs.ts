@@ -39,5 +39,5 @@ export async function uploadToGcs({
     });
   }
 
-  return results;
+  return results.filter(({image_url}) => image_url.includes('/diffs/'));
 }
