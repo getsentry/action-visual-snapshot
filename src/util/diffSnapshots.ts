@@ -93,6 +93,8 @@ export async function diffSnapshots({
     [basePath, baseFiles],
   ]);
 
+  console.log({childPaths});
+
   // We need these as we'll move the images that were used to compare into corresponding dirs
   const outputDiffPath = path.resolve(outputPath, diffDirName);
   const outputBasePath = path.resolve(outputPath, baseDirName);
@@ -101,27 +103,21 @@ export async function diffSnapshots({
   const outputNewPath = path.resolve(outputPath, newDirName);
   const outputMissingPath = path.resolve(outputPath, missingDirName);
 
-  try {
-    await Promise.all(
-      [
-        outputDiffPath,
-        outputBasePath,
-        outputCurrentPath,
-        outputMergedPath,
-        outputNewPath,
-        outputMissingPath,
-      ].map(
-        async base =>
-          await Promise.all(
-            [...childPaths].map(
-              async childPath => await io.mkdirP(path.resolve(base, childPath))
-            )
-          )
-      )
-    );
-  } catch (err) {
-    Sentry.captureException(err);
-    // ignore mkdir errors
+  for (const base of [
+    outputDiffPath,
+    outputBasePath,
+    outputCurrentPath,
+    outputMergedPath,
+    outputNewPath,
+    outputMissingPath,
+  ]) {
+    for (const childPath of [...childPaths]) {
+      try {
+        await io.mkdirP(path.resolve(base, childPath));
+      } catch (err) {
+        Sentry.captureException(new Error(err.message));
+      }
+    }
   }
 
   // Diff snapshots against base branch
