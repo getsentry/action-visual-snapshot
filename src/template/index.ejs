@@ -50,12 +50,12 @@
         background-color: black;
       }
 
-      .img {
-        overflow: hidden;
-        max-width: 100%;
+      .image-wrapper {
+        padding: 12px;
+        background-color: #ccc;
       }
       .image {
-        max-width: 300%;
+        width: 100%;
       }
     </style>
 
@@ -125,7 +125,12 @@
         render({page}, {todos = []}) {
           return html`
             <div class="app">
-              <div class="snapshots">
+              <div
+                class="snapshots"
+                style="${{
+                  maxWidth: `${this.state.width}px`,
+                }}"
+              >
                 ${Object.entries(__images.changed).map(([img, src], i) => {
                   const typeIndex = this.state.images[img] || 0;
 
@@ -150,12 +155,7 @@
                         )}
                       </div>
                     </h3>
-                    <div
-                      class="img"
-                      style="${{
-                        maxWidth: `${this.state.width}px`,
-                      }}"
-                    >
+                    <div class="image-wrapper">
                       <img
                         tabindex="${i}"
                         class="image"

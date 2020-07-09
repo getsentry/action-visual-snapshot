@@ -7,6 +7,7 @@
   "scripts": {
     "build": "yarn tsc --build tsconfig.build.json",
     "build-template": "yarn ts-node src/template/build",
+    "dev:gallery": "nodemon --watch src/template/index.ejs --watch src/template/dev.ts --exec \"ts-node\" ./src/template/dev.ts",
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
@@ -74,6 +75,7 @@
     "jest-circus": "^24.9.0",
     "js-yaml": "^3.13.1",
     "lint-staged": "^10.2.11",
+    "nodemon": "^2.0.4",
     "prettier": "^1.19.1",
     "ts-jest": "^24.2.0",
     "ts-node": "^8.10.2",

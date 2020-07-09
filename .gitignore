@@ -99,3 +99,4 @@ __tests__/runner/*
 lib/**/*
 
 __results
+example_gallery/index.html
