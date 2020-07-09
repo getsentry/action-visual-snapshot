@@ -3,6 +3,7 @@ import path from 'path';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as io from '@actions/io';
+import * as Sentry from '@sentry/node';
 
 import {createDiff} from './createDiff';
 import {multiCompare} from './multiCompare';
@@ -119,6 +120,7 @@ export async function diffSnapshots({
       )
     );
   } catch (err) {
+    Sentry.captureException(err);
     // ignore mkdir errors
   }
 
