@@ -7,30 +7,28 @@ import {findChangedPixels} from './findChangedPixels';
 import {fileToPng} from './fileToPng';
 import {copyPixel} from './copyPixel';
 import {getDiff} from './getDiff';
-import {getCombinedDiff} from './getCombinedDiff';
 
 type Options = {
-  output: string;
   snapshotName: string;
   branchBase: string;
   baseHead: string;
   branchHead: string;
+  outputDiffPath: string;
+  outputMergedPath: string;
 };
 
 export async function multiCompare({
-  output,
   snapshotName,
   branchBase,
   baseHead,
   branchHead,
+  outputDiffPath,
+  outputMergedPath,
 }: Options) {
-  const [
-    baseHeadImage,
-    branchHeadImage,
-    branchHeadMergedImage,
-  ] = await Promise.all([
+  const promises = [];
+
+  const [baseHeadImage, branchHeadMergedImage] = await Promise.all([
     fileToPng(baseHead),
-    fileToPng(branchHead),
     fileToPng(branchHead),
   ]);
 
@@ -52,12 +50,15 @@ export async function multiCompare({
     changedPixels.forEach(idx => {
       copyPixel(idx, baseHeadImage, branchHeadMergedImage);
     });
-  }
 
-  // await fs.writeFile(
-  // path.resolve('./3waymerge.png'),
-  // PNG.sync.write(branchHeadImage)
-  // );
+    // Output merged image to fs
+    promises.push(
+      fs.writeFile(
+        path.resolve(outputMergedPath, snapshotName),
+        PNG.sync.write(branchHeadMergedImage)
+      )
+    );
+  }
 
   // diff branch head snapshot against head snapshot
   const {width, height} = branchHeadMergedImage;
@@ -77,20 +78,15 @@ export async function multiCompare({
 
   if (result > 0) {
     // TODO detect conflicts
-
-    const combined = await getCombinedDiff(
-      baseHeadImage,
-      branchHeadImage,
-      diff
-    );
-
-    await Promise.all([
+    promises.push(
       fs.writeFile(
-        path.resolve(output, snapshotName),
-        PNG.sync.write(combined)
-      ),
-    ]);
+        path.resolve(outputDiffPath, snapshotName),
+        PNG.sync.write(diff)
+      )
+    );
   }
+
+  await Promise.all(promises);
 
   return result;
 }

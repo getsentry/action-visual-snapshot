@@ -3,18 +3,16 @@ import path from 'path';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
-import * as io from '@actions/io';
 import * as Sentry from '@sentry/node';
 import {RewriteFrames} from '@sentry/integrations';
 
-import {createDiff} from './util/createDiff';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
-import {multiCompare} from './util/multiCompare';
 import {generateImageGallery} from './util/generateImageGallery';
 import {saveSnapshots} from './util/saveSnapshots';
 import {downloadSnapshots} from './util/downloadSnapshots';
 import {uploadToGcs} from './util/uploadToGcs';
 import {getStorageClient} from './util/getStorageClient';
+import {diffSnapshots} from './util/diffSnapshots';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
@@ -31,16 +29,6 @@ Sentry.init({
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
-/**
- * Given a base path and a full path to file, we want to find
- * the subdirectories "between" `base` and `fullPathToFile`
- */
-const getChildPaths = (base: string, fullPathToFile: string) =>
-  path.relative(
-    base,
-    fullPathToFile.replace(path.basename(fullPathToFile), '')
-  );
-
 async function run(): Promise<void> {
   try {
     const resultsRootPath: string = core.getInput('results-path');
@@ -53,7 +41,6 @@ async function run(): Promise<void> {
       resultsRootPath,
       'visual-snapshots-results'
     );
-    const diffPath = path.resolve(resultsPath, 'diffs');
     const basePath = path.resolve('/tmp/visual-snapshots-base');
     const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
@@ -79,12 +66,6 @@ async function run(): Promise<void> {
     if (!octokit) {
       throw new Error('`githubToken` missing');
     }
-
-    const newSnapshots = new Set<string>([]);
-    const changedSnapshots = new Set<string>([]);
-    const missingSnapshots = new Set<string>([]);
-    const currentSnapshots = new Set<string>([]);
-    const baseSnapshots = new Set<string>([]);
 
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
     const [didDownloadLatest] = await Promise.all([
@@ -118,129 +99,31 @@ async function run(): Promise<void> {
       rootDirectory: '/tmp/visual-snapshots',
     });
     const current = resp.downloadPath;
+    const currentPath = path.resolve(GITHUB_WORKSPACE, current);
 
-    // globs
-    const [baseGlobber, currentGlobber, mergeBaseGlobber] = await Promise.all([
-      glob.create(`${basePath}${pngGlob}`, {followSymbolicLinks: false}),
-      glob.create(`${current}${pngGlob}`, {followSymbolicLinks: false}),
-      glob.create(`${mergeBasePath}${pngGlob}`, {followSymbolicLinks: false}),
-    ]);
-
-    const [baseFiles, currentFiles, mergeBaseFiles] = await Promise.all([
-      baseGlobber.glob(),
-      currentGlobber.glob(),
-      mergeBaseGlobber.glob(),
-    ]);
-
-    if (!baseFiles.length) {
-      core.warning('No snapshots found for base branch');
-    }
-
-    if (!currentFiles.length) {
-      core.warning('No snapshots found for current branch');
-    }
-
-    // make diff dir if not exists
-    await io.mkdirP(diffPath);
-
-    baseFiles.forEach(absoluteFile => {
-      const file = path.relative(basePath, absoluteFile);
-      baseSnapshots.add(file);
-      missingSnapshots.add(file);
+    const {
+      baseFiles,
+      changedSnapshots,
+      missingSnapshots,
+      newSnapshots,
+    } = await diffSnapshots({
+      basePath,
+      mergeBasePath,
+      currentPath,
+      outputPath: resultsPath,
     });
 
-    // index merge base files as well
-    const mergeBaseSnapshots = new Set(
-      mergeBaseFiles.map(absolute => path.relative(mergeBasePath, absolute))
-    );
-
-    // Since we recurse in the directories looking for pngs, we need to replicate
-    // directory structure in the diff directory
-    const childPaths = new Set([
-      ...currentFiles.map(getChildPaths.bind(null, current)),
-      ...baseFiles.map(getChildPaths.bind(null, basePath)),
-    ]);
-
-    try {
-      await Promise.all(
-        [...childPaths].map(async childPath =>
-          io.mkdirP(path.resolve(diffPath, childPath))
-        )
-      );
-    } catch {
-      // ignore mkdir errors
-    }
-
-    // Diff snapshots against base branch
-    // This is to make sure we run the above tasks serially, otherwise we will
-    // face OOM issues
-    for (const absoluteFile of currentFiles) {
-      const file = path.relative(current, absoluteFile);
-      currentSnapshots.add(file);
-
-      if (baseSnapshots.has(file)) {
-        try {
-          let isDiff;
-
-          // If merge base snapshot exists, do a 3way diff
-          if (mergeBaseSnapshots.has(file)) {
-            isDiff = await multiCompare({
-              branchBase: path.resolve(mergeBasePath, file),
-              baseHead: path.resolve(basePath, file),
-              branchHead: path.resolve(GITHUB_WORKSPACE, current, file),
-              output: diffPath,
-              snapshotName: file,
-            });
-          } else {
-            isDiff = await createDiff(
-              file,
-              diffPath,
-              path.resolve(basePath, file),
-              path.resolve(GITHUB_WORKSPACE, current, file)
-            );
-          }
-
-          if (isDiff) {
-            changedSnapshots.add(file);
-          }
-          missingSnapshots.delete(file);
-        } catch (err) {
-          core.debug(`Unable to diff: ${err.message}`);
-          Sentry.captureException(err);
-        }
-      } else {
-        newSnapshots.add(file);
-      }
-    }
-
-    missingSnapshots.forEach(file => {
-      if (!mergeBaseSnapshots.has(file)) {
-        missingSnapshots.delete(file);
-        return;
-      }
-      core.debug(`missing snapshot: ${file}`);
-    });
-
-    newSnapshots.forEach(fileName => {
-      core.debug(`new snapshot: ${fileName}`);
-    });
-
-    changedSnapshots.forEach(name => {
-      core.debug(`changed snapshot: ${name}`);
-    });
-
-    // TODO: Upload diff files where and update check with them
-    const diffGlobber = await glob.create(`${diffPath}${pngGlob}`, {
+    const resultsGlobber = await glob.create(`${resultsPath}${pngGlob}`, {
       followSymbolicLinks: false,
     });
-    const diffFiles = await diffGlobber.glob();
+    const resultsFiles = await resultsGlobber.glob();
 
     const gcsDestination = `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}`;
-    const diffArtifactUrls = await uploadToGcs({
-      files: diffFiles,
-      root: diffPath,
+    const resultsArtifactUrls = await uploadToGcs({
+      files: resultsFiles,
+      root: resultsPath,
       bucket: gcsBucket,
-      destinationRoot: `${gcsDestination}/diffs`,
+      destinationRoot: `${gcsDestination}/results`,
     });
     const changedArray = [...changedSnapshots];
 
@@ -326,11 +209,12 @@ ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
     : ''
 }
 `,
-          images: diffArtifactUrls,
+          images: resultsArtifactUrls,
         },
       }),
     ]);
   } catch (error) {
+    Sentry.captureException(error);
     core.setFailed(error.message);
   }
 }
