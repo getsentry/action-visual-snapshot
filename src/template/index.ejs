@@ -66,7 +66,8 @@
         render,
       } from 'https://unpkg.com/htm/preact/standalone.module.js';
 
-      const States = ['Original', 'New', 'Diff'];
+      const States = ['Diff', 'Original', 'New'];
+      const IMAGE_DIRS = ['diffs', 'original', 'changed'];
 
       class App extends Component {
         state = {
@@ -81,10 +82,9 @@
         }
 
         handleImageLoaded = e => {
-          console.log('loaded', e.target.width);
           if (!this.state.width) {
             this.setState({
-              width: e.target.width / 3,
+              width: e.target.width,
             });
           }
         };
@@ -126,8 +126,10 @@
           return html`
             <div class="app">
               <div class="snapshots">
-                ${Object.entries(__images.changed).map(
-                  ([img, src], i) => html`
+                ${Object.entries(__images.changed).map(([img, src], i) => {
+                  const typeIndex = this.state.images[img] || 0;
+
+                  return html`
                     <h3 class="header">
                       ${img}
                       <div class="button-bar">
@@ -135,9 +137,7 @@
                           (state, i) => html`
                             <button
                               class="${`button${
-                                i === (this.state.images[img] || 0)
-                                  ? ' selected'
-                                  : ''
+                                i === typeIndex ? ' selected' : ''
                               }`}"
                               type="button"
                               onKeyDown="${e => this.handleKeyDown(img, e)}"
@@ -161,18 +161,14 @@
                         class="image"
                         key="${img}"
                         alt="${img}"
-                        src="diffs/${src}"
-                        style="${{
-                          transform: `translateX(${(this.state.images[img] ||
-                            0) * -33.33}%)`,
-                        }}"
+                        src="results/${IMAGE_DIRS[typeIndex]}/${src}"
                         onLoad="${this.handleImageLoaded}"
                         onClick="${e => this.handleImageClick(img, e)}"
                         onKeyDown="${e => this.handleKeyDown(img, e)}"
                       />
                     </div>
-                  `
-                )}
+                  `;
+                })}
               </div>
             </div>
           `;
