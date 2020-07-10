@@ -52,6 +52,8 @@ export async function getArtifactsForBranchAndWorkflow(
     return null;
   }
 
+  core.debug(`Using workflow run: ${workflowRun.html_url}`);
+
   const {
     data: {artifacts},
   } = await octokit.actions.listWorkflowRunArtifacts({

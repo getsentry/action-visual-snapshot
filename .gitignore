@@ -97,3 +97,6 @@ Thumbs.db
 # Ignore built ts files
 __tests__/runner/*
 lib/**/*
+
+__results
+example_gallery/index.html

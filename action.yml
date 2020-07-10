@@ -5,15 +5,18 @@ inputs:
   snapshot-path:
     required: true
     description: 'path where snapshots are saved'
-  results-path:
-    required: false
-    description: 'path to write snapshot diffs'
-    default: '/tmp/visual-snapshot-results'
-
   githubToken:
     required: true
     description: 'github token'
 
+  results-path:
+    required: false
+    description: 'path to write snapshot diffs'
+    default: '/tmp/visual-snapshot-results'
+  save-only:
+    required: false
+    default: false
+    description: 'should action only be used to save snapshots'
   base-workflow-id:
     required: false
     description: 'id of the workflow that saves your base snapshots (the name of the yaml file including extension)'
@@ -21,7 +24,7 @@ inputs:
     required: false
     description: 'name of the branch to use as base comparison'
     default: 'master'
-  base-artifact-name:
+  artifact-name:
     required: false
     description: 'the artifact name'
     default: 'visual-snapshots'

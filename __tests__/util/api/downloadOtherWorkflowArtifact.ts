@@ -1,14 +1,14 @@
 import * as io from '@actions/io';
 import * as github from '@actions/github';
 import * as exec from '@actions/exec';
-import {downloadArtifact} from '@app/api/downloadArtifact';
+import {downloadOtherWorkflowArtifact} from '@app/api/downloadOtherWorkflowArtifact';
 
 jest.mock('path', () => ({
   resolve: () => '/',
 }));
 
 jest.mock('@app/api/fetchArtifactFromBranch', () => ({
-  fetchArtifactFromBranch: jest.fn(() =>
+  fetchArtifactFromBranch: jest.fn(async () =>
     Promise.resolve({
       url: 'http://artifact-download',
     })
@@ -16,7 +16,7 @@ jest.mock('@app/api/fetchArtifactFromBranch', () => ({
 }));
 
 jest.mock('@actions/io', () => ({
-  mkdirP: jest.fn(() => Promise.resolve()),
+  mkdirP: jest.fn(async () => Promise.resolve()),
 }));
 jest.mock('@actions/exec', () => ({
   exec: jest.fn(),
@@ -25,7 +25,7 @@ jest.mock('@actions/exec', () => ({
 test('downloads and extracts artifact', async function() {
   const octokit = github.getOctokit('token');
 
-  const downloadResult = await downloadArtifact(octokit, {
+  const downloadResult = await downloadOtherWorkflowArtifact(octokit, {
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',

@@ -20,7 +20,7 @@ const FILENAME = 'visual-snapshots-base.zip';
  *
  * Then download and extract artifact to `downloadPath`
  */
-export async function downloadArtifact(
+export async function downloadOtherWorkflowArtifact(
   octokit: ReturnType<typeof github.getOctokit>,
   {
     owner,

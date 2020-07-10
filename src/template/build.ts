@@ -1,7 +1,7 @@
 import path from 'path';
 import {promises as fs} from 'fs';
 
-async function main() {
+export async function build() {
   const html = await fs.readFile(
     path.resolve(__dirname, './index.ejs'),
     'utf8'
@@ -12,4 +12,4 @@ async function main() {
   );
 }
 
-main();
+build();
