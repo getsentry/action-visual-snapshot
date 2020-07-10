@@ -14,6 +14,6 @@ describe('getChildDirectories', function() {
           ],
         ],
       ])
-    ).toEqual(new Set(['', 'a/deep/directory', 'another/deep/directory']));
+    ).toEqual(new Set(['a/deep/directory', 'another/deep/directory']));
   });
 });
