@@ -64,17 +64,6 @@ async function run(): Promise<void> {
       return;
     }
 
-    // Only needs to upload snapshots
-    if (shouldSaveOnly !== 'false') {
-      const current: string = core.getInput('snapshot-path');
-      await saveSnapshots({
-        artifactName,
-        rootDirectory: current,
-      });
-
-      return;
-    }
-
     if (!octokit) {
       throw new Error('`githubToken` missing');
     }
