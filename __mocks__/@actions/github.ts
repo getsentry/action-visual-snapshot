@@ -83,15 +83,12 @@ const listWorkflowRunsMock = jest.fn(async () =>
 export const getOctokit = jest.fn(() => ({
   paginate: {
     // @ts-ignore
-
-    // @ts-ignore
     iterator: function(fn, args) {
       return {
         async *[Symbol.asyncIterator]() {
           if (fn === listWorkflowRunsMock) {
             // @ts-ignore
-            const resp = await listWorkflowRunsMock(args);
-            yield resp;
+            yield await listWorkflowRunsMock(args);
           }
 
           // not implemented
