@@ -91,8 +91,8 @@ export const getOctokit = jest.fn(() => ({
             const resp = await listWorkflowRunsMock(args);
 
             yield {
+              data: resp.data.workflow_runs,
               total_count: resp.data.workflow_runs.length,
-              workflow_runs: resp.data.workflow_runs,
             };
           }
 
