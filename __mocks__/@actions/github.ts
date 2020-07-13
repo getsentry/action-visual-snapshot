@@ -32,34 +32,33 @@ export const getOctokit = jest.fn((token: string) => {
           data: {
             workflow_runs: [
               {
-                id: 152081708,
-                node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
+                id: 152081718,
+                node_id: '',
                 head_branch: 'master',
-                head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
-                run_number: 172,
+                head_sha: '4e19cbbea129a173dc79d4634df0fdaece933b06',
+                run_number: 173,
                 event: 'push',
-                status: 'completed',
-                conclusion: 'success',
-                workflow_id: 1154499,
+                status: 'in_progress',
+                workflow_id: 1154500,
                 url:
-                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708',
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081718',
                 html_url:
-                  'https://github.com/billyvg/sentry/actions/runs/152081708',
+                  'https://github.com/billyvg/sentry/actions/runs/152081718',
                 pull_requests: [],
-                created_at: '2020-06-29T23:42:39Z',
-                updated_at: '2020-06-29T23:56:40Z',
+                created_at: '2020-06-30T23:42:39Z',
+                updated_at: '2020-06-30T23:56:40Z',
                 jobs_url:
-                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/jobs',
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081718/jobs',
                 logs_url:
-                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/logs',
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081718/logs',
                 check_suite_url:
                   'https://api.github.com/repos/billyvg/sentry/check-suites/856201749',
                 artifacts_url:
-                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/artifacts',
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081718/artifacts',
                 cancel_url:
-                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/cancel',
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081718/cancel',
                 rerun_url:
-                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/rerun',
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081718/rerun',
                 workflow_url:
                   'https://api.github.com/repos/billyvg/sentry/actions/workflows/1154499',
                 head_commit: {
@@ -293,14 +292,125 @@ export const getOctokit = jest.fn((token: string) => {
                     'https://api.github.com/repos/billyvg/sentry/deployments',
                 },
               },
+              {
+                id: 152081708,
+                node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
+                head_branch: 'master',
+                head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
+                run_number: 172,
+                event: 'push',
+                status: 'completed',
+                conclusion: 'success',
+                workflow_id: 1154499,
+                url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708',
+                html_url:
+                  'https://github.com/billyvg/sentry/actions/runs/152081708',
+                pull_requests: [],
+                created_at: '2020-06-29T23:42:39Z',
+                updated_at: '2020-06-29T23:56:40Z',
+                jobs_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/jobs',
+                logs_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/logs',
+                check_suite_url:
+                  'https://api.github.com/repos/billyvg/sentry/check-suites/856201749',
+                artifacts_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/artifacts',
+                cancel_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/cancel',
+                rerun_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/rerun',
+                workflow_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/workflows/1154499',
+                head_commit: {
+                  id: '5e19cbbea129a173dc79d4634df0fdaece933b06',
+                  tree_id: '332a699162888947ea062892169d9d81a9c906fe',
+                  message: 'remove wait for animations',
+                  timestamp: '2020-06-29T23:42:25Z',
+                  author: {name: 'Billy Vong', email: 'billy@sentry.io'},
+                  committer: {name: 'Billy Vong', email: 'billy@sentry.io'},
+                },
+                repository: {},
+                head_repository: {},
+              },
+              {
+                id: 152081707,
+                node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
+                head_branch: 'master',
+                head_sha: '11111111l129a173dc79d4634df0fdaece933b06',
+                run_number: 171,
+                event: 'push',
+                status: 'completed',
+                conclusion: 'success',
+                workflow_id: 1154498,
+                url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708',
+                html_url:
+                  'https://github.com/billyvg/sentry/actions/runs/152081708',
+                pull_requests: [],
+                created_at: '2020-06-29T23:42:39Z',
+                updated_at: '2020-06-29T23:56:40Z',
+                jobs_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/jobs',
+                logs_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/logs',
+                check_suite_url:
+                  'https://api.github.com/repos/billyvg/sentry/check-suites/856201749',
+                artifacts_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/artifacts',
+                cancel_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/cancel',
+                rerun_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/runs/152081708/rerun',
+                workflow_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/workflows/1154499',
+                repository: {},
+                head_repository: {},
+              },
             ],
           },
         })
       ),
-      listWorkflowRunArtifacts: jest.fn(() =>
-        Promise.resolve({
+      listWorkflowRunArtifacts: jest.fn(opts => {
+        if (opts.run_id === 152081707) {
+          return Promise.resolve({
+            data: {
+              artifacts: [
+                {
+                  id: 8808920,
+                  node_id: '',
+                  name: 'visual-snapshots',
+                  size_in_bytes: 11768445,
+                  url:
+                    'https://api.github.com/repos/billyvg/sentry/actions/artifacts/9808919',
+                  archive_download_url:
+                    'https://api.github.com/repos/billyvg/sentry/actions/artifacts/9808919/zip',
+                  expired: false,
+                  created_at: '2020-06-29T23:56:36Z',
+                  updated_at: '2020-06-29T23:56:40Z',
+                },
+              ],
+            },
+          });
+        }
+
+        return Promise.resolve({
           data: {
             artifacts: [
+              {
+                id: 9808920,
+                node_id: 'MDg6QXJ0aWZhY3Q5ODA4OTE5',
+                name: 'not-visual-snapshots',
+                size_in_bytes: 11768446,
+                url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/artifacts/9808919',
+                archive_download_url:
+                  'https://api.github.com/repos/billyvg/sentry/actions/artifacts/9808919/zip',
+                expired: false,
+                created_at: '2020-06-29T23:56:36Z',
+                updated_at: '2020-06-29T23:56:40Z',
+              },
               {
                 id: 9808919,
                 node_id: 'MDg6QXJ0aWZhY3Q5ODA4OTE5',
@@ -316,8 +426,8 @@ export const getOctokit = jest.fn((token: string) => {
               },
             ],
           },
-        })
-      ),
+        });
+      }),
     },
   };
 });

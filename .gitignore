@@ -100,3 +100,4 @@ lib/**/*
 
 __results
 example_gallery/index.html
+dist/index.js.map

@@ -8,6 +8,7 @@ const RESULTS_PATH = path.resolve(__dirname, '__results');
 
 jest.mock('@actions/core', () => ({
   debug: jest.fn(),
+  warning: jest.fn(),
 }));
 
 describe('diffSnapshots (integration)', function() {
@@ -51,6 +52,39 @@ describe('diffSnapshots (integration)', function() {
       ),
       fs.access(
         path.resolve(RESULTS_PATH, 'new', 'acceptance', 'added-in-current.png')
+      ),
+    ]);
+
+    // fs.access will resolve with "error" value if it can not access file
+    // so undefined means file/dir exists
+    expect(results).toEqual(results.map(() => undefined));
+  });
+
+  it('diffs different sized snapshots', async function() {
+    const diffResults = await diffSnapshots({
+      basePath: path.resolve(__dirname, 'imgs', 'base'),
+      mergeBasePath: path.resolve(__dirname, 'imgs', 'mergeBase'),
+      currentPath: path.resolve(__dirname, 'imgs', 'size'),
+      outputPath: path.resolve(RESULTS_PATH),
+    });
+
+    expect(diffResults).toEqual(
+      expect.objectContaining({
+        changedSnapshots: new Set([]),
+        differentSizeSnapshots: new Set(['acceptance/test.png']),
+        missingSnapshots: new Set(['acceptance/both-base.png']),
+        newSnapshots: new Set(['acceptance/added-in-current.png']),
+        potentialFlakes: new Set(['acceptance/only-base.png']),
+      })
+    );
+
+    // Things should exist
+    const results = await Promise.all([
+      fs.access(
+        path.resolve(RESULTS_PATH, 'changed', 'acceptance', 'test.png')
+      ),
+      fs.access(
+        path.resolve(RESULTS_PATH, 'missing', 'acceptance', 'both-base.png')
       ),
     ]);
 

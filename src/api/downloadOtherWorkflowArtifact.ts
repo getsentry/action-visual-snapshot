@@ -3,50 +3,37 @@ import path from 'path';
 import {exec} from '@actions/exec';
 import * as github from '@actions/github';
 import * as io from '@actions/io';
-import {
-  fetchArtifactFromBranch,
-  FetchArtifactFromBranchParams,
-} from './fetchArtifactFromBranch';
 
 type DownloadArtifactParams = {
-  artifactName: string;
+  owner: string;
+  repo: string;
+  artifactId: number;
   downloadPath: string;
-} & FetchArtifactFromBranchParams;
+};
 
 const FILENAME = 'visual-snapshots-base.zip';
 
 /**
- * Use GitHub API to fetch artifacts for a workflow from a specific branch
- *
- * Then download and extract artifact to `downloadPath`
+ * Use GitHub API to fetch artifact download url, then
+ * download and extract artifact to `downloadPath`
  */
 export async function downloadOtherWorkflowArtifact(
   octokit: ReturnType<typeof github.getOctokit>,
-  {
-    owner,
-    repo,
-    artifactName,
-    workflow_id,
-    branch,
-    downloadPath,
-    commit,
-  }: DownloadArtifactParams
+  {owner, repo, artifactId, downloadPath}: DownloadArtifactParams
 ) {
-  const artifact = await fetchArtifactFromBranch(octokit, {
+  const artifact = await octokit.actions.downloadArtifact({
     owner,
     repo,
-    artifactName,
-    workflow_id,
-    branch,
-    commit,
+    artifact_id: artifactId,
+    archive_format: 'zip',
   });
 
-  if (!artifact) {
-    return null;
-  }
-
   // Make sure output path exists
-  await io.mkdirP(downloadPath);
+  try {
+    await io.mkdirP(downloadPath);
+  } catch {
+    // ignore errors
+  }
 
   const downloadFile = path.resolve(downloadPath, FILENAME);
 
