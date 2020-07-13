@@ -65,9 +65,7 @@ export async function getArtifactsForBranchAndWorkflow(
       per_page: 100,
     }
   )) {
-    console.log(response);
-    // This is typed wrong... probably because of paginate()?
-    const workflowRuns = response.data.workflow_runs;
+    const workflowRuns = response.data;
 
     if (!workflowRuns.length) {
       core.warning(`Workflow ${workflow_id} not found in branch ${branch}`);
