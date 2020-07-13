@@ -1,10 +1,10 @@
-name: test
+name: release
 
 on: push
 
 
 jobs:
-  test:
+  release:
     runs-on: ubuntu-latest
     env:
       SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
