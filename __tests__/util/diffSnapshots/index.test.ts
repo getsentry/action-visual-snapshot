@@ -80,6 +80,7 @@ describe('diffSnapshots (integration)', function() {
 
     // Things should exist
     const results = await Promise.all([
+      fs.access(path.resolve(RESULTS_PATH, 'diffs', 'acceptance', 'test.png')),
       fs.access(
         path.resolve(RESULTS_PATH, 'changed', 'acceptance', 'test.png')
       ),
