@@ -161,6 +161,10 @@ async function run(): Promise<void> {
     const unchanged =
       baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
 
+    const galleryUrl =
+      imageGalleryFile &&
+      `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
+
     await Promise.all([
       saveSnapshots({
         artifactName: `${artifactName}-results`,
@@ -171,7 +175,8 @@ async function run(): Promise<void> {
       octokit.checks.create({
         owner,
         repo,
-        name: 'Visual Snapshot',
+        name: 'Visual Snapshot name',
+        details_url: galleryUrl,
         head_sha: GITHUB_EVENT.pull_request.head.sha,
         status: 'completed',
         conclusion,
@@ -179,11 +184,7 @@ async function run(): Promise<void> {
           title: 'Visual Snapshots',
           summary: `
 
-${
-  imageGalleryFile
-    ? `[View Image Gallery](https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name})`
-    : ''
-}
+${imageGalleryFile ? `[View Image Gallery](${galleryUrl})` : ''}
 
 * **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
