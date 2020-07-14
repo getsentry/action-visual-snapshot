@@ -11,7 +11,7 @@
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
-    "dist": "yarn build && yarn build-template && yarn ncc build -s",
+    "dist": "yarn build-template && yarn build && yarn ncc build -C -s",
     "test": "yarn jest",
     "all": "yarn build && yarn format && yarn lint && yarn test && yarn dist"
   },
