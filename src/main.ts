@@ -111,7 +111,6 @@ async function run(): Promise<void> {
       changedSnapshots,
       missingSnapshots,
       newSnapshots,
-      differentSizeSnapshots,
     } = await diffSnapshots({
       basePath,
       mergeBasePath,
@@ -137,7 +136,6 @@ async function run(): Promise<void> {
       changed: setToObject(changedArray),
       missing: setToObject(missingSnapshots),
       added: setToObject(newSnapshots),
-      differentSize: setToObject(differentSizeSnapshots),
     });
 
     const storage = getStorageClient();
@@ -154,19 +152,14 @@ async function run(): Promise<void> {
       : [];
 
     const conclusion =
-      !!changedSnapshots.size ||
-      !!missingSnapshots.size ||
-      !!differentSizeSnapshots.size
+      !!changedSnapshots.size || !!missingSnapshots.size
         ? 'failure'
         : !!newSnapshots.size
         ? 'neutral'
         : 'success';
 
     const unchanged =
-      baseFiles.length -
-      (changedSnapshots.size +
-        missingSnapshots.size +
-        differentSizeSnapshots.size);
+      baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
 
     await Promise.all([
       saveSnapshots({
@@ -192,18 +185,15 @@ ${
     : ''
 }
 
-* **${changedSnapshots.size +
-            differentSizeSnapshots.size}** changed snapshots (${unchanged} unchanged)
+* **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
 `,
           text: `
 ${
-  changedSnapshots.size || differentSizeSnapshots.size
+  changedSnapshots.size
     ? `## Changed snapshots
-${[...changedSnapshots, ...differentSizeSnapshots]
-  .map(name => `* ${name}`)
-  .join('\n')}
+${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
 `
     : ''
 }

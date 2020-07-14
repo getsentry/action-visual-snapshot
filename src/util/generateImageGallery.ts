@@ -9,7 +9,6 @@ export async function generateImageGallery(
     changed: Record<string, string>;
     missing?: Record<string, string>;
     added?: Record<string, string>;
-    differentSize?: Record<string, string>;
   }
 ) {
   const html = ejs.render(template.html, {

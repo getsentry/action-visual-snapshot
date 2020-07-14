@@ -53,7 +53,6 @@ export async function diffSnapshots({
   const currentSnapshots = new Set<string>([]);
   const baseSnapshots = new Set<string>([]);
   const potentialFlakes = new Set<string>([]);
-  const differentSizeSnapshots = new Set<string>([]);
 
   // globs
   const [baseGlobber, currentGlobber, mergeBaseGlobber] = await Promise.all([
@@ -162,19 +161,8 @@ export async function diffSnapshots({
 
         missingSnapshots.delete(file);
       } catch (err) {
-        if (err.message !== 'Image sizes do not match') {
-          core.debug(`Unable to diff: ${err.message}`);
-          throw err;
-        }
-
-        // Image sizes do not match, we can't show diff but we can show
-        // the original vs new images
-        missingSnapshots.delete(file);
-        differentSizeSnapshots.add(file);
-        await Promise.all([
-          io.cp(baseHead, path.resolve(outputBasePath, file)),
-          io.cp(branchHead, path.resolve(outputCurrentPath, file)),
-        ]);
+        core.debug(`Unable to diff: ${err.message}`);
+        throw err;
       }
     } else {
       newSnapshots.add(file);
@@ -230,6 +218,5 @@ export async function diffSnapshots({
     newSnapshots,
     changedSnapshots,
     potentialFlakes,
-    differentSizeSnapshots,
   };
 }
