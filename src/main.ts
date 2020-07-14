@@ -151,8 +151,9 @@ async function run(): Promise<void> {
           })
       : [];
 
+    const totalChanged = changedSnapshots.size + missingSnapshots.size;
     const conclusion =
-      !!changedSnapshots.size || !!missingSnapshots.size
+      totalChanged > 0
         ? 'failure'
         : !!newSnapshots.size
         ? 'neutral'
@@ -165,6 +166,11 @@ async function run(): Promise<void> {
       imageGalleryFile &&
       `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
 
+    const checkTitle =
+      totalChanged > 0
+        ? `${totalChanged} snapshots need review`
+        : 'No snapshot changes detected';
+
     await Promise.all([
       saveSnapshots({
         artifactName: `${artifactName}-results`,
@@ -175,13 +181,13 @@ async function run(): Promise<void> {
       octokit.checks.create({
         owner,
         repo,
-        name: 'Visual Snapshot name',
+        name: 'Visual Snapshot',
         details_url: galleryUrl,
         head_sha: GITHUB_EVENT.pull_request.head.sha,
         status: 'completed',
         conclusion,
         output: {
-          title: 'Visual Snapshots',
+          title: checkTitle,
           summary: `
 
 ${imageGalleryFile ? `[View Image Gallery](${galleryUrl})` : ''}
