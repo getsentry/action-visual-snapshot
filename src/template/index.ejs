@@ -137,18 +137,12 @@
           const added = Object.entries(__images.added);
           const missing = Object.entries(__images.missing);
           const changed = Object.entries(__images.changed);
-          const differentSize = Object.entries(__images.differentSize);
 
           return html`
             <div class="app">
               <nav class="top-nav">
                 <h3>
                   <a href="#changed">Changed (${changed.length})</a>
-                </h3>
-                <h3>
-                  <a href="#changed-sizes"
-                    >Changed (different sizes) (${differentSize.length})</a
-                  >
                 </h3>
                 <h3>
                   <a href="#added">Added (${added.length})</a>
@@ -175,50 +169,6 @@
                               class="${`button${
                                 i === typeIndex ? ' selected' : ''
                               }`}"
-                              type="button"
-                              onKeyDown="${e => this.handleKeyDown(img, e)}"
-                              onClick="${() =>
-                                this.handleSelectState(img, state)}"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        )}
-                      </div>
-                    </h3>
-                    <div class="image-wrapper">
-                      <img
-                        tabindex="${i}"
-                        class="image"
-                        key="${img}"
-                        alt="${img}"
-                        src="results/${IMAGE_DIRS[typeIndex]}/${src}"
-                        onLoad="${this.handleImageLoaded}"
-                        onClick="${e => this.handleImageClick(img, e)}"
-                        onKeyDown="${e => this.handleKeyDown(img, e)}"
-                      />
-                    </div>
-                  `;
-                })}
-              </div>
-
-              <h2 id="changed-sizes">
-                Changed (Size changed, diffs unavailable)
-              </h2>
-              <div class="snapshots">
-                ${differentSize.map(([img, src], i) => {
-                  const typeIndex = this.state.images[img] || 2;
-
-                  return html`
-                    <h3 class="header">
-                      ${img}
-                      <div class="button-bar">
-                        ${States.map(
-                          (state, i) => html`
-                            <button
-                              class="${`button${
-                                i === typeIndex ? ' selected' : ''
-                              }${state === 'Diff' ? ' disabled' : ''}`}"
                               type="button"
                               onKeyDown="${e => this.handleKeyDown(img, e)}"
                               onClick="${() =>

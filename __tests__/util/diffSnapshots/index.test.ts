@@ -71,7 +71,6 @@ describe('diffSnapshots (integration)', function() {
     expect(diffResults).toEqual(
       expect.objectContaining({
         changedSnapshots: new Set([]),
-        differentSizeSnapshots: new Set(['acceptance/test.png']),
         missingSnapshots: new Set(['acceptance/both-base.png']),
         newSnapshots: new Set(['acceptance/added-in-current.png']),
         potentialFlakes: new Set(['acceptance/only-base.png']),
