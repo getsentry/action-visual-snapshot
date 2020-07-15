@@ -33,8 +33,6 @@ are optional and will upload your images to the bucket if specified):
             gcp-service-account-key: ${{ secrets.SNAPSHOT_GOOGLE_SERVICE_ACCOUNT_KEY }}
 ```
 
-(Note this will be simplified soon)
-
 ## Contributing
 
 WIP
