@@ -173,7 +173,7 @@ export async function diffSnapshots({
   // in current and base
 
   missingSnapshots.forEach(file => {
-    if (!mergeBaseSnapshots.has(file)) {
+    if (mergeBaseFiles.length && !mergeBaseSnapshots.has(file)) {
       // It's possible this isn't desirable, but seems likely that this snapshot was
       // added in latest base.
       missingSnapshots.delete(file);
