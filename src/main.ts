@@ -32,30 +32,32 @@ Sentry.init({
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
+function handleError(error: Error) {
+  Sentry.captureException(error);
+  core.setFailed(error.message);
+}
+
 async function run(): Promise<void> {
+  const resultsRootPath: string = core.getInput('results-path');
+  const baseBranch = core.getInput('base-branch');
+  const artifactName = core.getInput('artifact-name');
+  const gcsBucket = core.getInput('gcs-bucket');
+  const shouldSaveOnly = core.getInput('save-only');
+  const apiToken = core.getInput('api-token');
+
+  const resultsPath = path.resolve(resultsRootPath, 'visual-snapshots-results');
+  const basePath = path.resolve('/tmp/visual-snapshots-base');
+  const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
+
+  core.debug(`resultsPath: ${resultsPath}`);
+  core.debug(GITHUB_WORKSPACE);
+
+  // Forward `results-path` to outputs
+  core.setOutput('results-path', resultsRootPath);
+  core.setOutput('base-images-path', basePath);
+  core.setOutput('merge-base-images-path', mergeBasePath);
+
   try {
-    const resultsRootPath: string = core.getInput('results-path');
-    const baseBranch = core.getInput('base-branch');
-    const artifactName = core.getInput('artifact-name');
-    const gcsBucket = core.getInput('gcs-bucket');
-    const shouldSaveOnly = core.getInput('save-only');
-    const apiToken = core.getInput('api-token');
-
-    const resultsPath = path.resolve(
-      resultsRootPath,
-      'visual-snapshots-results'
-    );
-    const basePath = path.resolve('/tmp/visual-snapshots-base');
-    const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
-
-    core.debug(`resultsPath: ${resultsPath}`);
-    core.debug(GITHUB_WORKSPACE);
-
-    // Forward `results-path` to outputs
-    core.setOutput('results-path', resultsRootPath);
-    core.setOutput('base-images-path', basePath);
-    core.setOutput('merge-base-images-path', mergeBasePath);
-
     // Only needs to upload snapshots
     if (shouldSaveOnly !== 'false') {
       const current: string = core.getInput('snapshot-path');
@@ -66,18 +68,23 @@ async function run(): Promise<void> {
 
       return;
     }
+  } catch (error) {
+    handleError(error);
+  }
 
-    if (!octokit) {
-      throw new Error('`githubToken` missing');
-    }
+  if (!octokit) {
+    handleError(new Error('`githubToken` missing'));
+    return;
+  }
 
-    const buildId = await startBuild({
-      owner,
-      repo,
-      token: apiToken,
-      head_sha: GITHUB_EVENT.pull_request.head.sha,
-    });
+  const buildId = await startBuild({
+    owner,
+    repo,
+    token: apiToken,
+    head_sha: GITHUB_EVENT.pull_request.head.sha,
+  });
 
+  try {
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
 
     core.debug(`Merge base SHA is: ${mergeBaseSha}`);

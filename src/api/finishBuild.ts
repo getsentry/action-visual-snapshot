@@ -3,7 +3,7 @@ import bent from 'bent';
 const put = bent('https://bv.ngrok.io/api', 'PUT', 'json', 200);
 
 type Params = {
-  id: string;
+  id: number;
   owner: string;
   repo: string;
   token: string;
@@ -13,9 +13,10 @@ type Params = {
     image_url: string;
   }[];
   results: {
-    changed: Record<string, string>;
-    missing: Record<string, string>;
-    added: Record<string, string>;
+    baseFilesLength: number;
+    changed: string[];
+    missing: string[];
+    added: string[];
   };
   galleryUrl?: string;
 };
