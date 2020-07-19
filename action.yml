@@ -5,6 +5,9 @@ inputs:
   snapshot-path:
     required: true
     description: 'path where snapshots are saved'
+  apiToken:
+    required: true
+    description: 'Visual Snapshot API token, should be `VISUAL_SNAPSHOT_SECRET` from GitHub Secrets'
   githubToken:
     required: true
     description: 'github token'

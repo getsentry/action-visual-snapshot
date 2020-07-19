@@ -13,6 +13,8 @@ import {uploadToGcs} from './util/uploadToGcs';
 import {getStorageClient} from './util/getStorageClient';
 import {diffSnapshots} from './util/diffSnapshots';
 import {retrieveBaseSnapshots} from './api/retrieveBaseSnapshots';
+import {startBuild} from './api/startBuild';
+import {finishBuild} from './api/finishBuild';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
@@ -37,6 +39,7 @@ async function run(): Promise<void> {
     const artifactName = core.getInput('artifact-name');
     const gcsBucket = core.getInput('gcs-bucket');
     const shouldSaveOnly = core.getInput('save-only');
+    const apiToken = core.getInput('api-token');
 
     const resultsPath = path.resolve(
       resultsRootPath,
@@ -67,6 +70,13 @@ async function run(): Promise<void> {
     if (!octokit) {
       throw new Error('`githubToken` missing');
     }
+
+    const buildId = await startBuild({
+      owner,
+      repo,
+      token: apiToken,
+      head_sha: GITHUB_EVENT.pull_request.head.sha,
+    });
 
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
 
@@ -131,12 +141,17 @@ async function run(): Promise<void> {
       destinationRoot: `${gcsDestination}/results`,
     });
     const changedArray = [...changedSnapshots];
-
-    await generateImageGallery(path.resolve(resultsPath, 'index.html'), {
+    const results = {
+      baseFilesLength: baseFiles.length,
       changed: changedArray,
       missing: [...missingSnapshots],
       added: [...newSnapshots],
-    });
+    };
+
+    await generateImageGallery(
+      path.resolve(resultsPath, 'index.html'),
+      results
+    );
 
     const storage = getStorageClient();
     const [imageGalleryFile] = storage
@@ -159,17 +174,17 @@ async function run(): Promise<void> {
         ? 'neutral'
         : 'success';
 
-    const unchanged =
-      baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
+    // const unchanged =
+    // baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
 
     const galleryUrl =
       imageGalleryFile &&
       `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
 
-    const checkTitle =
-      totalChanged > 0
-        ? `${totalChanged} snapshots need review`
-        : 'No snapshot changes detected';
+    // const checkTitle =
+    // totalChanged > 0
+    // ? `${totalChanged} snapshots need review`
+    // : 'No snapshot changes detected';
 
     await Promise.all([
       saveSnapshots({
@@ -177,53 +192,64 @@ async function run(): Promise<void> {
         rootDirectory: resultsRootPath,
       }),
 
-      // Create a GitHub check with our results
-      octokit.checks.create({
+      finishBuild({
+        id: buildId,
         owner,
         repo,
-        name: 'Visual Snapshot',
-        details_url: galleryUrl,
-        head_sha: GITHUB_EVENT.pull_request.head.sha,
-        status: 'completed',
+        token: apiToken,
         conclusion,
-        output: {
-          title: checkTitle,
-          summary: `
-
-${imageGalleryFile ? `[View Image Gallery](${galleryUrl})` : ''}
-
-* **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
-* **${missingSnapshots.size}** missing snapshots
-* **${newSnapshots.size}** new snapshots
-`,
-          text: `
-${
-  changedSnapshots.size
-    ? `## Changed snapshots
-${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
-`
-    : ''
-}
-
-${
-  missingSnapshots.size
-    ? `## Missing snapshots
-${[...missingSnapshots].map(name => `* ${name}`).join('\n')}
-`
-    : ''
-}
-
-${
-  newSnapshots.size
-    ? `## New snapshots
-${[...newSnapshots].map(name => `* ${name}`).join('\n')}
-`
-    : ''
-}
-`,
-          images: resultsArtifactUrls,
-        },
+        galleryUrl,
+        images: resultsArtifactUrls,
+        results,
       }),
+
+      // Create a GitHub check with our results
+      // octokit.checks.create({
+      // owner,
+      // repo,
+      // name: 'Visual Snapshot',
+      // details_url: galleryUrl,
+      // head_sha: GITHUB_EVENT.pull_request.head.sha,
+      // status: 'completed',
+      // conclusion,
+      // output: {
+      // title: checkTitle,
+      // summary: `
+
+      // ${imageGalleryFile ? `[View Image Gallery](${galleryUrl})` : ''}
+
+      // * **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
+      // * **${missingSnapshots.size}** missing snapshots
+      // * **${newSnapshots.size}** new snapshots
+      // `,
+      // text: `
+      // ${
+      // changedSnapshots.size
+      // ? `## Changed snapshots
+      // ${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
+      // `
+      // : ''
+      // }
+
+      // ${
+      // missingSnapshots.size
+      // ? `## Missing snapshots
+      // ${[...missingSnapshots].map(name => `* ${name}`).join('\n')}
+      // `
+      // : ''
+      // }
+
+      // ${
+      // newSnapshots.size
+      // ? `## New snapshots
+      // ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
+      // `
+      // : ''
+      // }
+      // `,
+      // images: resultsArtifactUrls,
+      // },
+      // }),
     ]);
   } catch (error) {
     Sentry.captureException(error);
