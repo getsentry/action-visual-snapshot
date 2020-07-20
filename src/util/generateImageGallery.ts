@@ -6,6 +6,7 @@ import template from '../template';
 export async function generateImageGallery(
   target: string,
   data: {
+    baseFilesLength: number;
     changed: string[];
     missing?: string[];
     added?: string[];

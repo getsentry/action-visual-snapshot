@@ -9,6 +9,7 @@ async function main() {
   await generateImageGallery(
     path.resolve(__dirname, '../../example_gallery/index.html'),
     {
+      baseFilesLength: 10,
       changed: [
         'acceptance/project-ownership.png',
         'acceptance/project-settings-all-integrations.png',
