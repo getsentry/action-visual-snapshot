@@ -12,4 +12,8 @@ export async function build() {
   );
 }
 
-build();
+build()
+  .then(() => true)
+  .catch(err => {
+    throw err;
+  });

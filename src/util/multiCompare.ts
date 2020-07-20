@@ -1,14 +1,12 @@
 import {promises as fs} from 'fs';
 import path from 'path';
 import {PNG} from 'pngjs';
-import pixelmatch from 'pixelmatch';
 import * as Sentry from '@sentry/node';
 
 import {findChangedPixels} from './findChangedPixels';
 import {fileToPng} from './fileToPng';
 import {copyPixel} from './copyPixel';
 import {getDiff} from './getDiff';
-import {ImageDimensionError} from './ImageDimensionError';
 
 type Options = {
   snapshotName: string;
@@ -29,9 +27,14 @@ export async function multiCompare({
 }: Options) {
   const promises = [];
 
-  const [baseHeadImage, branchHeadMergedImage] = await Promise.all([
+  const [
+    baseHeadImage,
+    branchHeadMergedImage,
+    branchBaseImage,
+  ] = await Promise.all([
     fileToPng(baseHead),
     fileToPng(branchHead),
+    fileToPng(branchBase),
   ]);
 
   try {
@@ -40,7 +43,7 @@ export async function multiCompare({
     const {
       result: baseDiffResult,
       diff: branchBaseBaseHeadDiffImage,
-    } = await getDiff(branchBase, baseHead, {
+    } = await getDiff(branchBaseImage, baseHeadImage, {
       alpha: 0,
     });
 
@@ -67,26 +70,7 @@ export async function multiCompare({
     Sentry.captureException(err);
   }
 
-  // diff branch head snapshot against head snapshot
-  const {width, height} = branchHeadMergedImage;
-
-  if (width !== baseHeadImage.width || height !== baseHeadImage.height) {
-    throw new ImageDimensionError();
-  }
-
-  const diff = new PNG({width, height});
-
-  const result = pixelmatch(
-    baseHeadImage.data,
-    branchHeadMergedImage.data,
-    diff.data,
-    width,
-    height,
-    {
-      includeAA: true,
-      threshold: 0.2,
-    }
-  );
+  const {result, diff} = await getDiff(baseHeadImage, branchHeadMergedImage);
 
   if (result > 0) {
     // TODO detect conflicts

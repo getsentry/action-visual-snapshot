@@ -24,6 +24,9 @@ export type GetArtifactsForBranchAndWorkflow = {
   commit?: string;
 };
 
+// max pages of workflows to pagination through
+const MAX_PAGES = 5;
+
 /**
  * Fetch artifacts from a workflow run from a branch
  *
@@ -47,45 +50,56 @@ export async function getArtifactsForBranchAndWorkflow(
     }...`
   );
 
-  const {
-    data: {workflow_runs: workflowRuns},
-  } = await octokit.actions.listWorkflowRuns({
-    owner,
-    repo,
-    // Below is typed incorrectly, can accept string
-    // @ts-ignore
-    workflow_id,
-    branch,
-  });
+  let currentPage = 0;
+  let completedWorkflowRuns: WorkflowRun[] = [];
 
-  if (!workflowRuns.length) {
-    core.warning(`Workflow ${workflow_id} not found in branch ${branch}`);
-    return null;
-  }
+  for await (const response of octokit.paginate.iterator(
+    octokit.actions.listWorkflowRuns,
+    {
+      owner,
+      repo,
+      // Below is typed incorrectly, it needs to be a string but typed as number
+      workflow_id: (workflow_id as unknown) as number,
+      branch,
+      status: 'completed',
+      per_page: 100,
+    }
+  )) {
+    const workflowRuns = response.data;
 
-  // Either find a workflow run for a specific commit, or use the latest run
-  // Make sure that the workflow run has completed, otherwise artifacts may not
-  // be saved yet
-  const workflowRunsForCommit = commit
-    ? workflowRuns.filter(
-        (run: typeof workflowRuns[number]) => run.head_sha === commit
-      )
-    : workflowRuns;
+    if (!workflowRuns.length) {
+      core.warning(`Workflow ${workflow_id} not found in branch ${branch}`);
+      return null;
+    }
 
-  const completedWorkflowRuns = workflowRunsForCommit.filter(isCompleted);
+    const workflowRunsForCommit = commit
+      ? workflowRuns.filter(
+          (run: typeof workflowRuns[number]) => run.head_sha === commit
+        )
+      : workflowRuns;
 
-  if (!completedWorkflowRuns.length) {
-    core.warning(
-      `Workflow ${workflow_id} not found in branch: ${branch}${
-        commit ? ` and commit: ${commit}` : ''
-      }`
-    );
-    return null;
+    if (workflowRunsForCommit.length) {
+      completedWorkflowRuns = completedWorkflowRuns.concat(
+        workflowRunsForCommit
+      );
+      break;
+    }
+
+    if (currentPage > MAX_PAGES) {
+      core.warning(
+        `Workflow ${workflow_id} not found in branch: ${branch}${
+          commit ? ` and commit: ${commit}` : ''
+        }`
+      );
+      return null;
+    }
+
+    currentPage++;
   }
 
   // Search through workflow artifacts until we find a workflow run w/ artifact name that we are looking for
   for (const workflowRun of completedWorkflowRuns) {
-    core.debug(`Checking artifacts for  workflow run: ${workflowRun.html_url}`);
+    core.debug(`Checking artifacts for workflow run: ${workflowRun.html_url}`);
 
     const {
       data: {artifacts},
@@ -113,9 +127,4 @@ export async function getArtifactsForBranchAndWorkflow(
 
   core.warning(`Artifact not found: ${artifactName}`);
   return null;
-}
-
-// It's possible we may only want when `run.conclusion === 'success'`
-function isCompleted(run: WorkflowRun) {
-  return run.status === 'completed';
 }

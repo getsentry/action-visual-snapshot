@@ -61,8 +61,9 @@
         padding: 12px;
         background-color: #ccc;
       }
+
       .image {
-        width: 100%;
+        max-width: 100%;
       }
 
       .top-nav {
@@ -133,21 +134,13 @@
         };
 
         render({page}, {todos = []}) {
-          const added = Object.entries(__images.added);
-          const missing = Object.entries(__images.missing);
-          const changed = Object.entries(__images.changed);
-          const differentSize = Object.entries(__images.differentSize);
+          const {added, missing, changed} = __images;
 
           return html`
             <div class="app">
               <nav class="top-nav">
                 <h3>
                   <a href="#changed">Changed (${changed.length})</a>
-                </h3>
-                <h3>
-                  <a href="#changed-sizes"
-                    >Changed (different sizes) (${changed.length})</a
-                  >
                 </h3>
                 <h3>
                   <a href="#added">Added (${added.length})</a>
@@ -161,7 +154,7 @@
                 Changed
               </h2>
               <div class="snapshots">
-                ${changed.map(([img, src], i) => {
+                ${changed.map((img, i) => {
                   const typeIndex = this.state.images[img] || 0;
 
                   return html`
@@ -191,51 +184,7 @@
                         class="image"
                         key="${img}"
                         alt="${img}"
-                        src="results/${IMAGE_DIRS[typeIndex]}/${src}"
-                        onLoad="${this.handleImageLoaded}"
-                        onClick="${e => this.handleImageClick(img, e)}"
-                        onKeyDown="${e => this.handleKeyDown(img, e)}"
-                      />
-                    </div>
-                  `;
-                })}
-              </div>
-
-              <h2 id="changed-sizes">
-                Changed (Size changed, diffs unavailable)
-              </h2>
-              <div class="snapshots">
-                ${differentSize.map(([img, src], i) => {
-                  const typeIndex = this.state.images[img] || 2;
-
-                  return html`
-                    <h3 class="header">
-                      ${img}
-                      <div class="button-bar">
-                        ${States.map(
-                          (state, i) => html`
-                            <button
-                              class="${`button${
-                                i === typeIndex ? ' selected' : ''
-                              }${state === 'Diff' ? ' disabled' : ''}`}"
-                              type="button"
-                              onKeyDown="${e => this.handleKeyDown(img, e)}"
-                              onClick="${() =>
-                                this.handleSelectState(img, state)}"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        )}
-                      </div>
-                    </h3>
-                    <div class="image-wrapper">
-                      <img
-                        tabindex="${i}"
-                        class="image"
-                        key="${img}"
-                        alt="${img}"
-                        src="results/${IMAGE_DIRS[typeIndex]}/${src}"
+                        src="results/${IMAGE_DIRS[typeIndex]}/${img}"
                         onLoad="${this.handleImageLoaded}"
                         onClick="${e => this.handleImageClick(img, e)}"
                         onKeyDown="${e => this.handleKeyDown(img, e)}"
@@ -249,7 +198,7 @@
                 Added
               </h2>
               <div class="snapshots">
-                ${added.map(([img, src], i) => {
+                ${added.map((img, i) => {
                   const typeIndex = this.state.images[img] || 0;
 
                   return html`
@@ -278,7 +227,7 @@
                         alt="${img}"
                         src="results/${IMAGE_DIRS[
                           IMAGE_DIRS.indexOf('new')
-                        ]}/${src}"
+                        ]}/${img}"
                       />
                     </div>
                   `;
@@ -289,7 +238,7 @@
                 Missing
               </h2>
               <div class="snapshots">
-                ${missing.map(([img, src], i) => {
+                ${missing.map((img, i) => {
                   const typeIndex = this.state.images[img] || 0;
 
                   return html`
@@ -318,7 +267,7 @@
                         alt="${img}"
                         src="results/${IMAGE_DIRS[
                           IMAGE_DIRS.indexOf('original')
-                        ]}/${src}"
+                        ]}/${img}"
                       />
                     </div>
                   `;
@@ -328,16 +277,6 @@
           `;
         }
       }
-
-      const Header = ({name}) =>
-        html`
-          <h1>${name}</h1>
-        `;
-
-      const Footer = props =>
-        html`
-          <footer ...${props} />
-        `;
 
       render(
         html`

@@ -35,9 +35,13 @@ test('downloads and extracts artifact', async function() {
     ],
     {silent: true}
   );
-  expect(exec.exec).toHaveBeenCalledWith('unzip', ['-d', '.artifacts', '/'], {
-    silent: true,
-  });
+  expect(exec.exec).toHaveBeenCalledWith(
+    'unzip',
+    ['-qq', '-d', '.artifacts', '/'],
+    {
+      silent: true,
+    }
+  );
 
   expect(downloadResult).toBe(true);
 });

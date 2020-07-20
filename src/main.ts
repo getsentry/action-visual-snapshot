@@ -111,7 +111,6 @@ async function run(): Promise<void> {
       changedSnapshots,
       missingSnapshots,
       newSnapshots,
-      differentSizeSnapshots,
     } = await diffSnapshots({
       basePath,
       mergeBasePath,
@@ -134,10 +133,9 @@ async function run(): Promise<void> {
     const changedArray = [...changedSnapshots];
 
     await generateImageGallery(path.resolve(resultsPath, 'index.html'), {
-      changed: setToObject(changedArray),
-      missing: setToObject(missingSnapshots),
-      added: setToObject(newSnapshots),
-      differentSize: setToObject(differentSizeSnapshots),
+      changed: changedArray,
+      missing: [...missingSnapshots],
+      added: [...newSnapshots],
     });
 
     const storage = getStorageClient();
@@ -153,20 +151,25 @@ async function run(): Promise<void> {
           })
       : [];
 
+    const totalChanged = changedSnapshots.size + missingSnapshots.size;
     const conclusion =
-      !!changedSnapshots.size ||
-      !!missingSnapshots.size ||
-      !!differentSizeSnapshots.size
+      totalChanged > 0
         ? 'failure'
         : !!newSnapshots.size
         ? 'neutral'
         : 'success';
 
     const unchanged =
-      baseFiles.length -
-      (changedSnapshots.size +
-        missingSnapshots.size +
-        differentSizeSnapshots.size);
+      baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
+
+    const galleryUrl =
+      imageGalleryFile &&
+      `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
+
+    const checkTitle =
+      totalChanged > 0
+        ? `${totalChanged} snapshots need review`
+        : 'No snapshot changes detected';
 
     await Promise.all([
       saveSnapshots({
@@ -179,31 +182,25 @@ async function run(): Promise<void> {
         owner,
         repo,
         name: 'Visual Snapshot',
+        details_url: galleryUrl,
         head_sha: GITHUB_EVENT.pull_request.head.sha,
         status: 'completed',
         conclusion,
         output: {
-          title: 'Visual Snapshots',
+          title: checkTitle,
           summary: `
 
-${
-  imageGalleryFile
-    ? `[View Image Gallery](https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name})`
-    : ''
-}
+${imageGalleryFile ? `[View Image Gallery](${galleryUrl})` : ''}
 
-* **${changedSnapshots.size +
-            differentSizeSnapshots.size}** changed snapshots (${unchanged} unchanged)
+* **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
 * **${missingSnapshots.size}** missing snapshots
 * **${newSnapshots.size}** new snapshots
 `,
           text: `
 ${
-  changedSnapshots.size || differentSizeSnapshots.size
+  changedSnapshots.size
     ? `## Changed snapshots
-${[...changedSnapshots, ...differentSizeSnapshots]
-  .map(name => `* ${name}`)
-  .join('\n')}
+${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
 `
     : ''
 }
@@ -232,13 +229,6 @@ ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
     Sentry.captureException(error);
     core.setFailed(error.message);
   }
-}
-
-function setToObject(set: Set<string> | string[]) {
-  return Object.fromEntries([...set].map(nameToFileEntry));
-}
-function nameToFileEntry(file: string) {
-  return [path.basename(file, '.png'), file];
 }
 
 run();

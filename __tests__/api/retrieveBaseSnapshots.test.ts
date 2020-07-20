@@ -25,6 +25,8 @@ test('only downloads and returns base if base and merge base are the same', asyn
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
     branch: 'main',
+    per_page: 100,
+    status: 'completed',
   });
 
   expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
@@ -72,6 +74,8 @@ test('downloads and returns base and merge base', async function() {
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
     branch: 'main',
+    per_page: 100,
+    status: 'completed',
   });
 
   expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
@@ -79,6 +83,7 @@ test('downloads and returns base and merge base', async function() {
     repo: 'sentry',
     run_id: 152081708,
   });
+
   expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
