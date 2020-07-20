@@ -134,9 +134,7 @@
         };
 
         render({page}, {todos = []}) {
-          const added = Object.entries(__images.added);
-          const missing = Object.entries(__images.missing);
-          const changed = Object.entries(__images.changed);
+          const {added, missing, changed} = __images;
 
           return html`
             <div class="app">
@@ -156,7 +154,7 @@
                 Changed
               </h2>
               <div class="snapshots">
-                ${changed.map(([img, src], i) => {
+                ${changed.map((img, i) => {
                   const typeIndex = this.state.images[img] || 0;
 
                   return html`
@@ -186,7 +184,7 @@
                         class="image"
                         key="${img}"
                         alt="${img}"
-                        src="results/${IMAGE_DIRS[typeIndex]}/${src}"
+                        src="results/${IMAGE_DIRS[typeIndex]}/${img}"
                         onLoad="${this.handleImageLoaded}"
                         onClick="${e => this.handleImageClick(img, e)}"
                         onKeyDown="${e => this.handleKeyDown(img, e)}"
@@ -200,7 +198,7 @@
                 Added
               </h2>
               <div class="snapshots">
-                ${added.map(([img, src], i) => {
+                ${added.map((img, i) => {
                   const typeIndex = this.state.images[img] || 0;
 
                   return html`
@@ -229,7 +227,7 @@
                         alt="${img}"
                         src="results/${IMAGE_DIRS[
                           IMAGE_DIRS.indexOf('new')
-                        ]}/${src}"
+                        ]}/${img}"
                       />
                     </div>
                   `;
@@ -240,7 +238,7 @@
                 Missing
               </h2>
               <div class="snapshots">
-                ${missing.map(([img, src], i) => {
+                ${missing.map((img, i) => {
                   const typeIndex = this.state.images[img] || 0;
 
                   return html`
@@ -269,7 +267,7 @@
                         alt="${img}"
                         src="results/${IMAGE_DIRS[
                           IMAGE_DIRS.indexOf('original')
-                        ]}/${src}"
+                        ]}/${img}"
                       />
                     </div>
                   `;
@@ -279,16 +277,6 @@
           `;
         }
       }
-
-      const Header = ({name}) =>
-        html`
-          <h1>${name}</h1>
-        `;
-
-      const Footer = props =>
-        html`
-          <footer ...${props} />
-        `;
 
       render(
         html`

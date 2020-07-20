@@ -6,9 +6,9 @@ import template from '../template';
 export async function generateImageGallery(
   target: string,
   data: {
-    changed: Record<string, string>;
-    missing?: Record<string, string>;
-    added?: Record<string, string>;
+    changed: string[];
+    missing?: string[];
+    added?: string[];
   }
 ) {
   const html = ejs.render(template.html, {
