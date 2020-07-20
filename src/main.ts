@@ -15,6 +15,7 @@ import {diffSnapshots} from './util/diffSnapshots';
 import {retrieveBaseSnapshots} from './api/retrieveBaseSnapshots';
 import {startBuild} from './api/startBuild';
 import {finishBuild} from './api/finishBuild';
+import {SENTRY_DSN} from './config';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('githubToken');
@@ -23,7 +24,7 @@ const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const pngGlob = '/**/*.png';
 
 Sentry.init({
-  dsn: 'https://6b971d11c2af4b468105f079294e372c@o1.ingest.sentry.io/5324467',
+  dsn: SENTRY_DSN,
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
   release: process.env.VERSION,
 });
@@ -78,6 +79,7 @@ async function run(): Promise<void> {
   }
 
   const buildId = await startBuild({
+    octokit,
     owner,
     repo,
     token: apiToken,
@@ -173,25 +175,9 @@ async function run(): Promise<void> {
           })
       : [];
 
-    const totalChanged = changedSnapshots.size + missingSnapshots.size;
-    const conclusion =
-      totalChanged > 0
-        ? 'failure'
-        : !!newSnapshots.size
-        ? 'neutral'
-        : 'success';
-
-    // const unchanged =
-    // baseFiles.length - (changedSnapshots.size + missingSnapshots.size);
-
     const galleryUrl =
       imageGalleryFile &&
       `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
-
-    // const checkTitle =
-    // totalChanged > 0
-    // ? `${totalChanged} snapshots need review`
-    // : 'No snapshot changes detected';
 
     await Promise.all([
       saveSnapshots({
@@ -200,67 +186,18 @@ async function run(): Promise<void> {
       }),
 
       finishBuild({
+        octokit,
         id: buildId,
         owner,
         repo,
         token: apiToken,
-        conclusion,
         galleryUrl,
         images: resultsArtifactUrls,
         results,
       }),
-
-      // Create a GitHub check with our results
-      // octokit.checks.create({
-      // owner,
-      // repo,
-      // name: 'Visual Snapshot',
-      // details_url: galleryUrl,
-      // head_sha: GITHUB_EVENT.pull_request.head.sha,
-      // status: 'completed',
-      // conclusion,
-      // output: {
-      // title: checkTitle,
-      // summary: `
-
-      // ${imageGalleryFile ? `[View Image Gallery](${galleryUrl})` : ''}
-
-      // * **${changedSnapshots.size}** changed snapshots (${unchanged} unchanged)
-      // * **${missingSnapshots.size}** missing snapshots
-      // * **${newSnapshots.size}** new snapshots
-      // `,
-      // text: `
-      // ${
-      // changedSnapshots.size
-      // ? `## Changed snapshots
-      // ${[...changedSnapshots].map(name => `* ${name}`).join('\n')}
-      // `
-      // : ''
-      // }
-
-      // ${
-      // missingSnapshots.size
-      // ? `## Missing snapshots
-      // ${[...missingSnapshots].map(name => `* ${name}`).join('\n')}
-      // `
-      // : ''
-      // }
-
-      // ${
-      // newSnapshots.size
-      // ? `## New snapshots
-      // ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
-      // `
-      // : ''
-      // }
-      // `,
-      // images: resultsArtifactUrls,
-      // },
-      // }),
     ]);
   } catch (error) {
-    Sentry.captureException(error);
-    core.setFailed(error.message);
+    handleError(error);
   }
 }
 
