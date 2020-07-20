@@ -133,9 +133,9 @@ async function run(): Promise<void> {
     const changedArray = [...changedSnapshots];
 
     await generateImageGallery(path.resolve(resultsPath, 'index.html'), {
-      changed: setToObject(changedArray),
-      missing: setToObject(missingSnapshots),
-      added: setToObject(newSnapshots),
+      changed: changedArray,
+      missing: [...missingSnapshots],
+      added: [...newSnapshots],
     });
 
     const storage = getStorageClient();
@@ -229,13 +229,6 @@ ${[...newSnapshots].map(name => `* ${name}`).join('\n')}
     Sentry.captureException(error);
     core.setFailed(error.message);
   }
-}
-
-function setToObject(set: Set<string> | string[]) {
-  return Object.fromEntries([...set].map(nameToFileEntry));
-}
-function nameToFileEntry(file: string) {
-  return [path.basename(file, '.png'), file];
 }
 
 run();

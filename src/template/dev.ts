@@ -9,32 +9,19 @@ async function main() {
   await generateImageGallery(
     path.resolve(__dirname, '../../example_gallery/index.html'),
     {
-      changed: {
-        'project-ownership': 'acceptance/project-ownership.png',
-        'project-settings-all-integrations':
-          'acceptance/project-settings-all-integrations.png',
-        'project-settings-debug-symbols':
-          'acceptance/project-settings-debug-symbols.png',
-        'project-settings-general-settings':
-          'acceptance/project-settings-general-settings.png',
-        'project-settings-release-tracking':
-          'acceptance/project-settings-release-tracking.png',
-        'project-settings-service-hooks-create':
-          'acceptance/project-settings-service-hooks-create.png',
-        'project-settings-service-hooks-details':
-          'acceptance/project-settings-service-hooks-details.png',
-        'project-settings-service-hooks-empty-list':
-          'acceptance/project-settings-service-hooks-empty-list.png',
-        'project-settings-service-hooks-list-with-entries':
-          'acceptance/project-settings-service-hooks-list-with-entries.png',
-      },
-      missing: {
-        'project-settings-tags-after-remove':
-          'acceptance/project-settings-tags-after-remove.png',
-      },
-      added: {
-        'project-settings-tags': 'acceptance/project-settings-tags.png',
-      },
+      changed: [
+        'acceptance/project-ownership.png',
+        'acceptance/project-settings-all-integrations.png',
+        'acceptance/project-settings-debug-symbols.png',
+        'acceptance/project-settings-general-settings.png',
+        'acceptance/project-settings-release-tracking.png',
+        'acceptance/project-settings-service-hooks-create.png',
+        'acceptance/project-settings-service-hooks-details.png',
+        'acceptance/project-settings-service-hooks-empty-list.png',
+        'acceptance/project-settings-service-hooks-list-with-entries.png',
+      ],
+      missing: ['acceptance/project-settings-tags-after-remove.png'],
+      added: ['acceptance/project-settings-tags.png'],
     }
   );
 }
