@@ -8,6 +8,9 @@ inputs:
   api-token:
     required: true
     description: 'Visual Snapshot API token, should be `VISUAL_SNAPSHOT_SECRET` from GitHub Secrets'
+  github-token:
+    required: false
+    description: 'github token'
   githubToken:
     required: true
     description: 'github token'

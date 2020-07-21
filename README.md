@@ -29,7 +29,7 @@ are optional and will upload your images to the bucket if specified):
           id: visual-snapshots-diff
           uses: getsentry/action-visual-snapshot@v1
           with:
-            githubToken: ${{ secrets.GITHUB_TOKEN }}
+            github-token: ${{ secrets.GITHUB_TOKEN }}
             gcs-bucket: 'sentry-visual-snapshots'
             gcp-service-account-key: ${{ secrets.SNAPSHOT_GOOGLE_SERVICE_ACCOUNT_KEY }}
 ```
