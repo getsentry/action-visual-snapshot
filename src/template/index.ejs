@@ -10,6 +10,7 @@
     <style>
       body {
         margin: 0;
+        font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
       }
 
       .app {
@@ -83,6 +84,29 @@
       const States = ['Diff', 'Original', 'New'];
       const IMAGE_DIRS = ['diffs', 'original', 'changed', 'new'];
 
+      const Snapshot = (props) => {
+      return html`
+      <div>
+          <h3 class="header">
+            ${props.image}
+
+            <div class="button-bar">
+              ${props.buttons}
+            </div>
+          </h3>
+          <div class="image-wrapper">
+            <img
+              tabindex="${props.index}"
+              class="image"
+              key="${props.image}"
+              alt="${props.image}"
+              src="${props.getSource(props)}"
+            />
+          </div>
+          </div>
+        `;
+      };
+
       class App extends Component {
         state = {
           images: {},
@@ -126,11 +150,12 @@
           e.preventDefault();
           const direction =
             e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : null;
-          if (!direction) {
-            return null;
+          if (direction) {
+            this.navigate(img, direction);
           }
 
-          this.navigate(img, direction);
+
+
         };
 
         render({page}, {todos = []}) {
@@ -199,78 +224,53 @@
               </h2>
               <div class="snapshots">
                 ${added.map((img, i) => {
-                  const typeIndex = this.state.images[img] || 0;
-
-                  return html`
-                    <h3 class="header">
-                      ${img}
-                      <div class="button-bar">
-                        ${States.map(
-                          state => html`
-                            <button
-                              class="${`button${
-                                state === 'New' ? ' selected' : ''
-                              }${state !== 'New' ? ' disabled' : ''}`}"
-                              type="button"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        )}
-                      </div>
-                    </h3>
-                    <div class="image-wrapper">
-                      <img
-                        tabindex="${i}"
-                        class="image"
-                        key="${img}"
-                        alt="${img}"
-                        src="results/${IMAGE_DIRS[
-                          IMAGE_DIRS.indexOf('new')
-                        ]}/${img}"
-                      />
-                    </div>
-                  `;
+                  const getSource = (p) => `results/${IMAGE_DIRS[IMAGE_DIRS.indexOf('new')]}/${p.image}`;
+                  const buttons = States.map(state => html`
+                    <button
+                      class="${`button${
+                        state === 'New' ? ' selected' : ''
+                      }${state !== 'New' ? ' disabled' : ''}`}"
+                      type="button"
+                    >
+                      ${state}
+                    </button>
+                  `);
+                   return html`
+                     <${Snapshot}
+                     buttons=${buttons}
+                     image=${img}
+                     index=${i}
+                     getSource=${getSource}
+                     />
+                   `;
                 })}
               </div>
 
               <h2 id="missing">
-                Missing
+                Missing (${missing.length})
               </h2>
+
               <div class="snapshots">
                 ${missing.map((img, i) => {
-                  const typeIndex = this.state.images[img] || 0;
-
-                  return html`
-                    <h3 class="header">
-                      ${img}
-                      <div class="button-bar">
-                        ${States.map(
-                          state => html`
-                            <button
-                              class="${`button${
-                                state === 'Original' ? ' selected' : ''
-                              }${state !== 'Original' ? ' disabled' : ''}`}"
-                              type="button"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        )}
-                      </div>
-                    </h3>
-                    <div class="image-wrapper">
-                      <img
-                        tabindex="${i}"
-                        class="image"
-                        key="${img}"
-                        alt="${img}"
-                        src="results/${IMAGE_DIRS[
-                          IMAGE_DIRS.indexOf('original')
-                        ]}/${img}"
-                      />
-                    </div>
-                  `;
+                  const getSource = (p) => `results/${IMAGE_DIRS[IMAGE_DIRS.indexOf('original')]}/${p.image}`;
+                  const buttons = States.map(state => html`
+                    <button
+                      class="${`button${
+                        state === 'Original' ? ' selected' : ''
+                      }${state !== 'Original' ? ' disabled' : ''}`}"
+                      type="button"
+                    >
+                      ${state}
+                    </button>
+                  `);
+                   return html`
+                     <${Snapshot}
+                     buttons=${buttons}
+                     image=${img}
+                     index=${i}
+                     getSource=${getSource}
+                     />
+                   `;
                 })}
               </div>
             </div>
