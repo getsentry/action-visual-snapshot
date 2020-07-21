@@ -6,6 +6,7 @@ export async function build() {
     path.resolve(__dirname, './index.ejs'),
     'utf8'
   );
+
   return await fs.writeFile(
     path.resolve(__dirname, './index.ts'),
     `const template = ${JSON.stringify({html})}; export default template`

@@ -21,8 +21,8 @@ async function main() {
         'acceptance/project-settings-service-hooks-empty-list.png',
         'acceptance/project-settings-service-hooks-list-with-entries.png',
       ],
+      added: [],
       missing: ['acceptance/project-settings-tags-after-remove.png'],
-      added: ['acceptance/project-settings-tags.png'],
     }
   );
 }
