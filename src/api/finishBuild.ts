@@ -32,7 +32,7 @@ export async function finishBuild({token, ...body}: Params) {
     });
   }
 
-  const {owner, repo, galleryUrl, id, results, octokit} = body;
+  const {owner, repo, galleryUrl, id, images, results, octokit} = body;
   const {baseFilesLength, changed, missing, added} = results;
   const unchanged = baseFilesLength - (changed.length + missing.length);
 
@@ -88,6 +88,7 @@ ${[...added].map(name => `* ${name}`).join('\n')}
 `
     : ''
 }`,
+      images,
     },
   });
 }
