@@ -15,6 +15,7 @@ import {diffSnapshots} from './util/diffSnapshots';
 import {retrieveBaseSnapshots} from './api/retrieveBaseSnapshots';
 import {startBuild} from './api/startBuild';
 import {finishBuild} from './api/finishBuild';
+import {failBuild} from './api/failBuild';
 import {SENTRY_DSN} from './config';
 
 const {owner, repo} = github.context.repo;
@@ -78,6 +79,7 @@ async function run(): Promise<void> {
     return;
   }
 
+  console.log('starting build...');
   const buildId = await startBuild({
     octokit,
     owner,
@@ -85,6 +87,7 @@ async function run(): Promise<void> {
     token: apiToken,
     head_sha: GITHUB_EVENT.pull_request.head.sha,
   });
+  console.log({buildId});
 
   try {
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
@@ -198,6 +201,13 @@ async function run(): Promise<void> {
     ]);
   } catch (error) {
     handleError(error);
+    failBuild({
+      octokit,
+      id: buildId,
+      owner,
+      repo,
+      token: apiToken,
+    });
   }
 }
 

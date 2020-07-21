@@ -20,7 +20,6 @@ export async function startBuild({
   head_sha,
 }: Params): Promise<any> {
   if (token) {
-    console.log(token);
     const post = bent(API_ENDPOINT, 'POST', 'json', 200);
     return await post(
       '/build',
