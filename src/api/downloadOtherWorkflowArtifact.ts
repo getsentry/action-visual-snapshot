@@ -38,7 +38,7 @@ export async function downloadOtherWorkflowArtifact(
   const downloadFile = path.resolve(downloadPath, FILENAME);
 
   await exec('curl', ['-L', '-o', downloadFile, artifact.url], {silent: true});
-  await exec('unzip', ['-qq', '-d', downloadPath, downloadFile], {
+  await exec('unzip', ['-q', '-d', downloadPath, downloadFile], {
     silent: true,
   });
 
