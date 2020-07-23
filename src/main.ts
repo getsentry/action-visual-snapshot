@@ -110,8 +110,9 @@ async function run(): Promise<void> {
     });
 
     if (!didDownloadLatest) {
+      // It's possible there are no base snapshots e.g. if these are all
+      // new snapshots.
       core.warning('Unable to download artifact from base branch');
-      return;
     }
 
     if (!didDownloadMergeBase) {
