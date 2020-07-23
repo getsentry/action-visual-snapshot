@@ -3,7 +3,7 @@ description: 'Visual snapshot tester for GitHub Actions'
 author: 'Sentry'
 inputs:
   snapshot-path:
-    required: true
+    required: false
     description: 'path where snapshots are saved'
   api-token:
     required: true
