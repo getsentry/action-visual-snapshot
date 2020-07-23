@@ -35,6 +35,11 @@ inputs:
     description: 'the artifact name'
     default: 'visual-snapshots'
 
+  action-name:
+    required: false
+    description: 'The name to be displayed in GitHub Checks'
+    default: 'Visual Snapshot'
+
   gcp-service-account-key:
     required: false
     description: 'Google Cloud service account key (base64)'

@@ -46,6 +46,7 @@ async function run(): Promise<void> {
   const gcsBucket = core.getInput('gcs-bucket');
   const shouldSaveOnly = core.getInput('save-only');
   const apiToken = core.getInput('api-token');
+  const actionName = core.getInput('action-name');
 
   const resultsPath = path.resolve(resultsRootPath, 'visual-snapshots-results');
   const basePath = path.resolve('/tmp/visual-snapshots-base');
@@ -79,15 +80,15 @@ async function run(): Promise<void> {
     return;
   }
 
-  console.log('starting build...');
+  core.debug('Starting build...');
   const buildId = await startBuild({
     octokit,
     owner,
     repo,
     token: apiToken,
     head_sha: GITHUB_EVENT.pull_request.head.sha,
+    name: actionName,
   });
-  console.log({buildId});
 
   try {
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
@@ -128,6 +129,7 @@ async function run(): Promise<void> {
     const current = resp.downloadPath;
     const currentPath = path.resolve(GITHUB_WORKSPACE, current);
 
+    core.debug('Diffing snapshots...');
     const {
       baseFiles,
       changedSnapshots,
@@ -160,6 +162,7 @@ async function run(): Promise<void> {
       added: [...newSnapshots],
     };
 
+    core.debug('Generating image gallery...');
     await generateImageGallery(
       path.resolve(resultsPath, 'index.html'),
       results
@@ -182,6 +185,7 @@ async function run(): Promise<void> {
       imageGalleryFile &&
       `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
 
+    core.debug('Saving snapshots and finishing build...');
     await Promise.all([
       saveSnapshots({
         artifactName: `${artifactName}-results`,

@@ -10,6 +10,7 @@ type Params = {
   repo: string;
   token: string;
   head_sha: string;
+  name: string;
 };
 
 export async function startBuild({
@@ -18,6 +19,7 @@ export async function startBuild({
   repo,
   token,
   head_sha,
+  name = 'Visual Snapshot',
 }: Params): Promise<any> {
   if (token) {
     const post = bent(API_ENDPOINT, 'POST', 'json', 200);
@@ -34,7 +36,7 @@ export async function startBuild({
     owner,
     repo,
     head_sha,
-    name: 'Visual Snapshot',
+    name,
     status: 'in_progress',
   });
 
