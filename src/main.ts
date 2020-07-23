@@ -115,7 +115,7 @@ async function run(): Promise<void> {
 
     if (!didDownloadMergeBase) {
       // We can still diff against base
-      core.warning('Unable to download artifact from merge base sha');
+      core.debug('Unable to download artifact from merge base sha');
     }
 
     core.debug('Downloading current snapshots');

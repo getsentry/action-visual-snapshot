@@ -72,7 +72,7 @@ export async function diffSnapshots({
   }
 
   if (!mergeBaseFiles.length) {
-    core.warning('No snapshots found for merge base');
+    core.debug('No snapshots found for merge base');
   }
 
   if (!currentFiles.length) {
