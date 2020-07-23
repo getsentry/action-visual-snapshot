@@ -47,6 +47,7 @@ async function run(): Promise<void> {
   const shouldSaveOnly = core.getInput('save-only');
   const apiToken = core.getInput('api-token');
   const actionName = core.getInput('action-name');
+  const snapshotPath: string = core.getInput('snapshot-path');
 
   const resultsPath = path.resolve(resultsRootPath, 'visual-snapshots-results');
   const basePath = path.resolve('/tmp/visual-snapshots-base');
@@ -61,14 +62,17 @@ async function run(): Promise<void> {
   core.setOutput('merge-base-images-path', mergeBasePath);
 
   try {
-    // Only needs to upload snapshots
-    if (shouldSaveOnly !== 'false') {
-      const current: string = core.getInput('snapshot-path');
+    if (snapshotPath) {
       await saveSnapshots({
         artifactName,
-        rootDirectory: current,
+        rootDirectory: snapshotPath,
       });
+    } else {
+      core.warning('No `snapshot-path` set!');
+    }
 
+    // Only needs to upload snapshots, do not proceed further
+    if (shouldSaveOnly !== 'false') {
       return;
     }
   } catch (error) {
@@ -120,17 +124,25 @@ async function run(): Promise<void> {
       core.debug('Unable to download artifact from merge base sha');
     }
 
-    core.debug('Downloading current snapshots');
+    let downloadResp: Await<ReturnType<typeof downloadSnapshots>>;
 
-    // Download snapshots from current branch
-    const resp = await downloadSnapshots({
-      artifactName,
-      rootDirectory: '/tmp/visual-snapshots',
-    });
-    const current = resp.downloadPath;
+    // TODO maybe make this more explicit, but if snapshot path is not defined
+    // we assume we need to fetch it from artifacts from this workflow
+    if (!snapshotPath) {
+      core.debug('Downloading current snapshots');
+
+      // Download snapshots from current branch
+      downloadResp = await downloadSnapshots({
+        artifactName,
+        rootDirectory: '/tmp/visual-snapshots',
+      });
+    }
+
+    const current = snapshotPath || downloadResp?.downloadPath;
     const currentPath = path.resolve(GITHUB_WORKSPACE, current);
 
-    core.debug('Diffing snapshots...');
+    core.debug('Starting diff of snapshots...');
+
     const {
       baseFiles,
       changedSnapshots,

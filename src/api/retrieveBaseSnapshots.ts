@@ -7,13 +7,6 @@ import {
 } from './getArtifactsForBranchAndWorkflow';
 import {downloadOtherWorkflowArtifact} from './downloadOtherWorkflowArtifact';
 
-// From https://stackoverflow.com/questions/48011353/how-to-unwrap-type-of-a-promise?rq=1
-type Await<T> = T extends {
-  then(onfulfilled?: (value: infer U) => unknown): unknown;
-}
-  ? U
-  : T;
-
 type GetArtifactsForBranchAndWorkflowType = Await<
   ReturnType<typeof getArtifactsForBranchAndWorkflow>
 > | null;
