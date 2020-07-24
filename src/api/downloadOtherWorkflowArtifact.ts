@@ -1,6 +1,5 @@
 /* eslint-env node */
 import path from 'path';
-import retry from 'async-retry';
 
 import {exec} from '@actions/exec';
 import * as github from '@actions/github';
@@ -57,14 +56,5 @@ export async function downloadOtherWorkflowArtifact(
 
   const downloadFile = path.resolve(downloadPath, FILENAME);
 
-  await retry(
-    async () => await download(artifact.url, downloadFile, downloadPath),
-    {
-      onRetry: err => {
-        console.error(err);
-      },
-    }
-  );
-
-  return true;
+  return await download(artifact.url, downloadFile, downloadPath);
 }

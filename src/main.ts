@@ -137,7 +137,7 @@ async function run(): Promise<void> {
       core.debug('Unable to download artifact from merge base sha');
     }
 
-    let downloadResp: Await<ReturnType<typeof downloadSnapshots>>;
+    let downloadResp: Await<ReturnType<typeof downloadSnapshots>> | null = null;
 
     // TODO maybe make this more explicit, but if snapshot path is not defined
     // we assume we need to fetch it from artifacts from this workflow
@@ -152,7 +152,18 @@ async function run(): Promise<void> {
     }
 
     const current = snapshotPath || downloadResp?.downloadPath;
-    const currentPath = path.resolve(GITHUB_WORKSPACE, current);
+
+    if (!current) {
+      const err = new Error(
+        !snapshotPath
+          ? '`snapshot-path` input not configured'
+          : 'Unable to download current snapshots'
+      );
+      core.error(err);
+      throw err;
+    }
+
+    const currentPath = path.resolve(GITHUB_WORKSPACE, current || '');
 
     core.debug('Starting diff of snapshots...');
 

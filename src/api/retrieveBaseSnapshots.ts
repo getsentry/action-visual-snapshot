@@ -1,3 +1,5 @@
+import retry from 'async-retry';
+
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 
@@ -43,12 +45,18 @@ export async function retrieveBaseSnapshots(
     return [];
   }
 
-  await downloadOtherWorkflowArtifact(octokit, {
-    owner,
-    repo,
-    artifactId: baseArtifacts.artifact.id,
-    downloadPath: basePath,
-  });
+  await retry(
+    async () =>
+      await downloadOtherWorkflowArtifact(octokit, {
+        owner,
+        repo,
+        artifactId: baseArtifacts.artifact.id,
+        downloadPath: basePath,
+      }),
+    {
+      onRetry: err => console.error(err), // eslint-disable-line
+    }
+  );
 
   let mergeBaseArtifacts: GetArtifactsForBranchAndWorkflowType = null;
 
@@ -63,12 +71,18 @@ export async function retrieveBaseSnapshots(
     });
 
     if (mergeBaseArtifacts) {
-      await downloadOtherWorkflowArtifact(octokit, {
-        owner,
-        repo,
-        artifactId: mergeBaseArtifacts.artifact.id,
-        downloadPath: mergeBasePath,
-      });
+      await retry(
+        async () =>
+          await downloadOtherWorkflowArtifact(octokit, {
+            owner,
+            repo,
+            artifactId: mergeBaseArtifacts!.artifact.id,
+            downloadPath: mergeBasePath,
+          }),
+        {
+          onRetry: err => console.error(err), // eslint-disable-line
+        }
+      );
     }
   } else {
     core.debug('Merge base is the same as base');
