@@ -29,6 +29,19 @@ Sentry.init({
   integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
   release: process.env.VERSION,
 });
+
+const originalCoreDebug = core.debug;
+
+// @ts-ignore
+core.debug = (message: string) => {
+  Sentry.addBreadcrumb({
+    category: 'console',
+    message,
+    level: Sentry.Severity.Debug,
+  });
+  originalCoreDebug(message);
+};
+
 // console.log(JSON.stringify(process.env, null, 2));
 // console.log(JSON.stringify(github, null, 2));
 
