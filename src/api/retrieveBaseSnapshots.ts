@@ -45,6 +45,12 @@ export async function retrieveBaseSnapshots(
     return [];
   }
 
+  const {
+    head_repository, // eslint-disable-line @typescript-eslint/no-unused-vars
+    repository, // eslint-disable-line @typescript-eslint/no-unused-vars
+    ...workflowRun
+  } = baseArtifacts.workflowRun;
+
   await retry(
     async () =>
       await downloadOtherWorkflowArtifact(octokit, {
@@ -54,13 +60,16 @@ export async function retrieveBaseSnapshots(
         downloadPath: basePath,
       }),
     {
-      onRetry: err => console.error(err), // eslint-disable-line
+      onRetry: err => {
+        console.log(workflowRun); // eslint-disable-line no-console
+        console.error(err); // eslint-disable-line no-console
+      },
     }
   );
 
   let mergeBaseArtifacts: GetArtifactsForBranchAndWorkflowType = null;
 
-  if (baseArtifacts.workflowRun.head_sha !== mergeBaseSha) {
+  if (workflowRun.head_sha !== mergeBaseSha) {
     mergeBaseArtifacts = await getArtifactsForBranchAndWorkflow(octokit, {
       owner,
       repo,
@@ -76,11 +85,14 @@ export async function retrieveBaseSnapshots(
           await downloadOtherWorkflowArtifact(octokit, {
             owner,
             repo,
-            artifactId: mergeBaseArtifacts!.artifact.id,
+            artifactId: mergeBaseArtifacts!.artifact.id, // eslint-disable-line @typescript-eslint/no-non-null-assertion
             downloadPath: mergeBasePath,
           }),
         {
-          onRetry: err => console.error(err), // eslint-disable-line
+          onRetry: err => {
+            console.log(workflowRun); // eslint-disable-line no-console
+            console.error(err); // eslint-disable-line
+          },
         }
       );
     }
