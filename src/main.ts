@@ -80,8 +80,6 @@ async function run(): Promise<void> {
         artifactName,
         rootDirectory: snapshotPath,
       });
-    } else {
-      core.warning('No `snapshot-path` set!');
     }
 
     // Only needs to upload snapshots, do not proceed further
