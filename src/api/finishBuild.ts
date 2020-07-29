@@ -9,6 +9,7 @@ type Params = {
   id: number;
   owner: string;
   repo: string;
+  headSha: string;
   token: string;
   images: {
     alt: string;

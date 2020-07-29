@@ -66,6 +66,8 @@ async function run(): Promise<void> {
   const basePath = path.resolve('/tmp/visual-snapshots-base');
   const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
+  const headSha = GITHUB_EVENT.pull_request.head.sha;
+
   core.debug(`resultsPath: ${resultsPath}`);
   core.debug(GITHUB_WORKSPACE);
 
@@ -101,7 +103,7 @@ async function run(): Promise<void> {
     owner,
     repo,
     token: apiToken,
-    head_sha: GITHUB_EVENT.pull_request.head.sha,
+    head_sha: headSha,
     name: actionName,
   });
 
@@ -182,7 +184,7 @@ async function run(): Promise<void> {
     });
     const resultsFiles = await resultsGlobber.glob();
 
-    const gcsDestination = `${owner}/${repo}/${GITHUB_EVENT.pull_request.head.sha}`;
+    const gcsDestination = `${owner}/${repo}/${headSha}`;
     const resultsArtifactUrls = await uploadToGcs({
       files: resultsFiles,
       root: resultsPath,
@@ -235,6 +237,7 @@ async function run(): Promise<void> {
         token: apiToken,
         galleryUrl,
         images: resultsArtifactUrls,
+        headSha,
         results,
       }),
     ]);
@@ -245,6 +248,7 @@ async function run(): Promise<void> {
       id: buildId,
       owner,
       repo,
+      headSha,
       token: apiToken,
     });
   }
