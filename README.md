@@ -34,8 +34,21 @@ are optional and will upload your images to the bucket if specified):
             gcp-service-account-key: ${{ secrets.SNAPSHOT_GOOGLE_SERVICE_ACCOUNT_KEY }}
 ```
 
-## Contributing
+### Multiple diffs
+You can also have multiple sets of diff actions with some configuration inputs
 
+```yaml
+  - name: Diff snapshots
+    id: visual-snapshots-diff
+    uses: getsentry/action-visual-snapshot@v1
+    with:
+      snapshot-path: .artifacts/visual-snapshots-jest
+      action-name: Jest Snapshots
+      artifact-name: visual-snapshots-jest
+      github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+## Contributing
 WIP
 
 ### Updating Image Gallery Template
@@ -52,16 +65,11 @@ need to save the file twice).
 
 
 ### Publishing
-Actions are run from GitHub repos so we will checkin the packed dist folder.
+Actions are run from GitHub repos so we will checkin the packed dist folder, this is done by GitHub Actions for all branches.
 
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
+To do this manually, run [ncc](https://github.com/zeit/ncc) and push the results:
 ```bash
 $ yarn dist
 $ git add dist
 $ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
 ```
-
-Your action is now published! :rocket:
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
