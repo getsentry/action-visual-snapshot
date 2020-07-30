@@ -42,7 +42,7 @@ core.debug = (message: string) => {
   originalCoreDebug(message);
 };
 
-console.log(JSON.stringify(process.env, null, 2));
+// console.log(JSON.stringify(process.env, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
@@ -51,7 +51,7 @@ function handleError(error: Error) {
   core.setFailed(error.message);
 }
 
-console.log(JSON.stringify(GITHUB_EVENT, null, 2));
+// console.log(JSON.stringify(GITHUB_EVENT, null, 2));
 
 async function run(): Promise<void> {
   const resultsRootPath: string = core.getInput('results-path');
@@ -68,6 +68,7 @@ async function run(): Promise<void> {
   const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
   const headSha = GITHUB_EVENT.pull_request.head.sha;
+  const headRef = GITHUB_EVENT.pull_request.head.ref;
 
   core.debug(`resultsPath: ${resultsPath}`);
   core.debug(GITHUB_WORKSPACE);
@@ -104,7 +105,8 @@ async function run(): Promise<void> {
     owner,
     repo,
     token: apiToken,
-    head_sha: headSha,
+    headSha,
+    headRef,
     name: actionName,
   });
 

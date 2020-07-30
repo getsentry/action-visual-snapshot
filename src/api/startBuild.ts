@@ -9,7 +9,8 @@ type Params = {
   owner: string;
   repo: string;
   token: string;
-  head_sha: string;
+  headSha: string;
+  headRef: string;
   name: string;
 };
 
@@ -18,14 +19,15 @@ export async function startBuild({
   owner,
   repo,
   token,
-  head_sha,
+  headSha: head_sha,
+  headRef: head_ref,
   name = 'Visual Snapshot',
 }: Params): Promise<any> {
   if (token) {
     const post = bent(API_ENDPOINT, 'POST', 'json', 200);
     return await post(
       '/build',
-      {owner, repo, head_sha},
+      {owner, repo, head_sha, head_ref},
       {
         'x-padding-token': token,
       }
