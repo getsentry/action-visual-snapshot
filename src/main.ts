@@ -30,6 +30,12 @@ Sentry.init({
   release: process.env.VERSION,
 });
 
+Sentry.setContext('actionEnvironment', {
+  repo: process.env.GITHUB_REPOSITORY,
+  ref: process.env.GITHUB_REF,
+  head_ref: process.env.GITHUB_HEAD_REF,
+});
+
 const originalCoreDebug = core.debug;
 
 // @ts-ignore
@@ -67,8 +73,8 @@ async function run(): Promise<void> {
   const basePath = path.resolve('/tmp/visual-snapshots-base');
   const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
-  const headSha = GITHUB_EVENT.pull_request.head.sha;
-  const headRef = GITHUB_EVENT.pull_request.head.ref;
+  const headSha = GITHUB_EVENT.pull_request?.head.sha;
+  const headRef = GITHUB_EVENT.pull_request?.head.ref;
 
   core.debug(`resultsPath: ${resultsPath}`);
   core.debug(GITHUB_WORKSPACE);
