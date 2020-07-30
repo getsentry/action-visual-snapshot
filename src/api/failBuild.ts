@@ -10,6 +10,7 @@ type Params = {
   owner: string;
   repo: string;
   token: string;
+  headSha: string;
 };
 
 /**

@@ -42,8 +42,7 @@ core.debug = (message: string) => {
   originalCoreDebug(message);
 };
 
-// console.log(JSON.stringify(process.env, null, 2));
-// console.log(JSON.stringify(github, null, 2));
+console.log(JSON.stringify(process.env, null, 2));
 
 const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
 
@@ -51,6 +50,8 @@ function handleError(error: Error) {
   Sentry.captureException(error);
   core.setFailed(error.message);
 }
+
+console.log(JSON.stringify(GITHUB_EVENT, null, 2));
 
 async function run(): Promise<void> {
   const resultsRootPath: string = core.getInput('results-path');
