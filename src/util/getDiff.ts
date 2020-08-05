@@ -9,7 +9,7 @@ type PixelmatchOptions = Exclude<Parameters<typeof pixelmatch>[5], undefined>;
 export async function getDiff(
   file1: string | PNG,
   file2: string | PNG,
-  {includeAA = true, threshold = 0.2, ...options}: PixelmatchOptions = {}
+  {includeAA = true, threshold = 0.1, ...options}: PixelmatchOptions = {}
 ) {
   let img1 = typeof file1 === 'string' ? await fileToPng(file1) : file1;
   let img2 = typeof file2 === 'string' ? await fileToPng(file2) : file2;
