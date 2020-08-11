@@ -33,13 +33,14 @@ export async function downloadSnapshots({
   const tarFiles = await tarGlobber.glob();
 
   await exec('pwd');
+  console.log(resp.downloadPath);
 
+  // need to unzip everything now
   for (const file of tarFiles) {
     console.log(file);
-    await exec('tar', ['zxf', file]);
+    await exec('tar', ['zxf', file, '-C', resp.downloadPath]);
   }
-  // need to unzip everything now
-  await exec('ls', ['-la', `${rootDirectory}/${artifactName}`]);
+  await exec('ls', ['-la', resp.downloadPath]);
 
   return resp;
 }
