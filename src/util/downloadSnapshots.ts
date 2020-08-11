@@ -33,6 +33,7 @@ export async function downloadSnapshots({
   const tarFiles = await tarGlobber.glob();
 
   for (const file of tarFiles) {
+    console.log(file);
     await exec('tar', ['zxf', file]);
   }
   // need to unzip everything now
