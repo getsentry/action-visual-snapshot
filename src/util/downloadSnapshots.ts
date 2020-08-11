@@ -24,16 +24,19 @@ export async function downloadSnapshots({
   // need to unzip everything now
   await exec('ls', [rootDirectory]);
 
-  const tarGlobber = await glob.create(`${rootDirectory}/snaps*.tar.gz`, {
-    followSymbolicLinks: false,
-  });
+  const tarGlobber = await glob.create(
+    `${rootDirectory}/${artifactName}/snap*.tar.gz`,
+    {
+      followSymbolicLinks: false,
+    }
+  );
   const tarFiles = await tarGlobber.glob();
 
   for (const file of tarFiles) {
     await exec('tar', ['zxf', file]);
   }
   // need to unzip everything now
-  await exec('ls', [rootDirectory]);
+  await exec('ls', [`${rootDirectory}/${artifactName}`]);
 
   return resp;
 }
