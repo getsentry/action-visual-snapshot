@@ -1,4 +1,5 @@
 import * as core from '@actions/core';
+import * as io from '@actions/io';
 import * as artifact from '@actions/artifact';
 import {exec} from '@actions/exec';
 import * as glob from '@actions/glob';
@@ -19,13 +20,14 @@ export async function saveSnapshots({
     // });
     // const files = await currentGlobber.glob();
 
+    await io.mkdirP('/tmp/snaps');
     await exec('tar', [
       'czf',
-      `/tmp/snaps-${Math.floor(Math.random() % 10000)}.tar.gz`,
+      `/tmp/snaps/snap-${Math.floor(Math.random() * 10000)}.tar.gz`,
       rootDirectory,
     ]);
 
-    const tarGlobber = await glob.create('/tmp/snaps*.tar.gz', {
+    const tarGlobber = await glob.create('/tmp/snaps/*.tar.gz', {
       followSymbolicLinks: false,
     });
 
@@ -34,7 +36,7 @@ export async function saveSnapshots({
     return await artifactClient.uploadArtifact(
       artifactName,
       tarFiles,
-      rootDirectory
+      '/tmp/snaps'
     );
   } catch (err) {
     core.warning(err.message);

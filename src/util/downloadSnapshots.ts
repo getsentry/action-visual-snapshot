@@ -32,5 +32,8 @@ export async function downloadSnapshots({
   for (const file of tarFiles) {
     await exec('tar', ['zxf', file]);
   }
+  // need to unzip everything now
+  await exec('ls', [rootDirectory]);
+
   return resp;
 }
