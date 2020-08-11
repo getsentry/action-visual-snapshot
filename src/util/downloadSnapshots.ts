@@ -34,13 +34,12 @@ export async function downloadSnapshots({
 
   await exec('pwd');
 
-  await exec('cd', [`${rootDirectory}/${artifactName}`]);
   for (const file of tarFiles) {
     console.log(file);
     await exec('tar', ['zxf', file]);
   }
   // need to unzip everything now
-  await exec('ls', [`${rootDirectory}/${artifactName}`]);
+  await exec('ls', ['-la', `${rootDirectory}/${artifactName}`]);
 
   return resp;
 }
