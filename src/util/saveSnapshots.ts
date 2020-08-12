@@ -4,6 +4,8 @@ import * as artifact from '@actions/artifact';
 import {exec} from '@actions/exec';
 import * as glob from '@actions/glob';
 
+import {v4 as uuidv4} from 'uuid';
+
 type SaveSnapshotsParams = {
   rootDirectory: string;
   artifactName: string;
@@ -19,7 +21,7 @@ export async function saveSnapshots({
     await io.mkdirP('/tmp/snaps');
     await exec('tar', [
       'czf',
-      `/tmp/snaps/snap-${Math.floor(Math.random() * 10000)}.tar.gz`,
+      `/tmp/snaps/snap-${uuidv4()}.tar.gz`,
       '-C',
       rootDirectory,
       '.',
