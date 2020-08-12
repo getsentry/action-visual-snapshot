@@ -26,6 +26,7 @@ export async function saveSnapshots({
       `/tmp/snaps/snap-${Math.floor(Math.random() * 10000)}.tar.gz`,
       '-C',
       rootDirectory,
+      '.',
     ]);
 
     const tarGlobber = await glob.create('/tmp/snaps/*.tar.gz', {
