@@ -24,6 +24,7 @@ export async function saveSnapshots({
     await exec('tar', [
       'czf',
       `/tmp/snaps/snap-${Math.floor(Math.random() * 10000)}.tar.gz`,
+      '-C',
       rootDirectory,
     ]);
 
