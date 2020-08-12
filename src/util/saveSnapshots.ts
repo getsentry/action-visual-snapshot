@@ -15,10 +15,6 @@ export async function saveSnapshots({
 }: SaveSnapshotsParams) {
   try {
     const artifactClient = artifact.create();
-    // const currentGlobber = await glob.create(`${rootDirectory}/**/*.png`, {
-    // followSymbolicLinks: false,
-    // });
-    // const files = await currentGlobber.glob();
 
     await io.mkdirP('/tmp/snaps');
     await exec('tar', [
