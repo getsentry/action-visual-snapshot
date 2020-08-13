@@ -4,6 +4,7 @@ import path from 'path';
 import {exec} from '@actions/exec';
 import * as github from '@actions/github';
 import * as io from '@actions/io';
+import * as glob from '@actions/glob';
 
 type DownloadArtifactParams = {
   owner: string;
@@ -27,9 +28,28 @@ async function download(url: string, file: string, dest: string) {
     file,
     url,
   ]);
+
   await exec('unzip', ['-q', '-d', dest, file], {
     silent: true,
   });
+
+  // need to unzip everything now
+  await exec('ls', [dest]);
+
+  const tarGlobber = await glob.create(`${dest}/*.tar.gz`, {
+    followSymbolicLinks: false,
+  });
+
+  const tarFiles = await tarGlobber.glob();
+
+  await exec('pwd');
+
+  // need to unzip everything now
+  for (const tarFile of tarFiles) {
+    await exec('tar', ['zxf', tarFile, '-C', dest]);
+  }
+  await exec('ls', ['-la', dest]);
+
   return true;
 }
 /**
