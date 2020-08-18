@@ -22,7 +22,9 @@ test('downloads and extracts artifact', async function () {
   const downloadResult = await downloadOtherWorkflowArtifact(octokit, {
     owner: 'getsentry',
     repo: 'sentry',
-    artifactId: 9808919,
+    workflow_id: 'workflow_id',
+    branch: 'main',
+    artifactName: 'artifactName',
     downloadPath: '.artifacts',
   });
 
