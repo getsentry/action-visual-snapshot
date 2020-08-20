@@ -21,9 +21,6 @@ export async function downloadSnapshots({
     }
   );
 
-  // need to unzip everything now
-  await exec('ls', [rootDirectory]);
-
   const tarGlobber = await glob.create(
     `${rootDirectory}/${artifactName}/snap*.tar.gz`,
     {
@@ -32,13 +29,10 @@ export async function downloadSnapshots({
   );
   const tarFiles = await tarGlobber.glob();
 
-  await exec('pwd');
-
   // need to unzip everything now
   for (const file of tarFiles) {
     await exec('tar', ['zxf', file, '-C', resp.downloadPath]);
   }
-  await exec('ls', ['-la', resp.downloadPath]);
 
   return resp;
 }

@@ -2,15 +2,9 @@ import {promises as fs} from 'fs';
 
 import ejs from 'ejs';
 
-export async function generateImageGallery(
-  target: string,
-  data: {
-    baseFilesLength: number;
-    changed: string[];
-    missing?: string[];
-    added?: string[];
-  }
-) {
+import {DiffResults} from '../types';
+
+export async function generateImageGallery(target: string, data: DiffResults) {
   const template = require('../template').default;
   const html = ejs.render(template.html, {
     images: JSON.stringify(data),

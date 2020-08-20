@@ -40,22 +40,16 @@ export async function downloadOtherWorkflowArtifact(
     commit,
   });
 
-  // need to unzip everything now
-  await exec('ls', [downloadPath]);
-
   const tarGlobber = await glob.create(`${downloadPath}/*.tar.gz`, {
     followSymbolicLinks: false,
   });
 
   const tarFiles = await tarGlobber.glob();
 
-  await exec('pwd');
-
   // need to unzip everything now
   for (const tarFile of tarFiles) {
     await exec('tar', ['zxf', tarFile, '-C', downloadPath]);
   }
-  await exec('ls', ['-la', downloadPath]);
 
   return results;
 }

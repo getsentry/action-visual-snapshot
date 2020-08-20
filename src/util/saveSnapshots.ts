@@ -18,8 +18,6 @@ export async function saveSnapshots({
   try {
     const artifactClient = artifact.create();
 
-    await exec('ls', [rootDirectory]);
-
     await io.mkdirP('/tmp/snaps');
     await exec('tar', [
       'czf',

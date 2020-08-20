@@ -2,6 +2,8 @@ import bent from 'bent';
 import * as github from '@actions/github';
 import {API_ENDPOINT} from '@app/config';
 
+import {DiffResults} from '../types';
+
 type Octokit = ReturnType<typeof github.getOctokit>;
 
 type Params = {
@@ -15,16 +17,11 @@ type Params = {
     alt: string;
     image_url: string;
   }[];
-  results: {
-    baseFilesLength: number;
-    changed: string[];
-    missing: string[];
-    added: string[];
-  };
+  results: DiffResults;
   galleryUrl?: string;
 };
 
-export async function finishBuild({token, ...body}: Params) {
+export async function finishBuild({octokit, token, ...body}: Params) {
   if (token) {
     const put = bent(API_ENDPOINT, 'PUT', 'json', 200);
 
@@ -33,7 +30,7 @@ export async function finishBuild({token, ...body}: Params) {
     });
   }
 
-  const {owner, repo, galleryUrl, id, images, results, octokit} = body;
+  const {owner, repo, galleryUrl, id, images, results} = body;
   const {baseFilesLength, changed, missing, added} = results;
   const unchanged = baseFilesLength - (changed.length + missing.length);
 

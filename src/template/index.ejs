@@ -74,8 +74,6 @@
         grid-gap: 12px;
         position: sticky;
         top: 0;
-
-        color: #e2e2e2;
         font-weight: normal;
         margin: 0;
         padding: 12px;
@@ -84,11 +82,20 @@
         z-index: 1;
       }
 
+      .snapshot-header a {
+        color: #e2e2e2;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
       .button-bar {
         display: grid;
         grid-auto-flow: column;
         grid-gap: 6px;
+        align-items: center;
       }
+
       .button {
         cursor: pointer;
         padding: 6px 12px;
@@ -124,38 +131,97 @@
         render,
       } from 'https://unpkg.com/htm/preact/standalone.module.js';
 
-      function cleanSelector(str) {
+      function getImageName(image) {
+        return typeof image === 'string'
+          ? image
+          : `${image.baseGroup}/${image.name}`;
+      }
+
+      function getImagePath(image, group) {
+        return typeof image === 'string'
+          ? image
+          : `${image.baseGroup}${group ? `/${group}` : ''}/${image.name}`;
+      }
+
+      function cleanSelector(image) {
+        const str = getImageName(image);
         return str.replace(/[^a-z-_]+/gi, '-');
       }
 
       const States = ['Diff', 'Original', 'New'];
       const IMAGE_DIRS = ['diffs', 'original', 'changed', 'new'];
 
-      const Snapshot = props => html`
-        <div id=${cleanSelector(props.image)}>
-          <h3 class="snapshot-header">
-            ${props.image}
+      class Snapshot extends Component {
+        state = {
+          group: '',
+        };
 
-            <div class="button-bar">
-              ${props.buttons}
+        handleSelectGroup = group => {
+          this.setState({group});
+        };
+
+        render() {
+          const {
+            buttons,
+            getSource,
+            image,
+            onLoad,
+            onClick,
+            onKeyDown,
+            onFocus,
+          } = this.props;
+          const filename = getImageName(image);
+          const slug = cleanSelector(image);
+          const groups = typeof image !== 'string' && image.groups;
+
+          const GroupBar = groups
+            ? groups.map(
+                group => html`
+                  <button
+                    type="button"
+                    class="${`button${
+                      this.state.group === group ? ' selected' : ''
+                    }`}"
+                    onClick="${() => this.handleSelectGroup(group)}"
+                  >
+                    ${group || 'base'}
+                  </button>
+                `
+              )
+            : null;
+
+          return html`
+            <div id=${slug}>
+              <h3 class="snapshot-header">
+                <div class="button-bar">
+                  <a href="#${slug}">${filename}</a>
+                  ${GroupBar}
+                </div>
+
+                <div class="button-bar">
+                  ${buttons}
+                </div>
+              </h3>
+              <div class="image-wrapper">
+                <img
+                  loading="lazy"
+                  tabindex="0"
+                  class="image"
+                  key="${filename}"
+                  alt="${filename}"
+                  src="${getSource({
+                    image: getImagePath(image, this.state.group),
+                  })}"
+                  onLoad="${onLoad}"
+                  onClick="${onClick}"
+                  onKeyDown="${onKeyDown}"
+                  onFocus="${onFocus}"
+                />
+              </div>
             </div>
-          </h3>
-          <div class="image-wrapper">
-            <img
-              loading="lazy"
-              tabindex="0"
-              class="image"
-              key="${props.image}"
-              alt="${props.image}"
-              src="${props.getSource(props)}"
-              onLoad="${props.onLoad}"
-              onClick="${props.onClick}"
-              onKeyDown="${props.onKeyDown}"
-              onFocus="${props.onFocus}"
-            />
-          </div>
-        </div>
-      `;
+          `;
+        }
+      }
 
       class App extends Component {
         state = {

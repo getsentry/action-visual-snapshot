@@ -2793,10 +2793,10 @@ getpass@^0.1.1:
   dependencies:
     assert-plus "^1.0.0"
 
-github-fetch-workflow-artifact@^1.0.1-5:
-  version "1.0.1-5"
-  resolved "https://registry.yarnpkg.com/github-fetch-workflow-artifact/-/github-fetch-workflow-artifact-1.0.1-5.tgz#1a854edfbbc0a4f20eebac6b94b8f3c533f92f7f"
-  integrity sha512-DNzsh/1QdWBD3yZsPw2bhmAsoHjoDSLcKPG07J2NQJzXIY9mO52mYd3RkJdGyJ/U8aEgx4b3X4KqGB4oMgQDWw==
+github-fetch-workflow-artifact@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/github-fetch-workflow-artifact/-/github-fetch-workflow-artifact-1.0.2.tgz#9dd436c5c9fd0507bd5f90e595edd568d8721fc9"
+  integrity sha512-8oXswbCIpoGGqC2Ahvg9sC7AkB+iNE7u0f9eqrtacOw6H6638YU1vjPewXhQCvivQGJxqlqv+XePh7tO6LC7Mw==
   dependencies:
     "@actions/core" "^1.2.4"
     "@actions/exec" "^1.0.4"

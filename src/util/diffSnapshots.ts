@@ -5,13 +5,82 @@ import * as glob from '@actions/glob';
 import * as io from '@actions/io';
 import * as Sentry from '@sentry/node';
 
-import {PixelmatchOptions} from '@app/types';
+import {PixelmatchOptions, Snapshot} from '@app/types';
 
 import {createDiff} from './createDiff';
 import {multiCompare} from './multiCompare';
 import {getChildDirectories} from './getChildDirectories';
 
 const pngGlob = '/**/*.png';
+
+function getPartsByFilename(filename: string, ignoreGroups: string[] = []) {
+  const parts = filename.split(path.sep);
+  const numberOfParts = parts.length;
+
+  if (numberOfParts <= 1) {
+    return {
+      name: filename,
+    };
+  }
+
+  const [baseGroup, ...restParts] = parts;
+
+  if (numberOfParts === 2 || ignoreGroups.includes(baseGroup)) {
+    return {
+      baseGroup: parts[0],
+      group: '',
+      name: parts[1],
+    };
+  }
+
+  const [group, ...rest] = restParts;
+
+  // More than 2 parts
+  return {
+    baseGroup,
+    group,
+    name: rest.join(path.sep),
+  };
+}
+
+/**
+ * Breaks down a snapshot file name into Snapshot objects which contain
+ * baseGroup, group, snapshot name
+ *
+ * TODO: Add ignoreGroups
+ */
+function filterGroups(
+  set: Set<string>,
+  ignoreGroups?: string[]
+): Set<Snapshot> {
+  const groupedMap = new Map<string, Snapshot>();
+
+  [...set].forEach(item => {
+    const {baseGroup, group, name} = getPartsByFilename(item, ignoreGroups);
+
+    if (!baseGroup) {
+      groupedMap.set(name, {name, groups: []});
+      return;
+    }
+
+    const obj = groupedMap.has(name) ? groupedMap.get(name) : null;
+
+    if (obj) {
+      groupedMap.set(name, {
+        ...obj,
+        groups: [...obj.groups, group || ''],
+      });
+    } else {
+      groupedMap.set(name, {
+        baseGroup,
+        name,
+        groups: [group || ''],
+      });
+    }
+  });
+
+  return new Set(groupedMap.values());
+}
 
 type DiffSnapshotsParams = {
   basePath: string;
@@ -25,6 +94,8 @@ type DiffSnapshotsParams = {
   newDirName?: string;
   missingDirName?: string;
   pixelmatchOptions?: PixelmatchOptions;
+  groups?: string[];
+  ignoreGroups?: string[];
 };
 
 /**
@@ -43,6 +114,7 @@ export async function diffSnapshots({
   mergeBasePath,
   currentPath,
   outputPath,
+  ignoreGroups,
   diffDirName = 'diffs',
   baseDirName = 'original',
   mergedDirName = 'merged',
@@ -223,11 +295,18 @@ export async function diffSnapshots({
     )
   );
 
+  const groupedChangedSnapshots = filterGroups(changedSnapshots, ignoreGroups);
+  const groupedMissingSnapshots = filterGroups(missingSnapshots, ignoreGroups);
+  const groupedNewSnapshots = filterGroups(newSnapshots, ignoreGroups);
+
   return {
     baseFiles,
-    missingSnapshots,
-    newSnapshots,
-    changedSnapshots,
+    missingSnapshots: groupedMissingSnapshots || missingSnapshots,
+    newSnapshots: groupedNewSnapshots || newSnapshots,
+    changedSnapshots: groupedChangedSnapshots || changedSnapshots,
+    allChangedSnapshots: changedSnapshots,
+    allMissingSnapshots: missingSnapshots,
+    allNewSnapshots: newSnapshots,
     potentialFlakes,
   };
 }

@@ -46,6 +46,7 @@ export async function retrieveBaseSnapshots(
       artifactName,
     });
   } catch (err) {
+    console.error(err);
     if (err instanceof NoArtifactsError) {
       return [];
     }

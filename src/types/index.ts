@@ -11,3 +11,18 @@ export type Await<T> = T extends {
 }
   ? U
   : T;
+
+export type Snapshot = {
+  name: string;
+  groups: string[];
+  baseGroup?: string;
+};
+
+type SnapshotResult = Snapshot | string;
+
+export type DiffResults = {
+  baseFilesLength: number;
+  changed: SnapshotResult[];
+  missing: SnapshotResult[];
+  added: SnapshotResult[];
+};
