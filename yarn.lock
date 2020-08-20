@@ -2793,10 +2793,10 @@ getpass@^0.1.1:
   dependencies:
     assert-plus "^1.0.0"
 
-github-fetch-workflow-artifact@^1.0.1-4:
-  version "1.0.1-4"
-  resolved "https://registry.yarnpkg.com/github-fetch-workflow-artifact/-/github-fetch-workflow-artifact-1.0.1-4.tgz#304c69be166ab7516b893c48ffc91e8369ce7ab5"
-  integrity sha512-o0r3UN1KBtHZhUIqfg8XaE9g9+MIUP6UO+1HsVw8uMEhBH8Z401xZQGgV1D38g8SdQHdk3PwV6wokdeVAqRY1w==
+github-fetch-workflow-artifact@^1.0.1-5:
+  version "1.0.1-5"
+  resolved "https://registry.yarnpkg.com/github-fetch-workflow-artifact/-/github-fetch-workflow-artifact-1.0.1-5.tgz#1a854edfbbc0a4f20eebac6b94b8f3c533f92f7f"
+  integrity sha512-DNzsh/1QdWBD3yZsPw2bhmAsoHjoDSLcKPG07J2NQJzXIY9mO52mYd3RkJdGyJ/U8aEgx4b3X4KqGB4oMgQDWw==
   dependencies:
     "@actions/core" "^1.2.4"
     "@actions/exec" "^1.0.4"
@@ -2804,7 +2804,6 @@ github-fetch-workflow-artifact@^1.0.1-4:
     "@actions/io" "^1.0.2"
     "@types/async-retry" "^1.4.2"
     async-retry "^1.3.1"
-    typescript "^3.9.7"
 
 glob-parent@^5.0.0, glob-parent@^5.1.0, glob-parent@~5.1.0:
   version "5.1.1"
@@ -5756,11 +5755,6 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
-
-typescript@^3.9.7:
-  version "3.9.7"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.9.7.tgz#98d600a5ebdc38f40cb277522f12dc800e9e25fa"
-  integrity sha512-BLbiRkiBzAwsjut4x/dsibSTB6yWpwT5qWmC2OfuCg3GgVQCSgMs4vEctYPhsaGtd0AeuuHMkjZ2h2WG8MSzRw==
 
 typescript@^4.0.3:
   version "4.0.3"
