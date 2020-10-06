@@ -43,6 +43,9 @@
       "yarn prettier --write"
     ]
   },
+  "resolutions": {
+    "node-forge": "^0.10.0"
+  },
   "dependencies": {
     "@actions/artifact": "^0.4.0",
     "@actions/core": "^1.2.6",
