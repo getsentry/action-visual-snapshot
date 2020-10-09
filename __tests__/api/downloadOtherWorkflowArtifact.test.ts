@@ -5,6 +5,8 @@ import {downloadOtherWorkflowArtifact} from '@app/api/downloadOtherWorkflowArtif
 
 jest.mock('path', () => ({
   resolve: () => '/',
+  dirname: () => '/dirname',
+  basename: () => '/basename',
 }));
 
 jest.mock('@actions/io', () => ({
@@ -14,7 +16,7 @@ jest.mock('@actions/exec', () => ({
   exec: jest.fn(),
 }));
 
-test('downloads and extracts artifact', async function() {
+test('downloads and extracts artifact', async function () {
   const octokit = github.getOctokit('token');
 
   const downloadResult = await downloadOtherWorkflowArtifact(octokit, {

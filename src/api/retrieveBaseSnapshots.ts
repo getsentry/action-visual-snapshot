@@ -8,6 +8,7 @@ import {
   GetArtifactsForBranchAndWorkflow,
 } from './getArtifactsForBranchAndWorkflow';
 import {downloadOtherWorkflowArtifact} from './downloadOtherWorkflowArtifact';
+import {Await} from '@app/types';
 
 type GetArtifactsForBranchAndWorkflowType = Await<
   ReturnType<typeof getArtifactsForBranchAndWorkflow>

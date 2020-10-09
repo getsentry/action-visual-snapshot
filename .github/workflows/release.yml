@@ -29,7 +29,6 @@ jobs:
       id: get-version
       run: echo "::set-output name=version::$(sentry-cli releases propose-version)"
 
-
     - run: yarn lint
 
     - run: yarn test

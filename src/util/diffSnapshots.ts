@@ -5,6 +5,8 @@ import * as glob from '@actions/glob';
 import * as io from '@actions/io';
 import * as Sentry from '@sentry/node';
 
+import {PixelmatchOptions} from '@app/types';
+
 import {createDiff} from './createDiff';
 import {multiCompare} from './multiCompare';
 import {getChildDirectories} from './getChildDirectories';
@@ -22,6 +24,7 @@ type DiffSnapshotsParams = {
   currentDirName?: string;
   newDirName?: string;
   missingDirName?: string;
+  pixelmatchOptions?: PixelmatchOptions;
 };
 
 /**
@@ -46,6 +49,7 @@ export async function diffSnapshots({
   currentDirName = 'changed',
   newDirName = 'new',
   missingDirName = 'missing',
+  pixelmatchOptions,
 }: DiffSnapshotsParams) {
   const newSnapshots = new Set<string>([]);
   const changedSnapshots = new Set<string>([]);
@@ -145,9 +149,16 @@ export async function diffSnapshots({
             outputDiffPath,
             outputMergedPath,
             snapshotName: file,
+            pixelmatchOptions,
           });
         } else {
-          isDiff = await createDiff(file, outputDiffPath, baseHead, branchHead);
+          isDiff = await createDiff(
+            file,
+            outputDiffPath,
+            baseHead,
+            branchHead,
+            pixelmatchOptions
+          );
         }
 
         if (isDiff) {

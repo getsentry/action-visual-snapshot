@@ -2,6 +2,22 @@ name: 'action-visual-snapshot'
 description: 'Visual snapshot tester for GitHub Actions'
 author: 'Sentry'
 inputs:
+  threshold:
+    description: 'Matching threshold, ranges from 0 to 1. Smaller values make the comparison more sensitive. 0.1 by default.'
+    default: 0.05
+    required: false
+  includeAA:
+    description: 'If true, disables detecting and ignoring anti-aliased pixels. false by default.'
+    default: false
+    required: false
+  alpha:
+    description: 'Blending factor of unchanged pixels in the diff output. Ranges from 0 for pure white to 1 for original brightness. 0.1 by default.'
+    default: 0.1
+    required: false
+  diffMask:
+    description: 'Draw the diff over a transparent background (a mask), rather than over the original image. Will not draw anti-aliased pixels (if detected).'
+    required: false
+
   snapshot-path:
     required: false
     description: 'path where snapshots are saved'
