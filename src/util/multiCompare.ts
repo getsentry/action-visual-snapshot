@@ -3,6 +3,8 @@ import path from 'path';
 import {PNG} from 'pngjs';
 import * as Sentry from '@sentry/node';
 
+import {PixelmatchOptions} from '@app/types';
+
 import {findChangedPixels} from './findChangedPixels';
 import {fileToPng} from './fileToPng';
 import {copyPixel} from './copyPixel';
@@ -15,6 +17,7 @@ type Options = {
   branchHead: string;
   outputDiffPath: string;
   outputMergedPath: string;
+  pixelmatchOptions?: PixelmatchOptions;
 };
 
 export async function multiCompare({
@@ -24,6 +27,7 @@ export async function multiCompare({
   branchHead,
   outputDiffPath,
   outputMergedPath,
+  pixelmatchOptions,
 }: Options) {
   const promises = [];
 
@@ -44,6 +48,7 @@ export async function multiCompare({
       result: baseDiffResult,
       diff: branchBaseBaseHeadDiffImage,
     } = await getDiff(branchBaseImage, baseHeadImage, {
+      ...pixelmatchOptions,
       alpha: 0,
     });
 
@@ -70,7 +75,11 @@ export async function multiCompare({
     Sentry.captureException(err);
   }
 
-  const {result, diff} = await getDiff(baseHeadImage, branchHeadMergedImage);
+  const {result, diff} = await getDiff(
+    baseHeadImage,
+    branchHeadMergedImage,
+    pixelmatchOptions
+  );
 
   if (result > 0) {
     // TODO detect conflicts

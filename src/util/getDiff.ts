@@ -1,10 +1,10 @@
 import {PNG} from 'pngjs';
 import pixelmatch from 'pixelmatch';
 
+import {PixelmatchOptions} from '@app/types';
+
 import {fileToPng} from './fileToPng';
 import {resizeImage} from './resizeImage';
-
-type PixelmatchOptions = Exclude<Parameters<typeof pixelmatch>[5], undefined>;
 
 export async function getDiff(
   file1: string | PNG,

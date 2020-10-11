@@ -17,6 +17,8 @@ import {startBuild} from './api/startBuild';
 import {finishBuild} from './api/finishBuild';
 import {failBuild} from './api/failBuild';
 import {SENTRY_DSN} from './config';
+import {Await} from './types';
+import {getPixelmatchOptions} from './getPixelmatchOptions';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('github-token') || core.getInput('githubToken');
@@ -176,6 +178,9 @@ async function run(): Promise<void> {
 
     core.debug('Starting diff of snapshots...');
 
+    // Get pixelmatch options from workflow inputs
+    const pixelmatchOptions = getPixelmatchOptions();
+
     const {
       baseFiles,
       changedSnapshots,
@@ -186,6 +191,7 @@ async function run(): Promise<void> {
       mergeBasePath,
       currentPath,
       outputPath: resultsPath,
+      pixelmatchOptions,
     });
 
     const resultsGlobber = await glob.create(`${resultsPath}${pngGlob}`, {
