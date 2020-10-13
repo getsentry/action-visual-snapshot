@@ -1,6 +1,6 @@
-import * as io from '@actions/io';
 import * as github from '@actions/github';
 import * as exec from '@actions/exec';
+import * as glob from '@actions/glob';
 import {downloadOtherWorkflowArtifact} from '@app/api/downloadOtherWorkflowArtifact';
 
 jest.mock('path', () => ({
@@ -12,12 +12,27 @@ jest.mock('path', () => ({
 jest.mock('@actions/io', () => ({
   mkdirP: jest.fn(async () => Promise.resolve()),
 }));
+
 jest.mock('@actions/exec', () => ({
   exec: jest.fn(),
 }));
 
+jest.mock('@actions/glob', () => ({
+  create: jest.fn(async () => {}),
+}));
+
+jest.mock('github-fetch-workflow-artifact', () => ({
+  __esModule: true,
+  default: jest.fn(async () => ({artifact: {}, workflowRun: {}})),
+}));
+
 test('downloads and extracts artifact', async function () {
   const octokit = github.getOctokit('token');
+
+  jest.spyOn(glob, 'create');
+  (glob.create as jest.Mock).mockImplementation(async () => ({
+    glob: jest.fn(async () => ['foo.tar.gz', 'bar.tar.gz']),
+  }));
 
   const downloadResult = await downloadOtherWorkflowArtifact(octokit, {
     owner: 'getsentry',
@@ -28,21 +43,25 @@ test('downloads and extracts artifact', async function () {
     downloadPath: '.artifacts',
   });
 
-  expect(io.mkdirP).toHaveBeenCalledWith('.artifacts');
-  expect(exec.exec).toHaveBeenCalledWith(
-    'wget',
-    expect.arrayContaining([
-      '/',
-      'https://pipelines.actions.githubusercontent.com/fVNRiR9dLg3DkWCpAUCEq7qRezdKTcYtICIqwx0vWs6L0oyqxQ/_apis/pipelines/1/runs/487/signedartifactscontent?artifactName=visual-snapshots&urlExpires=2020-06-30T00%3A19%3A19.8133132Z&urlSigningMethod=HMACV1&urlSignature=12tWt93zqyKS9Fy7IMRj1NGHxGn07YTDwOZT988hCAI%3D',
-    ])
-  );
-  expect(exec.exec).toHaveBeenCalledWith(
-    'unzip',
-    ['-q', '-d', '.artifacts', '/'],
-    {
-      silent: true,
-    }
+  // It should glob for all `.tar.gz` in the `downloadPath`
+  expect(glob.create).toHaveBeenCalledWith(
+    '.artifacts/*.tar.gz',
+    expect.anything()
   );
 
-  expect(downloadResult).toBe(true);
+  expect(exec.exec).toHaveBeenCalledWith('tar', [
+    'zxf',
+    'foo.tar.gz',
+    '-C',
+    '.artifacts',
+  ]);
+  expect(exec.exec).toHaveBeenCalledWith('tar', [
+    'zxf',
+    'bar.tar.gz',
+    '-C',
+    '.artifacts',
+  ]);
+
+  expect(downloadResult.artifact).not.toBeFalsy();
+  expect(downloadResult.workflowRun).not.toBeFalsy();
 });
