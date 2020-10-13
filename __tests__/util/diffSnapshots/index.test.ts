@@ -44,8 +44,8 @@ describe('diffSnapshots', function () {
     jest.spyOn(glob, 'create');
     (glob.create as jest.Mock).mockImplementation(async dir => ({
       glob: jest.fn(async () => {
-        function withPath(p) {
-          return f => `${p}/${f}`;
+        function withPath(p: string) {
+          return (f: string) => `${p}/${f}`;
         }
 
         const COMMON_FILES = ['foo/bar/a', 'foo/bar/b', 'foo/bar/baz/c'];
@@ -123,8 +123,8 @@ describe('diffSnapshots', function () {
     jest.spyOn(glob, 'create');
     (glob.create as jest.Mock).mockImplementation(async dir => ({
       glob: jest.fn(async () => {
-        function withPath(p) {
-          return f => `${p}/${f}`;
+        function withPath(p: string) {
+          return (f: string) => `${p}/${f}`;
         }
 
         const COMMON_FILES = [
