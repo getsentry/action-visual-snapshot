@@ -70,6 +70,10 @@ async function run(): Promise<void> {
   const apiToken = core.getInput('api-token');
   const actionName = core.getInput('action-name');
   const snapshotPath: string = core.getInput('snapshot-path');
+  const ignoreGroups: string[] = core
+    .getInput('ignoreGroups')
+    .split(',')
+    .map((g: string) => g.trim());
 
   const resultsPath = path.resolve(resultsRootPath, 'visual-snapshots-results');
   const basePath = path.resolve('/tmp/visual-snapshots-base');
@@ -192,6 +196,7 @@ async function run(): Promise<void> {
       currentPath,
       outputPath: resultsPath,
       pixelmatchOptions,
+      ignoreGroups,
     });
 
     const resultsGlobber = await glob.create(`${resultsPath}${pngGlob}`, {

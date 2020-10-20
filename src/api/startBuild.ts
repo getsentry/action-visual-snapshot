@@ -1,3 +1,4 @@
+import * as core from '@actions/core';
 import bent from 'bent';
 import * as github from '@actions/github';
 import {API_ENDPOINT} from '@app/config';
@@ -25,13 +26,19 @@ export async function startBuild({
 }: Params): Promise<any> {
   if (token) {
     const post = bent(API_ENDPOINT, 'POST', 'json', 200);
-    return await post(
-      '/build',
-      {owner, repo, head_sha, head_ref},
-      {
-        'x-padding-token': token,
-      }
-    );
+    try {
+      return await post(
+        '/build',
+        {owner, repo, head_sha, head_ref},
+        {
+          'x-padding-token': token,
+        }
+      );
+    } catch (err) {
+      core.error(err);
+      core.setFailed('Error starting build');
+      throw err;
+    }
   }
 
   const {data: check} = await octokit.checks.create({

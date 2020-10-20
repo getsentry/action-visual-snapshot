@@ -22,6 +22,17 @@ inputs:
     required: false
     description: 'path where snapshots are saved'
 
+  ignoreGroups:
+    required: false
+    description: 'comma separated list of directories to not treat as a group'
+  defaultGroup:
+    required: false
+    description: ''
+  groups:
+    required: false
+    description: 'testing'
+
+
   api-token:
     required: true
     description: 'Visual Snapshot API token, should be `VISUAL_SNAPSHOT_SECRET` from GitHub Secrets'

@@ -11,18 +11,38 @@ async function main() {
     {
       baseFilesLength: 10,
       changed: [
-        'acceptance/project-ownership.png',
+        {
+          name: 'project-ownership.png',
+          baseGroup: 'acceptance',
+          groups: ['1680px', '375px'],
+        },
+        {
+          name: 'project-settings-all-integrations.png',
+          baseGroup: 'acceptance',
+          groups: ['1680px', '375px'],
+        },
         'acceptance/project-settings-all-integrations.png',
         'acceptance/project-settings-debug-symbols.png',
         'acceptance/project-settings-general-settings.png',
         'acceptance/project-settings-release-tracking.png',
-        'acceptance/project-settings-service-hooks-create.png',
-        'acceptance/project-settings-service-hooks-details.png',
         'acceptance/project-settings-service-hooks-empty-list.png',
-        'acceptance/project-settings-service-hooks-list-with-entries.png',
       ],
-      added: [],
-      missing: ['acceptance/project-settings-tags-after-remove.png'],
+      added: [
+        {
+          name: 'project-settings-service-hooks-details.png',
+          baseGroup: 'acceptance',
+          groups: ['1680px', '375px'],
+        },
+        'acceptance/project-settings-service-hooks-create.png',
+      ],
+      missing: [
+        {
+          name: 'project-settings-service-hooks-list-with-entries.png',
+          baseGroup: 'acceptance',
+          groups: ['1680px', '375px'],
+        },
+        'acceptance/project-settings-tags-after-remove.png',
+      ],
     }
   );
 }

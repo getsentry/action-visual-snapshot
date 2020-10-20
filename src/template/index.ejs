@@ -74,8 +74,6 @@
         grid-gap: 12px;
         position: sticky;
         top: 0;
-
-        color: #e2e2e2;
         font-weight: normal;
         margin: 0;
         padding: 12px;
@@ -84,11 +82,20 @@
         z-index: 1;
       }
 
+      .snapshot-header a {
+        color: #e2e2e2;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
       .button-bar {
         display: grid;
         grid-auto-flow: column;
         grid-gap: 6px;
+        align-items: center;
       }
+
       .button {
         cursor: pointer;
         padding: 6px 12px;
@@ -124,38 +131,103 @@
         render,
       } from 'https://unpkg.com/htm/preact/standalone.module.js';
 
-      function cleanSelector(str) {
+      function getImageName(image) {
+        return typeof image === 'string'
+          ? image
+          : `${image.baseGroup}/${image.name}`;
+      }
+
+      function getImagePath(image, group, groups) {
+        const groupOrDefault = !group
+          ? groups.length
+            ? `/${groups[0]}`
+            : ''
+          : `/${group}`;
+
+        return typeof image === 'string'
+          ? image
+          : `${image.baseGroup}${groupOrDefault}/${image.name}`;
+      }
+
+      function cleanSelector(image) {
+        const str = getImageName(image);
         return str.replace(/[^a-z-_]+/gi, '-');
       }
 
       const States = ['Diff', 'Original', 'New'];
       const IMAGE_DIRS = ['diffs', 'original', 'changed', 'new'];
 
-      const Snapshot = props => html`
-        <div id=${cleanSelector(props.image)}>
-          <h3 class="snapshot-header">
-            ${props.image}
+      class Snapshot extends Component {
+        state = {
+          group: '',
+        };
 
-            <div class="button-bar">
-              ${props.buttons}
+        handleSelectGroup = group => {
+          this.setState({group});
+        };
+
+        render() {
+          const {
+            buttons,
+            getSource,
+            image,
+            onLoad,
+            onClick,
+            onKeyDown,
+            onFocus,
+          } = this.props;
+          const filename = getImageName(image);
+          const slug = cleanSelector(image);
+          const groups = typeof image !== 'string' && image.groups;
+
+          const GroupBar = groups
+            ? groups.map(
+                (group, i) => html`
+                  <button
+                    type="button"
+                    class="${`button${
+                      this.state.group === group || (!this.state.group && !i)
+                        ? ' selected'
+                        : ''
+                    }`}"
+                    onClick="${() => this.handleSelectGroup(group)}"
+                  >
+                    ${group || 'base'}
+                  </button>
+                `
+              )
+            : null;
+
+          return html`
+            <div id=${slug}>
+              <h3 class="snapshot-header">
+                <div class="button-bar">
+                  <a href="#${slug}">${filename}</a>
+                  ${GroupBar}
+                </div>
+
+                <div class="button-bar">${buttons}</div>
+              </h3>
+              <div class="image-wrapper">
+                <img
+                  loading="lazy"
+                  tabindex="0"
+                  class="image"
+                  key="${filename}"
+                  alt="${filename}"
+                  src="${getSource({
+                    image: getImagePath(image, this.state.group, groups),
+                  })}"
+                  onLoad="${onLoad}"
+                  onClick="${onClick}"
+                  onKeyDown="${onKeyDown}"
+                  onFocus="${onFocus}"
+                />
+              </div>
             </div>
-          </h3>
-          <div class="image-wrapper">
-            <img
-              loading="lazy"
-              tabindex="0"
-              class="image"
-              key="${props.image}"
-              alt="${props.image}"
-              src="${props.getSource(props)}"
-              onLoad="${props.onLoad}"
-              onClick="${props.onClick}"
-              onKeyDown="${props.onKeyDown}"
-              onFocus="${props.onFocus}"
-            />
-          </div>
-        </div>
-      `;
+          `;
+        }
+      }
 
       class App extends Component {
         state = {
@@ -322,120 +394,113 @@
 
               <main tabindex="-1" onKeyDown=${this.handleMainKeyDown}>
                 ${hasNoChanges &&
-                  html`
-                    <h1 class="no-changes">No Changes</h1>
-                  `}
+                html` <h1 class="no-changes">No Changes</h1> `}
                 ${!!changed.length &&
-                  html`
-                    <div data-type="changed" class="snapshots">
-                      ${changed.map((img, i) => {
-                        const typeIndex = this.state.images[img] || 0;
-                        const getSource = p =>
-                          `results/${IMAGE_DIRS[typeIndex]}/${p.image}`;
-                        const buttons = States.map(
-                          (state, i) => html`
-                            <button
-                              class="${`button${
-                                i === typeIndex ? ' selected' : ''
-                              }`}"
-                              type="button"
-                              onKeyDown="${e => this.handleKeyDown(img, e)}"
-                              onClick="${() =>
-                                this.handleSelectState(img, state)}"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        );
-
-                        return html`
-                          <${Snapshot}
-                            buttons=${buttons}
-                            image=${img}
-                            index=${i}
-                            getSource=${getSource}
-                            onLoad="${this.handleImageLoaded}"
-                            onClick="${e => this.handleImageClick(img, i, e)}"
+                html`
+                  <div data-type="changed" class="snapshots">
+                    ${changed.map((img, i) => {
+                      const typeIndex = this.state.images[img] || 0;
+                      const getSource = p =>
+                        `results/${IMAGE_DIRS[typeIndex]}/${p.image}`;
+                      const buttons = States.map(
+                        (state, i) => html`
+                          <button
+                            class="${`button${
+                              i === typeIndex ? ' selected' : ''
+                            }`}"
+                            type="button"
                             onKeyDown="${e => this.handleKeyDown(img, e)}"
-                          />
-                        `;
-                      })}
-                    </div>
-                  `}
+                            onClick="${() =>
+                              this.handleSelectState(img, state)}"
+                          >
+                            ${state}
+                          </button>
+                        `
+                      );
+
+                      return html`
+                        <${Snapshot}
+                          buttons=${buttons}
+                          image=${img}
+                          index=${i}
+                          getSource=${getSource}
+                          onLoad="${this.handleImageLoaded}"
+                          onClick="${e => this.handleImageClick(img, i, e)}"
+                          onKeyDown="${e => this.handleKeyDown(img, e)}"
+                        />
+                      `;
+                    })}
+                  </div>
+                `}
                 ${!!added.length &&
-                  html`
-                    <div data-type="added" class="snapshots">
-                      ${added.map((img, i) => {
-                        const getSource = p =>
-                          `results/${IMAGE_DIRS[IMAGE_DIRS.indexOf('new')]}/${
-                            p.image
-                          }`;
-                        const buttons = States.map(
-                          state => html`
-                            <button
-                              class="${`button${
-                                state === 'New' ? ' selected' : ''
-                              }${state !== 'New' ? ' disabled' : ''}`}"
-                              type="button"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        );
-                        return html`
-                          <${Snapshot}
-                            buttons=${buttons}
-                            image=${img}
-                            index=${i}
-                            getSource=${getSource}
-                          />
-                        `;
-                      })}
-                    </div>
-                  `}
+                html`
+                  <div data-type="added" class="snapshots">
+                    ${added.map((img, i) => {
+                      const getSource = p =>
+                        `results/${IMAGE_DIRS[IMAGE_DIRS.indexOf('new')]}/${
+                          p.image
+                        }`;
+                      const buttons = States.map(
+                        state => html`
+                          <button
+                            class="${`button${
+                              state === 'New' ? ' selected' : ''
+                            }${state !== 'New' ? ' disabled' : ''}`}"
+                            type="button"
+                          >
+                            ${state}
+                          </button>
+                        `
+                      );
+                      return html`
+                        <${Snapshot}
+                          buttons=${buttons}
+                          image=${img}
+                          index=${i}
+                          getSource=${getSource}
+                        />
+                      `;
+                    })}
+                  </div>
+                `}
                 ${!!missing.length &&
-                  html`
-                    <div data-type="missing" class="snapshots">
-                      ${missing.map((img, i) => {
-                        const getSource = p =>
-                          `results/${
-                            IMAGE_DIRS[IMAGE_DIRS.indexOf('original')]
-                          }/${p.image}`;
-                        const buttons = States.map(
-                          state => html`
-                            <button
-                              class="${`button${
-                                state === 'Original' ? ' selected' : ''
-                              }${state !== 'Original' ? ' disabled' : ''}`}"
-                              type="button"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        );
-                        return html`
-                          <${Snapshot}
-                            buttons=${buttons}
-                            image=${img}
-                            index=${i}
-                            getSource=${getSource}
-                          />
-                        `;
-                      })}
-                    </div>
-                  `}
+                html`
+                  <div data-type="missing" class="snapshots">
+                    ${missing.map((img, i) => {
+                      const getSource = p =>
+                        `results/${
+                          IMAGE_DIRS[IMAGE_DIRS.indexOf('original')]
+                        }/${p.image}`;
+                      const buttons = States.map(
+                        state => html`
+                          <button
+                            class="${`button${
+                              state === 'Original' ? ' selected' : ''
+                            }${state !== 'Original' ? ' disabled' : ''}`}"
+                            type="button"
+                          >
+                            ${state}
+                          </button>
+                        `
+                      );
+                      return html`
+                        <${Snapshot}
+                          buttons=${buttons}
+                          image=${img}
+                          index=${i}
+                          getSource=${getSource}
+                        />
+                      `;
+                    })}
+                  </div>
+                `}
               </main>
             </div>
           `;
         }
       }
 
-      render(
-        html`
-          <${App} page="All" />
-        `,
-        document.body
-      );
+      render(html` <${App} page="All" /> `, document.body);
     </script>
   </head>
 

@@ -1,13 +1,25 @@
 import * as github from '@actions/github';
 import {retrieveBaseSnapshots} from '@app/api/retrieveBaseSnapshots';
-import {downloadOtherWorkflowArtifact} from '@app/api/downloadOtherWorkflowArtifact';
+import * as doa from '@app/api/downloadOtherWorkflowArtifact';
+import fetchWorkflowArtifact from 'github-fetch-workflow-artifact';
 
-jest.mock('@app/api/downloadOtherWorkflowArtifact', () => ({
-  downloadOtherWorkflowArtifact: jest.fn(),
+jest.mock('github-fetch-workflow-artifact', () => ({
+  __esModule: true,
+  default: jest.fn(),
 }));
 
-test('only downloads and returns base if base and merge base are the same', async function() {
+test('only downloads and returns base if base and merge base are the same', async function () {
   const octokit = github.getOctokit('token');
+  jest.spyOn(doa, 'downloadOtherWorkflowArtifact');
+
+  // @ts-ignore
+  fetchWorkflowArtifact.mockImplementation(async () => ({
+    artifact: {id: 9808919},
+    workflowRun: {
+      id: 152081708,
+      head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
+    },
+  }));
 
   const results = await retrieveBaseSnapshots(octokit, {
     owner: 'getsentry',
@@ -20,29 +32,15 @@ test('only downloads and returns base if base and merge base are the same', asyn
     mergeBaseSha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
   });
 
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledWith({
-    owner: 'getsentry',
-    repo: 'sentry',
-    workflow_id: 'acceptance.yml',
+  expect(doa.downloadOtherWorkflowArtifact).toHaveBeenCalledTimes(1);
+
+  expect(doa.downloadOtherWorkflowArtifact).toHaveBeenCalledWith(octokit, {
+    artifactName: 'visual-snapshots',
     branch: 'main',
-    per_page: 100,
-    status: 'completed',
-  });
-
-  expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
-    owner: 'getsentry',
-    repo: 'sentry',
-    run_id: 152081708,
-  });
-
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledTimes(1);
-
-  expect(downloadOtherWorkflowArtifact).toHaveBeenCalledTimes(1);
-  expect(downloadOtherWorkflowArtifact).toHaveBeenCalledWith(octokit, {
-    artifactId: 9808919,
     downloadPath: './base',
     owner: 'getsentry',
     repo: 'sentry',
+    workflow_id: 'acceptance.yml',
   });
 
   expect(results).toEqual([
@@ -54,8 +52,18 @@ test('only downloads and returns base if base and merge base are the same', asyn
   ]);
 });
 
-test('downloads and returns base and merge base', async function() {
+test('downloads and returns base and merge base', async function () {
   const octokit = github.getOctokit('token');
+  jest.spyOn(doa, 'downloadOtherWorkflowArtifact');
+
+  // @ts-ignore
+  fetchWorkflowArtifact.mockImplementation(async () => ({
+    artifact: {id: 9808919},
+    workflowRun: {
+      id: 152081708,
+      head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
+    },
+  }));
 
   const results = await retrieveBaseSnapshots(octokit, {
     owner: 'getsentry',
@@ -68,50 +76,25 @@ test('downloads and returns base and merge base', async function() {
     mergeBaseSha: '11111111l129a173dc79d4634df0fdaece933b06',
   });
 
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledTimes(2);
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledWith({
+  expect(doa.downloadOtherWorkflowArtifact).toHaveBeenCalledTimes(2);
+  expect(doa.downloadOtherWorkflowArtifact).toHaveBeenCalledWith(octokit, {
+    artifactName: 'visual-snapshots',
+    downloadPath: './base',
+    branch: 'main',
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
-    branch: 'main',
-    per_page: 100,
-    status: 'completed',
   });
 
-  expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
-    owner: 'getsentry',
-    repo: 'sentry',
-    run_id: 152081708,
-  });
-
-  expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
-    owner: 'getsentry',
-    repo: 'sentry',
-    run_id: 152081707,
-  });
-
-  expect(downloadOtherWorkflowArtifact).toHaveBeenCalledTimes(2);
-  expect(downloadOtherWorkflowArtifact).toHaveBeenCalledWith(octokit, {
-    artifactId: 9808919,
-    downloadPath: './base',
-    owner: 'getsentry',
-    repo: 'sentry',
-  });
-
-  expect(downloadOtherWorkflowArtifact).toHaveBeenCalledWith(octokit, {
-    artifactId: 8808920,
+  expect(doa.downloadOtherWorkflowArtifact).toHaveBeenCalledWith(octokit, {
+    artifactName: 'visual-snapshots',
     downloadPath: './merge-base',
+    branch: 'main',
+    commit: '11111111l129a173dc79d4634df0fdaece933b06',
     owner: 'getsentry',
     repo: 'sentry',
+    workflow_id: 'acceptance.yml',
   });
-  expect(results).toEqual([
-    {
-      artifact: expect.objectContaining({id: 9808919}),
-      workflowRun: expect.objectContaining({id: 152081708}),
-    },
-    {
-      artifact: expect.objectContaining({id: 8808920}),
-      workflowRun: expect.objectContaining({id: 152081707}),
-    },
-  ]);
+
+  expect(results).toHaveLength(2);
 });
