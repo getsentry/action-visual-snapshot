@@ -1,4 +1,3 @@
-import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as artifact from '@actions/artifact';
 import {exec} from '@actions/exec';
@@ -41,11 +40,6 @@ export async function saveSnapshots({
       '/tmp/snaps'
     );
   } catch (err) {
-    core.warning(err.message);
-    if (!err.message.includes('Unprocessable Entity')) {
-      // throw err;
-    }
-
-    return null;
+    throw err;
   }
 }
