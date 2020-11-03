@@ -1,3 +1,4 @@
+import * as core from '@actions/core';
 import * as artifact from '@actions/artifact';
 import {exec} from '@actions/exec';
 import * as glob from '@actions/glob';
@@ -11,6 +12,7 @@ export async function downloadSnapshots({
   artifactName,
   rootDirectory,
 }: DownloadSnapshotsParams) {
+  core.startGroup(`downloadSnapshots: ${artifactName}`);
   const artifactClient = artifact.create();
 
   const resp = await artifactClient.downloadArtifact(
@@ -40,5 +42,6 @@ export async function downloadSnapshots({
   }
   await exec('ls', ['-la', resp.downloadPath]);
 
+  core.endGroup();
   return resp;
 }

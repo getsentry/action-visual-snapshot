@@ -44,10 +44,10 @@ export async function getArtifactsForBranchAndWorkflow(
     artifactName,
   }: GetArtifactsForBranchAndWorkflow
 ): Promise<GetArtifactsForBranchAndWorkflowReturn> {
-  core.debug(
-    `Fetching workflow ${workflow_id} in branch: ${branch}${
-      commit ? ` and commit: ${commit}` : ''
-    }...`
+  core.startGroup(
+    `getArtifactsForBranchAndWorkflow - workflow:"${workflow_id}",  branch:"${branch}"${
+      commit ? `,  commit:"${commit}"` : ''
+    }`
   );
 
   let currentPage = 0;
@@ -69,6 +69,7 @@ export async function getArtifactsForBranchAndWorkflow(
 
     if (!workflowRuns.length) {
       core.warning(`Workflow ${workflow_id} not found in branch ${branch}`);
+      core.endGroup();
       return null;
     }
 
@@ -91,6 +92,7 @@ export async function getArtifactsForBranchAndWorkflow(
           commit ? ` and commit: ${commit}` : ''
         }`
       );
+      core.endGroup();
       return null;
     }
 
@@ -117,6 +119,7 @@ export async function getArtifactsForBranchAndWorkflow(
       const foundArtifact = artifacts.find(({name}) => name === artifactName);
       if (foundArtifact) {
         core.debug(`Found suitable artifact: ${foundArtifact.url}`);
+        core.endGroup();
         return {
           artifact: foundArtifact,
           workflowRun,
@@ -126,5 +129,6 @@ export async function getArtifactsForBranchAndWorkflow(
   }
 
   core.warning(`Artifact not found: ${artifactName}`);
+  core.endGroup();
   return null;
 }

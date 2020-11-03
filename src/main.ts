@@ -59,8 +59,6 @@ function handleError(error: Error) {
   core.setFailed(error.message);
 }
 
-// console.log(JSON.stringify(GITHUB_EVENT, null, 2));
-
 async function run(): Promise<void> {
   const resultsRootPath: string = core.getInput('results-path');
   const baseBranch = core.getInput('base-branch');
@@ -78,13 +76,12 @@ async function run(): Promise<void> {
   const headSha = GITHUB_EVENT.pull_request?.head.sha;
   const headRef = GITHUB_EVENT.pull_request?.head.ref;
 
-  core.debug(`resultsPath: ${resultsPath}`);
-  core.debug(GITHUB_WORKSPACE);
-
   // Forward `results-path` to outputs
+  core.startGroup('Set outputs');
   core.setOutput('results-path', resultsRootPath);
   core.setOutput('base-images-path', basePath);
   core.setOutput('merge-base-images-path', mergeBasePath);
+  core.endGroup();
 
   try {
     if (snapshotPath) {
@@ -107,7 +104,6 @@ async function run(): Promise<void> {
     return;
   }
 
-  core.debug('Starting build...');
   const buildId = await startBuild({
     octokit,
     owner,
@@ -121,8 +117,15 @@ async function run(): Promise<void> {
   try {
     const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
 
-    core.debug(`Merge base SHA is: ${mergeBaseSha}`);
+    core.startGroup('debug');
+    core.startGroup('github context');
+    core.debug(JSON.stringify(github.context, null, 2));
+    core.endGroup();
+    core.debug(JSON.stringify(GITHUB_EVENT, null, 2));
+    core.endGroup();
 
+    // TODO(billy): owner/repo probably need to come from pull_request.base in order to handle
+    // forked repos
     const [
       didDownloadLatest,
       didDownloadMergeBase,
@@ -176,7 +179,7 @@ async function run(): Promise<void> {
 
     const currentPath = path.resolve(GITHUB_WORKSPACE, current || '');
 
-    core.debug('Starting diff of snapshots...');
+    core.startGroup('Starting diff of snapshots...');
 
     // Get pixelmatch options from workflow inputs
     const pixelmatchOptions = getPixelmatchOptions();
@@ -213,8 +216,9 @@ async function run(): Promise<void> {
       missing: [...missingSnapshots],
       added: [...newSnapshots],
     };
+    core.endGroup();
 
-    core.debug('Generating image gallery...');
+    core.startGroup('Generating image gallery...');
     await generateImageGallery(
       path.resolve(resultsPath, 'index.html'),
       results
@@ -236,6 +240,7 @@ async function run(): Promise<void> {
     const galleryUrl =
       imageGalleryFile &&
       `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
+    core.endGroup();
 
     core.debug('Saving snapshots and finishing build...');
     await Promise.all([

@@ -43,6 +43,7 @@ export async function retrieveBaseSnapshots(
   });
 
   if (!baseArtifacts) {
+    core.debug('Unable to find base artifacts');
     return [];
   }
 
@@ -69,6 +70,15 @@ export async function retrieveBaseSnapshots(
   );
 
   let mergeBaseArtifacts: GetArtifactsForBranchAndWorkflowType = null;
+
+  core.startGroup('workflowRun');
+  core.debug(`Merge base SHA: ${mergeBaseSha}`);
+  core.debug(
+    `workflowRun head sha (i.e. latest master): ${workflowRun.head_sha}`
+  );
+  core.debug(`!!! workflowRun:
+${JSON.stringify(workflowRun, null, 2)}`);
+  core.endGroup();
 
   if (workflowRun.head_sha !== mergeBaseSha) {
     mergeBaseArtifacts = await getArtifactsForBranchAndWorkflow(octokit, {
@@ -101,5 +111,6 @@ export async function retrieveBaseSnapshots(
     core.debug('Merge base is the same as base');
   }
 
+  core.endGroup();
   return [baseArtifacts, mergeBaseArtifacts];
 }
