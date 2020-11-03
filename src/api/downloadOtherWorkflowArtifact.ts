@@ -2,6 +2,7 @@
 import path from 'path';
 
 import {exec} from '@actions/exec';
+import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as io from '@actions/io';
 import * as glob from '@actions/glob';
@@ -16,6 +17,7 @@ type DownloadArtifactParams = {
 const FILENAME = 'visual-snapshots-base.zip';
 
 async function download(url: string, file: string, dest: string) {
+  core.startGroup(`download ${file}`);
   await exec('wget', [
     '-nv',
     '--retry-connrefused',
@@ -50,6 +52,7 @@ async function download(url: string, file: string, dest: string) {
   }
   await exec('ls', ['-la', dest]);
 
+  core.endGroup();
   return true;
 }
 /**

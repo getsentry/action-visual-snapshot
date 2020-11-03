@@ -1,4 +1,5 @@
 import * as io from '@actions/io';
+import * as core from '@actions/core';
 import * as artifact from '@actions/artifact';
 import {exec} from '@actions/exec';
 import * as glob from '@actions/glob';
@@ -14,6 +15,7 @@ export async function saveSnapshots({
   artifactName,
   rootDirectory,
 }: SaveSnapshotsParams) {
+  core.startGroup('saveSnapshots');
   try {
     const artifactClient = artifact.create();
 
@@ -34,12 +36,16 @@ export async function saveSnapshots({
 
     const tarFiles = await tarGlobber.glob();
 
-    return await artifactClient.uploadArtifact(
+    const result = await artifactClient.uploadArtifact(
       artifactName,
       tarFiles,
       '/tmp/snaps'
     );
+    core.endGroup();
+    return result;
   } catch (err) {
+    core.warning(err.message);
+    core.endGroup();
     throw err;
   }
 }
