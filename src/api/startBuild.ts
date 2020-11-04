@@ -24,25 +24,25 @@ export async function startBuild({
   headRef: head_ref,
   name = 'Visual Snapshot',
 }: Params): Promise<any> {
-  core.startGroup('Starting build');
   try {
-    if (token) {
-      core.debug('Starting build using API...');
-      const post = bent(API_ENDPOINT, 'POST', 'json', 200);
-
-      core.endGroup();
-      return await post(
-        '/build',
-        {owner, repo, head_sha, head_ref},
-        {
-          'x-padding-token': token,
-        }
-      );
+    if (!token) {
+      throw new Error('No API token');
     }
+
+    core.startGroup('Starting build using API...');
+    const post = bent(API_ENDPOINT, 'POST', 'json', 200);
+
+    const result = await post(
+      '/build',
+      {owner, repo, head_sha, head_ref},
+      {
+        'x-padding-token': token,
+      }
+    );
+    core.endGroup();
+    return result;
   } catch (err) {
-    core.debug(`Error using API: ${err}`);
-  } finally {
-    core.debug('Using GitHub API directly...');
+    core.startGroup('Starting build using GitHub API directly...');
     const {data: check} = await octokit.checks.create({
       owner,
       repo,
@@ -50,7 +50,6 @@ export async function startBuild({
       name,
       status: 'in_progress',
     });
-
     core.endGroup();
     return check.id;
   }
