@@ -25,7 +25,8 @@ export type GetArtifactsForBranchAndWorkflow = {
 };
 
 // max pages of workflows to pagination through
-const MAX_PAGES = 5;
+const MAX_PAGES = 10;
+const PER_PAGE_LIMIT = 100;
 
 /**
  * Fetch artifacts from a workflow run from a branch
@@ -62,7 +63,7 @@ export async function getArtifactsForBranchAndWorkflow(
       workflow_id: (workflow_id as unknown) as number,
       branch,
       status: 'completed',
-      per_page: 100,
+      per_page: PER_PAGE_LIMIT,
     }
   )) {
     const workflowRuns = response.data;
