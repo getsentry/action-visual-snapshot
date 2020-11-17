@@ -26,14 +26,16 @@ type Params = {
 
 export async function finishBuild({token, ...body}: Params) {
   try {
-    if (token) {
-      const put = bent(API_ENDPOINT, 'PUT', 'json', 200);
-
-      return await put('/build', body, {
-        'x-padding-token': token,
-      });
+    if (!token) {
+      throw new Error('No API token');
     }
-  } finally {
+
+    const put = bent(API_ENDPOINT, 'PUT', 'json', 200);
+
+    return await put('/build', body, {
+      'x-padding-token': token,
+    });
+  } catch (err) {
     const {owner, repo, galleryUrl, id, images, results, octokit} = body;
     const {baseFilesLength, changed, missing, added} = results;
     const unchanged = baseFilesLength - (changed.length + missing.length);
