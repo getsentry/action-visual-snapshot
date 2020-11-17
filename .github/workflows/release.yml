@@ -21,7 +21,7 @@ jobs:
         node-version: 12
     - name: yarn install
       run: |
-        echo "::add-path::$(yarn global bin)"
+        echo "$(yarn global bin)" >> $GITHUB_PATH
         yarn install --frozen-lockfile
         yarn global add @sentry/cli
 
