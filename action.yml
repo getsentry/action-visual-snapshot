@@ -21,6 +21,9 @@ inputs:
   snapshot-path:
     required: false
     description: 'path where snapshots are saved'
+  merge-base:
+    required: false
+    description: 'the merge base sha, will use from github context otherwise. If you use `pull_request_target` you will need to supply the merge base.'
 
   api-token:
     required: true

@@ -115,12 +115,16 @@ async function run(): Promise<void> {
   });
 
   try {
-    const mergeBaseSha: string = github.context.payload.pull_request?.base?.sha;
+    const mergeBaseSha: string =
+      core.getInput('merge-base') ||
+      github.context.payload.pull_request?.base?.sha;
 
-    core.startGroup('debug');
     core.startGroup('github context');
     core.debug(JSON.stringify(github.context, null, 2));
+    core.debug(`merge base: ${mergeBaseSha}`);
     core.endGroup();
+
+    core.startGroup('github event');
     core.debug(JSON.stringify(GITHUB_EVENT, null, 2));
     core.endGroup();
 
