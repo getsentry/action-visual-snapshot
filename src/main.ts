@@ -28,8 +28,12 @@ const pngGlob = '/**/*.png';
 
 Sentry.init({
   dsn: SENTRY_DSN,
-  integrations: [new RewriteFrames({root: __dirname || process.cwd()})],
+  integrations: [
+    new RewriteFrames({root: __dirname || process.cwd()}),
+    new Sentry.Integrations.Http({tracing: true}),
+  ],
   release: process.env.VERSION,
+  tracesSampleRate: 1.0,
 });
 
 Sentry.setContext('actionEnvironment', {
@@ -206,6 +210,11 @@ async function run(): Promise<void> {
     });
     const resultsFiles = await resultsGlobber.glob();
 
+    const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
+    const gcsSpan = transaction?.startChild({
+      op: 'upload',
+      description: 'Upload to GCS',
+    });
     const gcsDestination = `${owner}/${repo}/${headSha}`;
     const resultsArtifactUrls = await uploadToGcs({
       files: resultsFiles,
@@ -213,6 +222,7 @@ async function run(): Promise<void> {
       bucket: gcsBucket,
       destinationRoot: `${gcsDestination}/results`,
     });
+    gcsSpan?.finish();
     const changedArray = [...changedSnapshots];
     const results = {
       baseFilesLength: baseFiles.length,
@@ -246,6 +256,10 @@ async function run(): Promise<void> {
       `https://storage.googleapis.com/${gcsBucket}/${imageGalleryFile.name}`;
     core.endGroup();
 
+    const finishSpan = transaction?.startChild({
+      op: 'finishing',
+      description: 'Save snapshots and finish build',
+    });
     core.debug('Saving snapshots and finishing build...');
     await Promise.all([
       saveSnapshots({
@@ -265,6 +279,7 @@ async function run(): Promise<void> {
         results,
       }),
     ]);
+    finishSpan?.finish();
   } catch (error) {
     handleError(error);
     failBuild({
@@ -278,4 +293,13 @@ async function run(): Promise<void> {
   }
 }
 
-run();
+const transaction = Sentry.startTransaction({
+  op: 'run',
+  name: 'visual snapshot',
+});
+
+Sentry.configureScope(scope => {
+  scope.setSpan(transaction);
+});
+
+run().then(() => transaction.finish());

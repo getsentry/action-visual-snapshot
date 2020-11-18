@@ -6,6 +6,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as io from '@actions/io';
 import * as glob from '@actions/glob';
+import * as Sentry from '@sentry/node';
 
 type DownloadArtifactParams = {
   owner: string;
@@ -17,6 +18,12 @@ type DownloadArtifactParams = {
 const FILENAME = 'visual-snapshots-base.zip';
 
 async function download(url: string, file: string, dest: string) {
+  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
+  const span = transaction?.startChild({
+    op: 'download',
+    description: `download ${file}`,
+  });
+
   core.startGroup(`download ${file}`);
   await exec('wget', [
     '-nv',
@@ -44,8 +51,6 @@ async function download(url: string, file: string, dest: string) {
 
   const tarFiles = await tarGlobber.glob();
 
-  await exec('pwd');
-
   // need to unzip everything now
   for (const tarFile of tarFiles) {
     await exec('tar', ['zxf', tarFile, '-C', dest]);
@@ -53,6 +58,7 @@ async function download(url: string, file: string, dest: string) {
   await exec('ls', ['-la', dest]);
 
   core.endGroup();
+  span?.finish();
   return true;
 }
 /**

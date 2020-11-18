@@ -2,6 +2,7 @@ import * as core from '@actions/core';
 import * as artifact from '@actions/artifact';
 import {exec} from '@actions/exec';
 import * as glob from '@actions/glob';
+import * as Sentry from '@sentry/node';
 
 type DownloadSnapshotsParams = {
   rootDirectory: string;
@@ -12,7 +13,14 @@ export async function downloadSnapshots({
   artifactName,
   rootDirectory,
 }: DownloadSnapshotsParams) {
-  core.startGroup(`downloadSnapshots: ${artifactName}`);
+  const description = `downloadSnapshots: ${artifactName}`;
+  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
+  const span = transaction?.startChild({
+    op: 'downloadSnapshots',
+    description,
+  });
+
+  core.startGroup(description);
   const artifactClient = artifact.create();
 
   const resp = await artifactClient.downloadArtifact(
@@ -34,14 +42,18 @@ export async function downloadSnapshots({
   );
   const tarFiles = await tarGlobber.glob();
 
-  await exec('pwd');
-
   // need to unzip everything now
   for (const file of tarFiles) {
+    const tarSpan = transaction?.startChild({
+      op: 'tar',
+      description: file,
+    });
     await exec('tar', ['zxf', file, '-C', resp.downloadPath]);
+    tarSpan?.finish();
   }
   await exec('ls', ['-la', resp.downloadPath]);
 
   core.endGroup();
+  span?.finish();
   return resp;
 }

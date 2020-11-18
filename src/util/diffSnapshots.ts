@@ -51,6 +51,12 @@ export async function diffSnapshots({
   missingDirName = 'missing',
   pixelmatchOptions,
 }: DiffSnapshotsParams) {
+  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
+  const span = transaction?.startChild({
+    op: 'diff snapshots',
+    description: 'diff snapshots',
+  });
+
   const newSnapshots = new Set<string>([]);
   const changedSnapshots = new Set<string>([]);
   const missingSnapshots = new Set<string>([]);
@@ -222,6 +228,8 @@ export async function diffSnapshots({
         )
     )
   );
+
+  span?.finish();
 
   return {
     baseFiles,

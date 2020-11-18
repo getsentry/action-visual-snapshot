@@ -1,5 +1,6 @@
 import {PNG} from 'pngjs';
 import pixelmatch from 'pixelmatch';
+import * as Sentry from '@sentry/node';
 
 import {PixelmatchOptions} from '@app/types';
 
@@ -11,6 +12,11 @@ export async function getDiff(
   file2: string | PNG,
   {includeAA = true, threshold = 0.1, ...options}: PixelmatchOptions = {}
 ) {
+  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
+  const span = transaction?.startChild({
+    op: 'getDiff',
+    description: `Diff: ${file1} vs ${file2}`,
+  });
   let img1 = typeof file1 === 'string' ? await fileToPng(file1) : file1;
   let img2 = typeof file2 === 'string' ? await fileToPng(file2) : file2;
   const width = Math.max(img1.width, img2.width);
@@ -28,6 +34,8 @@ export async function getDiff(
     threshold,
     ...options,
   });
+
+  span?.finish();
 
   return {
     result,
