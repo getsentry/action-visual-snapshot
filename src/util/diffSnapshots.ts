@@ -56,6 +56,11 @@ export async function diffSnapshots({
     op: 'diff snapshots',
     description: 'diff snapshots',
   });
+  // Set this span in scope, so that new spans use this span as the parent instead
+  // of the main transaction
+  Sentry.configureScope(scope => {
+    scope.setSpan(span);
+  });
 
   const newSnapshots = new Set<string>([]);
   const changedSnapshots = new Set<string>([]);
@@ -231,6 +236,9 @@ export async function diffSnapshots({
 
   span?.finish();
 
+  Sentry.configureScope(scope => {
+    scope.setSpan(transaction);
+  });
   return {
     baseFiles,
     missingSnapshots,

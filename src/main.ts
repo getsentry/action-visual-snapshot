@@ -25,6 +25,7 @@ const token = core.getInput('github-token') || core.getInput('githubToken');
 const octokit = token && github.getOctokit(token);
 const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const pngGlob = '/**/*.png';
+const shouldSaveOnly = core.getInput('save-only');
 
 Sentry.init({
   dsn: SENTRY_DSN,
@@ -68,7 +69,6 @@ async function run(): Promise<void> {
   const baseBranch = core.getInput('base-branch');
   const artifactName = core.getInput('artifact-name');
   const gcsBucket = core.getInput('gcs-bucket');
-  const shouldSaveOnly = core.getInput('save-only');
   const apiToken = core.getInput('api-token');
   const actionName = core.getInput('action-name');
   const snapshotPath: string = core.getInput('snapshot-path');
@@ -294,7 +294,7 @@ async function run(): Promise<void> {
 }
 
 const transaction = Sentry.startTransaction({
-  op: 'run',
+  op: shouldSaveOnly ? 'save snapshots' : 'run',
   name: 'visual snapshot',
 });
 
