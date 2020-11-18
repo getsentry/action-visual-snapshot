@@ -294,7 +294,7 @@ async function run(): Promise<void> {
 }
 
 const transaction = Sentry.startTransaction({
-  op: shouldSaveOnly ? 'save snapshots' : 'run',
+  op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   name: 'visual snapshot',
 });
 
