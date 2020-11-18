@@ -56,11 +56,6 @@ export async function diffSnapshots({
     op: 'diff snapshots',
     description: 'diff snapshots',
   });
-  // Set this span in scope, so that new spans use this span as the parent instead
-  // of the main transaction
-  Sentry.configureScope(scope => {
-    scope.setSpan(span);
-  });
 
   const newSnapshots = new Set<string>([]);
   const changedSnapshots = new Set<string>([]);
@@ -142,6 +137,10 @@ export async function diffSnapshots({
   // face OOM issues
   for (const absoluteFile of currentFiles) {
     const file = path.relative(currentPath, absoluteFile);
+    const fileSpan = span?.startChild({
+      op: 'diff snapshot',
+      description: file,
+    });
     currentSnapshots.add(file);
 
     if (baseSnapshots.has(file)) {
@@ -189,6 +188,8 @@ export async function diffSnapshots({
     } else {
       newSnapshots.add(file);
     }
+
+    fileSpan?.finish();
   }
 
   // TODO: Track cases where snapshot exists in `mergeBaseSnapshots`, but not
@@ -235,10 +236,6 @@ export async function diffSnapshots({
   );
 
   span?.finish();
-
-  Sentry.configureScope(scope => {
-    scope.setSpan(transaction);
-  });
   return {
     baseFiles,
     missingSnapshots,
