@@ -29,7 +29,6 @@ are optional and will upload your images to the bucket if specified):
           id: visual-snapshots-diff
           uses: getsentry/action-visual-snapshot@v1
           with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
             gcs-bucket: 'sentry-visual-snapshots'
             gcp-service-account-key: ${{ secrets.SNAPSHOT_GOOGLE_SERVICE_ACCOUNT_KEY }}
 ```
@@ -45,7 +44,6 @@ You can also have multiple sets of diff actions with some configuration inputs
       snapshot-path: .artifacts/visual-snapshots-jest
       action-name: Jest Snapshots
       artifact-name: visual-snapshots-jest
-      github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Contributing
