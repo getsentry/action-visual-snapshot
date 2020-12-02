@@ -29,12 +29,6 @@ export async function multiCompare({
   outputMergedPath,
   pixelmatchOptions,
 }: Options) {
-  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
-  const span = transaction?.startChild({
-    op: 'multiCompare',
-    description: snapshotName,
-  });
-
   const promises = [];
 
   const [
@@ -99,6 +93,5 @@ export async function multiCompare({
 
   await Promise.all(promises);
 
-  span?.finish();
   return result;
 }
