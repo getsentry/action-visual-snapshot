@@ -59,7 +59,7 @@ async function download(url: string, file: string, dest: string) {
 
   core.endGroup();
   span?.finish();
-  return true;
+  return {downloadPath: dest, artifactName: file};
 }
 /**
  * Use GitHub API to fetch artifact download url, then

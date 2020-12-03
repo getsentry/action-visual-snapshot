@@ -19,11 +19,12 @@ import {failBuild} from './api/failBuild';
 import {SENTRY_DSN} from './config';
 import {Await} from './types';
 import {getPixelmatchOptions} from './getPixelmatchOptions';
+import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 
 const {owner, repo} = github.context.repo;
 const token = core.getInput('github-token');
 const octokit = token && github.getOctokit(token);
-const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
+const {GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const pngGlob = '/**/*.png';
 const shouldSaveOnly = core.getInput('save-only');
 
@@ -55,10 +56,6 @@ core.debug = (message: string) => {
   originalCoreDebug(message);
 };
 
-// console.log(JSON.stringify(process.env, null, 2));
-
-const GITHUB_EVENT = require(GITHUB_EVENT_PATH);
-
 function handleError(error: Error) {
   Sentry.captureException(error);
   core.setFailed(error.message);
@@ -77,14 +74,31 @@ async function run(): Promise<void> {
   const basePath = path.resolve('/tmp/visual-snapshots-base');
   const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
 
-  const headSha = GITHUB_EVENT.pull_request?.head.sha;
-  const headRef = GITHUB_EVENT.pull_request?.head.ref;
+  const workflowRunPayload = github.context.payload.workflow_run;
+  const pullRequestPayload = github.context.payload.pull_request;
+
+  // We're only interested the first pull request... I'm not sure how there can be multiple
+  const workflowRunPullRequest = workflowRunPayload?.pull_requests?.[0];
+
+  const headSha =
+    pullRequestPayload?.head.sha || workflowRunPullRequest?.head.sha;
+  const headRef =
+    pullRequestPayload?.head.ref || workflowRunPullRequest?.head.ref;
+  const mergeBaseSha: string =
+    core.getInput('merge-base') ||
+    pullRequestPayload?.base?.sha ||
+    workflowRunPullRequest?.base.sha;
 
   // Forward `results-path` to outputs
   core.startGroup('Set outputs');
   core.setOutput('results-path', resultsRootPath);
   core.setOutput('base-images-path', basePath);
   core.setOutput('merge-base-images-path', mergeBasePath);
+  core.endGroup();
+
+  core.startGroup('github context');
+  core.debug(`merge base: ${mergeBaseSha}`);
+  core.debug(JSON.stringify(github.context, null, 2));
   core.endGroup();
 
   try {
@@ -104,7 +118,16 @@ async function run(): Promise<void> {
   }
 
   if (!octokit) {
-    handleError(new Error('`github-token` missing'));
+    const error = new Error('`github-token` missing');
+    handleError(error);
+    throw error;
+  }
+
+  // This is intended to only work with pull requests, we should ignore `workflow_run` from pushes
+  if (github.context.payload.workflow_run?.event === 'push') {
+    core.debug(
+      'Push event triggered `workflow_run`... skipping as this only works for PRs'
+    );
     return;
   }
 
@@ -119,21 +142,6 @@ async function run(): Promise<void> {
   });
 
   try {
-    const mergeBaseSha: string =
-      core.getInput('merge-base') ||
-      github.context.payload.pull_request?.base?.sha;
-
-    core.startGroup('github context');
-    core.debug(JSON.stringify(github.context, null, 2));
-    core.debug(`merge base: ${mergeBaseSha}`);
-    core.endGroup();
-
-    core.startGroup('github event');
-    core.debug(JSON.stringify(GITHUB_EVENT, null, 2));
-    core.endGroup();
-
-    // TODO(billy): owner/repo probably need to come from pull_request.base in order to handle
-    // forked repos
     const [
       didDownloadLatest,
       didDownloadMergeBase,
@@ -141,7 +149,9 @@ async function run(): Promise<void> {
       owner,
       repo,
       branch: baseBranch,
-      workflow_id: `${GITHUB_WORKFLOW}.yml`,
+      workflow_id: `${
+        github.context.payload.workflow_run?.name || GITHUB_WORKFLOW
+      }.yml`,
       artifactName,
       basePath,
       mergeBasePath,
@@ -166,11 +176,38 @@ async function run(): Promise<void> {
     if (!snapshotPath) {
       core.debug('Downloading current snapshots');
 
-      // Download snapshots from current branch
-      downloadResp = await downloadSnapshots({
-        artifactName,
-        rootDirectory: '/tmp/visual-snapshots',
-      });
+      const rootDirectory = '/tmp/visual-snapshots';
+
+      if (github.context.eventName === 'workflow_run') {
+        // TODO: fail the build if workflow_run.conclusion != 'success'
+        // If this is called from a `workflow_run` event, then assume that the artifacts exist from that workflow run
+        // TODO: I'm not sure what happens if there are multiple workflows defined (I assume it would get called multiple times?)
+        const {data} = await octokit.actions.listWorkflowRunArtifacts({
+          owner,
+          repo,
+          run_id: github.context.payload.workflow_run?.id,
+        });
+
+        const artifact = data.artifacts.find(({name}) => name === artifactName);
+
+        if (!artifact) {
+          throw new Error(
+            `Unable to find artifact from ${github.context.payload.workflow_run?.html_url}`
+          );
+        }
+
+        downloadResp = await downloadOtherWorkflowArtifact(octokit, {
+          owner,
+          repo,
+          artifactId: artifact.id,
+          downloadPath: `${rootDirectory}/visual-snapshots`,
+        });
+      } else {
+        downloadResp = await downloadSnapshots({
+          artifactName,
+          rootDirectory,
+        });
+      }
     }
 
     const current = snapshotPath || downloadResp?.downloadPath;

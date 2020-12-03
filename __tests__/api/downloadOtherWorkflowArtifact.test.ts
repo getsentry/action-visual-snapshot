@@ -42,5 +42,8 @@ test('downloads and extracts artifact', async function () {
     }
   );
 
-  expect(downloadResult).toBe(true);
+  expect(downloadResult).toEqual({
+    artifactName: '/',
+    downloadPath: '.artifacts',
+  });
 });

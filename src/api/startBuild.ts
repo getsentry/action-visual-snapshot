@@ -32,6 +32,7 @@ export async function startBuild({
     core.startGroup('Starting build using API...');
     const post = bent(API_ENDPOINT, 'POST', 'json', 200);
 
+    core.debug(`sha/ref: ${head_ref}, ${head_sha}`);
     const result = await post(
       '/build',
       {owner, repo, head_sha, head_ref},
@@ -42,6 +43,10 @@ export async function startBuild({
     core.endGroup();
     return result;
   } catch (err) {
+    core.startGroup('Error starting build with API');
+    core.debug(err);
+    core.endGroup();
+
     core.startGroup('Starting build using GitHub API directly...');
     const {data: check} = await octokit.checks.create({
       owner,
