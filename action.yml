@@ -36,9 +36,6 @@ inputs:
     required: false
     description: 'github token'
     default: '${{ github.token }}'
-  githubToken:
-    required: true
-    description: 'github token'
 
   results-path:
     required: false

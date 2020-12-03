@@ -21,7 +21,7 @@ import {Await} from './types';
 import {getPixelmatchOptions} from './getPixelmatchOptions';
 
 const {owner, repo} = github.context.repo;
-const token = core.getInput('github-token') || core.getInput('githubToken');
+const token = core.getInput('github-token');
 const octokit = token && github.getOctokit(token);
 const {GITHUB_EVENT_PATH, GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const pngGlob = '/**/*.png';
