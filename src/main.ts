@@ -78,12 +78,20 @@ async function run(): Promise<void> {
   const pullRequestPayload = github.context.payload.pull_request;
 
   // We're only interested the first pull request... I'm not sure how there can be multiple
+  // Forks do not have `pull_requests` populated...
   const workflowRunPullRequest = workflowRunPayload?.pull_requests?.[0];
 
   const headSha =
-    pullRequestPayload?.head.sha || workflowRunPullRequest?.head.sha;
+    pullRequestPayload?.head.sha ||
+    workflowRunPullRequest?.head.sha ||
+    workflowRunPayload?.head_sha;
   const headRef =
-    pullRequestPayload?.head.ref || workflowRunPullRequest?.head.ref;
+    pullRequestPayload?.head.ref ||
+    workflowRunPullRequest?.head.ref ||
+    (workflowRunPayload?.head_branch &&
+      `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`);
+
+  // TODO: Need a good merge base for forks as neither of the below values will exist (input not included)
   const mergeBaseSha: string =
     core.getInput('merge-base') ||
     pullRequestPayload?.base?.sha ||
