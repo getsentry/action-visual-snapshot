@@ -66,13 +66,21 @@ export async function getArtifactsForBranchAndWorkflow(
       per_page: PER_PAGE_LIMIT,
     }
   )) {
-    const workflowRuns = response.data;
-
-    if (!workflowRuns.length) {
+    if (!response.data.length) {
       core.warning(`Workflow ${workflow_id} not found in branch ${branch}`);
       core.endGroup();
       return null;
     }
+
+    // XXX: This function is only used by `retrieveBaseSnapshots`, which means that base snapshots
+    // should only be used from the workflow org/repo and not from forks, as they can create
+    // a pull request that uses the base branch name.
+    //
+    // If this needs to be more generic, this should be an option.
+    const workflowRuns = response.data.filter(
+      workflowRun =>
+        workflowRun.head_repository.full_name === `${owner}/${repo}`
+    );
 
     const workflowRunsForCommit = commit
       ? workflowRuns.filter(
