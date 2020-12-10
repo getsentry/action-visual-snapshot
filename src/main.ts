@@ -132,7 +132,7 @@ async function run(): Promise<void> {
   }
 
   // This is intended to only work with pull requests, we should ignore `workflow_run` from pushes
-  if (github.context.payload.workflow_run?.event === 'push') {
+  if (workflowRunPayload?.event === 'push') {
     core.debug(
       'Push event triggered `workflow_run`... skipping as this only works for PRs'
     );
@@ -157,9 +157,7 @@ async function run(): Promise<void> {
       owner,
       repo,
       branch: baseBranch,
-      workflow_id: `${
-        github.context.payload.workflow_run?.name || GITHUB_WORKFLOW
-      }.yml`,
+      workflow_id: `${workflowRunPayload?.name || GITHUB_WORKFLOW}.yml`,
       artifactName,
       basePath,
       mergeBasePath,
@@ -193,14 +191,14 @@ async function run(): Promise<void> {
         const {data} = await octokit.actions.listWorkflowRunArtifacts({
           owner,
           repo,
-          run_id: github.context.payload.workflow_run?.id,
+          run_id: workflowRunPayload?.id,
         });
 
         const artifact = data.artifacts.find(({name}) => name === artifactName);
 
         if (!artifact) {
           throw new Error(
-            `Unable to find artifact from ${github.context.payload.workflow_run?.html_url}`
+            `Unable to find artifact from ${workflowRunPayload?.html_url}`
           );
         }
 

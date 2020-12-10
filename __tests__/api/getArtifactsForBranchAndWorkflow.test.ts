@@ -1,7 +1,7 @@
 import * as github from '@actions/github';
 import {getArtifactsForBranchAndWorkflow} from '@app/api/getArtifactsForBranchAndWorkflow';
 
-test('it gets workflow runs and a branch and workflow id and then gets artifacts for first workflow run found', async function() {
+test('it gets workflow runs and a branch and workflow id and then gets artifacts for first workflow run found', async function () {
   const octokit = github.getOctokit('token');
 
   const results = await getArtifactsForBranchAndWorkflow(octokit, {
@@ -29,6 +29,6 @@ test('it gets workflow runs and a branch and workflow id and then gets artifacts
 
   expect(results?.artifact).toMatchObject({
     url:
-      'https://api.github.com/repos/billyvg/sentry/actions/artifacts/9808919',
+      'https://api.github.com/repos/getsentry/sentry/actions/artifacts/9808919',
   });
 });
