@@ -26,7 +26,7 @@ export type GetArtifactsForBranchAndWorkflow = {
 
 // max pages of workflows to pagination through
 const MAX_PAGES = 10;
-const PER_PAGE_LIMIT = 100;
+const PER_PAGE_LIMIT = 10;
 
 /**
  * Fetch artifacts from a workflow run from a branch

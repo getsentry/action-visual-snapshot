@@ -25,7 +25,7 @@ test('only downloads and returns base if base and merge base are the same', asyn
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
     branch: 'main',
-    per_page: 100,
+    per_page: 10,
     status: 'completed',
   });
 
@@ -74,7 +74,7 @@ test('downloads and returns base and merge base', async function() {
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
     branch: 'main',
-    per_page: 100,
+    per_page: 10,
     status: 'completed',
   });
 

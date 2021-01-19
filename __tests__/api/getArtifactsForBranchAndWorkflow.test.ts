@@ -17,7 +17,7 @@ test('it gets workflow runs and a branch and workflow id and then gets artifacts
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
     branch: 'main',
-    per_page: 100,
+    per_page: 10,
     status: 'completed',
   });
 
