@@ -116,13 +116,13 @@ async function run(): Promise<void> {
         rootDirectory: snapshotPath,
       });
     }
-
+  } catch (error) {
+    handleError(error);
+  } finally {
     // Only needs to upload snapshots, do not proceed further
     if (shouldSaveOnly !== 'false') {
       return;
     }
-  } catch (error) {
-    handleError(error);
   }
 
   if (!octokit) {
