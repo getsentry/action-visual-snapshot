@@ -3,6 +3,7 @@ import path from 'path';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
+import * as io from '@actions/io';
 import * as Sentry from '@sentry/node';
 import {RewriteFrames} from '@sentry/integrations';
 
@@ -234,6 +235,8 @@ async function run(): Promise<void> {
 
     // Get pixelmatch options from workflow inputs
     const pixelmatchOptions = getPixelmatchOptions();
+
+    await io.mkdirP(resultsPath);
 
     const {
       baseFiles,
