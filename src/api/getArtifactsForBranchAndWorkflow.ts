@@ -78,17 +78,25 @@ export async function getArtifactsForBranchAndWorkflow(
     // a pull request that uses the base branch name.
     //
     // If this needs to be more generic, this should be an option.
-    const workflowRuns = response.data.filter(
-      workflowRun =>
-        workflowRun.head_repository.full_name === `${owner}/${repo}`
-    );
+    const workflowRuns = response.data
+      .filter(
+        workflowRun =>
+          workflowRun.head_repository.full_name === `${owner}/${repo}`
+      )
+      .filter(
+        // branch and status are temp due to GH issues Note, the GH api accepts
+        // both `status` and `conclusion` field values
+        // https://octokit.github.io/rest.js/v18#actions-list-workflow-workflowRuns-for-repo
+        // but we are only interested in successful workflowRuns (which means we
+        // have to use `conclusion`)
+        workflowRun =>
+          workflowRun.head_branch === branch &&
+          workflowRun.conclusion === 'success'
+      );
 
     const workflowRunsForCommit = commit
       ? workflowRuns.filter(
-          (run: typeof workflowRuns[number]) =>
-            run.head_sha === commit &&
-            run.head_branch === branch &&
-            run.status === 'success' // branch and status are temp due to GH issues
+          (run: typeof workflowRuns[number]) => run.head_sha === commit
         )
       : workflowRuns;
 
