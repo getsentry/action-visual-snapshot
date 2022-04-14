@@ -6,7 +6,7 @@ jest.mock('@app/api/downloadOtherWorkflowArtifact', () => ({
   downloadOtherWorkflowArtifact: jest.fn(),
 }));
 
-test('only downloads and returns base if base and merge base are the same', async function() {
+test('only downloads and returns base if base and merge base are the same', async function () {
   const octokit = github.getOctokit('token');
 
   const results = await retrieveBaseSnapshots(octokit, {
@@ -24,9 +24,9 @@ test('only downloads and returns base if base and merge base are the same', asyn
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
-    branch: 'main',
-    per_page: 10,
-    status: 'completed',
+    // branch: 'main',
+    per_page: 30,
+    // status: 'success',
   });
 
   expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
@@ -54,7 +54,7 @@ test('only downloads and returns base if base and merge base are the same', asyn
   ]);
 });
 
-test('downloads and returns base and merge base', async function() {
+test('downloads and returns base and merge base', async function () {
   const octokit = github.getOctokit('token');
 
   const results = await retrieveBaseSnapshots(octokit, {
@@ -73,9 +73,9 @@ test('downloads and returns base and merge base', async function() {
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
-    branch: 'main',
-    per_page: 10,
-    status: 'completed',
+    // branch: 'main',
+    per_page: 30,
+    // status: 'success',
   });
 
   expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({

@@ -26,7 +26,7 @@ export type GetArtifactsForBranchAndWorkflow = {
 
 // max pages of workflows to pagination through
 const MAX_PAGES = 10;
-const PER_PAGE_LIMIT = 10;
+const PER_PAGE_LIMIT = 30;
 
 /**
  * Fetch artifacts from a workflow run from a branch
@@ -61,8 +61,9 @@ export async function getArtifactsForBranchAndWorkflow(
       repo,
       // Below is typed incorrectly, it needs to be a string but typed as number
       workflow_id: (workflow_id as unknown) as number,
-      branch,
-      status: 'completed',
+      // XXX: GH broke filtering so we have to do it client-side for now
+      // branch,
+      // status: 'success',
       per_page: PER_PAGE_LIMIT,
     }
   )) {
@@ -77,10 +78,21 @@ export async function getArtifactsForBranchAndWorkflow(
     // a pull request that uses the base branch name.
     //
     // If this needs to be more generic, this should be an option.
-    const workflowRuns = response.data.filter(
-      workflowRun =>
-        workflowRun.head_repository.full_name === `${owner}/${repo}`
-    );
+    const workflowRuns = response.data
+      .filter(
+        workflowRun =>
+          workflowRun.head_repository.full_name === `${owner}/${repo}`
+      )
+      .filter(
+        // branch and status are temp due to GH issues Note, the GH api accepts
+        // both `status` and `conclusion` field values
+        // https://octokit.github.io/rest.js/v18#actions-list-workflow-workflowRuns-for-repo
+        // but we are only interested in successful workflowRuns (which means we
+        // have to use `conclusion`)
+        workflowRun =>
+          workflowRun.head_branch === branch &&
+          workflowRun.conclusion === 'success'
+      );
 
     const workflowRunsForCommit = commit
       ? workflowRuns.filter(
