@@ -26,7 +26,7 @@ export type GetArtifactsForBranchAndWorkflow = {
 
 // max pages of workflows to pagination through
 const MAX_PAGES = 10;
-const PER_PAGE_LIMIT = 10;
+const PER_PAGE_LIMIT = 30;
 
 /**
  * Fetch artifacts from a workflow run from a branch
@@ -61,8 +61,9 @@ export async function getArtifactsForBranchAndWorkflow(
       repo,
       // Below is typed incorrectly, it needs to be a string but typed as number
       workflow_id: (workflow_id as unknown) as number,
-      branch,
-      status: 'completed',
+      // XXX: GH broke filtering so we have to do it client-side for now
+      // branch,
+      // status: 'success',
       per_page: PER_PAGE_LIMIT,
     }
   )) {
@@ -84,7 +85,10 @@ export async function getArtifactsForBranchAndWorkflow(
 
     const workflowRunsForCommit = commit
       ? workflowRuns.filter(
-          (run: typeof workflowRuns[number]) => run.head_sha === commit
+          (run: typeof workflowRuns[number]) =>
+            run.head_sha === commit &&
+            run.head_branch === branch &&
+            run.status === 'success' // branch and status are temp due to GH issues
         )
       : workflowRuns;
 
