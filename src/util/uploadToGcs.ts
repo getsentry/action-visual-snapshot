@@ -21,23 +21,28 @@ export async function uploadToGcs({
     return Promise.resolve([]);
   }
 
-  const results = [];
+  const resultPromises: Promise<{alt: string; image_url: string}>[] = [];
+  const bucketReference = storage.bucket(bucket);
 
   for (const file of files) {
     const relativeFilePath = path.relative(root, file);
-    const [File] = await storage.bucket(bucket).upload(file, {
-      destination: `${destinationRoot}/${relativeFilePath}`,
-      gzip: true,
-      metadata: {
-        cacheControl: 'public, max-age=31536000',
-      },
-    });
+    const uploadPromise = bucketReference
+      .upload(file, {
+        destination: `${destinationRoot}/${relativeFilePath}`,
+        gzip: true,
+        metadata: {
+          cacheControl: 'public, max-age=31536000',
+        },
+      })
+      .then(([File]) => ({
+        alt: relativeFilePath,
+        image_url: `https://storage.googleapis.com/${bucket}/${File.name}`,
+      }));
 
-    results.push({
-      alt: relativeFilePath,
-      image_url: `https://storage.googleapis.com/${bucket}/${File.name}`,
-    });
+    resultPromises.push(uploadPromise);
   }
 
-  return results.filter(({image_url}) => image_url.includes('/diffs/'));
+  return Promise.all(resultPromises).then(results =>
+    results.filter(r => r.image_url.includes('/diffs/'))
+  );
 }
