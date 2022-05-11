@@ -62,6 +62,30 @@ function handleError(error: Error) {
   core.setFailed(error.message);
 }
 
+function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
+  const workflowRunPayload = github.context.payload.workflow_run;
+  const pullRequestPayload = github.context.payload.pull_request;
+  const workflowRunPullRequest = workflowRunPayload?.pull_requests?.[0];
+
+  const head_sha =
+    pullRequestPayload?.head.sha ||
+    workflowRunPullRequest?.head.sha ||
+    workflowRunPayload?.head_sha;
+
+  if (typeof head_sha !== 'string') {
+    throw new Error('Could not read head sha');
+  }
+
+  return {
+    headRef:
+      pullRequestPayload?.head.ref ||
+      workflowRunPullRequest?.head.ref ||
+      (workflowRunPayload?.head_branch &&
+        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`),
+    headSha: head_sha,
+  };
+}
+
 async function run(): Promise<void> {
   const resultsRootPath: string = core.getInput('results-path');
   const baseBranch = core.getInput('base-branch');
@@ -82,15 +106,7 @@ async function run(): Promise<void> {
   // Forks do not have `pull_requests` populated...
   const workflowRunPullRequest = workflowRunPayload?.pull_requests?.[0];
 
-  const headSha =
-    pullRequestPayload?.head.sha ||
-    workflowRunPullRequest?.head.sha ||
-    workflowRunPayload?.head_sha;
-  const headRef =
-    pullRequestPayload?.head.ref ||
-    workflowRunPullRequest?.head.ref ||
-    (workflowRunPayload?.head_branch &&
-      `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`);
+  const {headRef, headSha} = getGithubHeadRefInfo();
 
   // TODO: Need a good merge base for forks as neither of the below values will exist (input not included)
   const mergeBaseSha: string =
@@ -339,9 +355,12 @@ async function run(): Promise<void> {
   }
 }
 
+const {headRef, headSha} = getGithubHeadRefInfo();
+
 const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   name: 'visual snapshot',
+  tags: {head_ref: headRef, head_sha: headSha},
 });
 
 Sentry.configureScope(scope => {
