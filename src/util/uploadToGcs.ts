@@ -1,4 +1,5 @@
 import path from 'path';
+import {PromisePool} from '@supercharge/promise-pool';
 
 import {getStorageClient} from './getStorageClient';
 
@@ -21,28 +22,29 @@ export async function uploadToGcs({
     return Promise.resolve([]);
   }
 
-  const resultPromises: Promise<{alt: string; image_url: string}>[] = [];
+  const results: {alt: string; image_url: string}[] = [];
   const bucketReference = storage.bucket(bucket);
 
-  for (const file of files) {
-    const relativeFilePath = path.relative(root, file);
-    const uploadPromise = bucketReference
-      .upload(file, {
-        destination: `${destinationRoot}/${relativeFilePath}`,
-        gzip: true,
-        metadata: {
-          cacheControl: 'public, max-age=31536000',
-        },
-      })
-      .then(([File]) => ({
-        alt: relativeFilePath,
-        image_url: `https://storage.googleapis.com/${bucket}/${File.name}`,
-      }));
+  await PromisePool.for(files)
+    .withConcurrency(10)
+    .process(async file => {
+      const relativeFilePath = path.relative(root, file);
 
-    resultPromises.push(uploadPromise);
-  }
+      await bucketReference
+        .upload(file, {
+          destination: `${destinationRoot}/${relativeFilePath}`,
+          gzip: true,
+          metadata: {
+            cacheControl: 'public, max-age=31536000',
+          },
+        })
+        .then(([File]) => {
+          results.push({
+            alt: relativeFilePath,
+            image_url: `https://storage.googleapis.com/${bucket}/${File.name}`,
+          });
+        });
+    });
 
-  return Promise.all(resultPromises).then(results =>
-    results.filter(r => r.image_url.includes('/diffs/'))
-  );
+  return results.filter(({image_url}) => image_url.includes('/diffs/'));
 }

@@ -57,6 +57,7 @@
     "@sentry/integrations": "^5.27.4",
     "@sentry/node": "^5.27.4",
     "@sentry/tracing": "^5.27.4",
+    "@supercharge/promise-pool": "^2.1.0",
     "@types/async-retry": "^1.4.2",
     "@types/bent": "^7.3.0",
     "@types/ejs": "^3.0.4",
