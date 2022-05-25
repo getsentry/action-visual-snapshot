@@ -18,7 +18,7 @@ test('it gets workflow runs and a branch and workflow id and then gets artifacts
     workflow_id: 'acceptance.yml',
     branch: 'main',
     per_page: 10,
-    status: 'completed',
+    status: 'success',
   });
 
   expect(octokit.rest.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
