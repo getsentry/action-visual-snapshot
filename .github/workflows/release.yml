@@ -43,8 +43,9 @@ jobs:
         git add dist/index.js
         git add dist/sourcemap-register.js
         git add src/template/index.ts
-        git commit -m "chore(): Updating dist"
-        git push
+        # This can fail if `dist` was already run in branch
+        git commit -m "chore(): Updating dist" | true
+        git push | true
 
     - name: Sentry Release
       env:
