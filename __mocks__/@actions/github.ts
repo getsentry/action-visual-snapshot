@@ -9,7 +9,7 @@ const listWorkflowRunsMock = jest.fn(async () =>
           head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
           run_number: 172,
           event: 'push',
-          status: 'success',
+          status: 'completed',
           conclusion: 'success',
           workflow_id: 1154499,
           url:
@@ -53,7 +53,7 @@ const listWorkflowRunsMock = jest.fn(async () =>
           head_sha: '11111111l129a173dc79d4634df0fdaece933b06',
           run_number: 171,
           event: 'push',
-          status: 'success',
+          status: 'completed',
           conclusion: 'success',
           workflow_id: 1154498,
           url:
