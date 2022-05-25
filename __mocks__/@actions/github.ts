@@ -5,7 +5,7 @@ const listWorkflowRunsMock = jest.fn(async () =>
         {
           id: 152081708,
           node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
-          head_branch: 'main',
+          head_branch: 'master',
           head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
           run_number: 172,
           event: 'push',
@@ -49,7 +49,7 @@ const listWorkflowRunsMock = jest.fn(async () =>
         {
           id: 152081707,
           node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
-          head_branch: 'main',
+          head_branch: 'master',
           head_sha: '11111111l129a173dc79d4634df0fdaece933b06',
           run_number: 171,
           event: 'push',
