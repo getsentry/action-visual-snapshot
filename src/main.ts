@@ -205,7 +205,7 @@ async function run(): Promise<void> {
         // TODO: fail the build if workflow_run.conclusion != 'success'
         // If this is called from a `workflow_run` event, then assume that the artifacts exist from that workflow run
         // TODO: I'm not sure what happens if there are multiple workflows defined (I assume it would get called multiple times?)
-        const {data} = await octokit.actions.listWorkflowRunArtifacts({
+        const {data} = await octokit.rest.actions.listWorkflowRunArtifacts({
           owner,
           repo,
           run_id: workflowRunPayload?.id,

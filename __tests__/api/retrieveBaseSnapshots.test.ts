@@ -20,7 +20,7 @@ test('only downloads and returns base if base and merge base are the same', asyn
     mergeBaseSha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
   });
 
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledWith({
+  expect(octokit.rest.actions.listWorkflowRuns).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
@@ -29,13 +29,13 @@ test('only downloads and returns base if base and merge base are the same', asyn
     status: 'completed',
   });
 
-  expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
+  expect(octokit.rest.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
     run_id: 152081708,
   });
 
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledTimes(1);
+  expect(octokit.rest.actions.listWorkflowRuns).toHaveBeenCalledTimes(1);
 
   expect(downloadOtherWorkflowArtifact).toHaveBeenCalledTimes(1);
   expect(downloadOtherWorkflowArtifact).toHaveBeenCalledWith(octokit, {
@@ -68,8 +68,8 @@ test('downloads and returns base and merge base', async function() {
     mergeBaseSha: '11111111l129a173dc79d4634df0fdaece933b06',
   });
 
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledTimes(2);
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledWith({
+  expect(octokit.rest.actions.listWorkflowRuns).toHaveBeenCalledTimes(2);
+  expect(octokit.rest.actions.listWorkflowRuns).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
@@ -78,13 +78,13 @@ test('downloads and returns base and merge base', async function() {
     status: 'completed',
   });
 
-  expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
+  expect(octokit.rest.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
     run_id: 152081708,
   });
 
-  expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
+  expect(octokit.rest.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
     run_id: 152081707,

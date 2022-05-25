@@ -40,8 +40,7 @@ export async function failBuild({token, octokit, ...body}: Params) {
 
   const {title, summary, ...checkBody} = failureBody;
 
-  // @ts-ignore
-  return await octokit.checks.update({
+  return await octokit.rest.checks.update({
     check_run_id: id,
     owner,
     repo,

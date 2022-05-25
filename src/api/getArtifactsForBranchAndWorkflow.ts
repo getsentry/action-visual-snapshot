@@ -4,10 +4,10 @@ import * as github from '@actions/github';
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 type WorkflowRun = GetResponseDataTypeFromEndpointMethod<
-  Octokit['actions']['listWorkflowRuns']
+  Octokit['rest']['actions']['listWorkflowRuns']
 >['workflow_runs'][number];
 type Artifacts = GetResponseDataTypeFromEndpointMethod<
-  Octokit['actions']['listWorkflowRunArtifacts']
+  Octokit['rest']['actions']['listWorkflowRunArtifacts']
 >['artifacts'][number];
 
 export type GetArtifactsForBranchAndWorkflowReturn = {
@@ -55,7 +55,7 @@ export async function getArtifactsForBranchAndWorkflow(
   let completedWorkflowRuns: WorkflowRun[] = [];
 
   for await (const response of octokit.paginate.iterator(
-    octokit.actions.listWorkflowRuns,
+    octokit.rest.actions.listWorkflowRuns,
     {
       owner,
       repo,
@@ -114,7 +114,7 @@ export async function getArtifactsForBranchAndWorkflow(
 
     const {
       data: {artifacts},
-    } = await octokit.actions.listWorkflowRunArtifacts({
+    } = await octokit.rest.actions.listWorkflowRunArtifacts({
       owner,
       repo,
       run_id: workflowRun.id,
