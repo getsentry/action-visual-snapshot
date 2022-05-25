@@ -16,9 +16,9 @@ test('it gets workflow runs and a branch and workflow id and then gets artifacts
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
-    // branch: 'main',
-    per_page: 30,
-    // status: 'status',
+    branch: 'main',
+    per_page: 10,
+    status: 'completed',
   });
 
   expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({

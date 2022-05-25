@@ -43,8 +43,8 @@ jobs:
         git add dist/index.js
         git add dist/sourcemap-register.js
         git add src/template/index.ts
-        git commit -m "chore(): Updating dist" || true
-        git push || true
+        git commit -m "chore(): Updating dist"
+        git push
 
     - name: Sentry Release
       env:
