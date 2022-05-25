@@ -55,7 +55,7 @@ export async function finishBuild({token, ...body}: Params) {
         ? `${added.length} new snapshots`
         : 'No snapshot changes detected';
 
-    return await octokit.checks.update({
+    return await octokit.rest.checks.update({
       check_run_id: id,
       owner,
       repo,

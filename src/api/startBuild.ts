@@ -48,7 +48,7 @@ export async function startBuild({
     core.endGroup();
 
     core.startGroup('Starting build using GitHub API directly...');
-    const {data: check} = await octokit.checks.create({
+    const {data: check} = await octokit.rest.checks.create({
       owner,
       repo,
       head_sha,

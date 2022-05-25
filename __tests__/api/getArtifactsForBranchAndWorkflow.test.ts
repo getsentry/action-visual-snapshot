@@ -12,7 +12,7 @@ test('it gets workflow runs and a branch and workflow id and then gets artifacts
     artifactName: 'visual-snapshots',
   });
 
-  expect(octokit.actions.listWorkflowRuns).toHaveBeenCalledWith({
+  expect(octokit.rest.actions.listWorkflowRuns).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
     workflow_id: 'acceptance.yml',
@@ -21,7 +21,7 @@ test('it gets workflow runs and a branch and workflow id and then gets artifacts
     status: 'completed',
   });
 
-  expect(octokit.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
+  expect(octokit.rest.actions.listWorkflowRunArtifacts).toHaveBeenCalledWith({
     owner: 'getsentry',
     repo: 'sentry',
     run_id: 152081708,
