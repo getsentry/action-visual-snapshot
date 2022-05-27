@@ -8,28 +8,23 @@ export function resizeImage(img: PNG, width: number, height: number) {
     return img;
   }
 
+  // Initialize the image buffers through PNG
   const newImage = new PNG({width, height});
-  // Iterate over pixels of target image width/height and copy pixels
-  // from base image. If beyond dimensions of original image, then
-  // make a transparent pixel
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (width * y + (x % width)) << 2;
-      // Check if outside of boundaries
-      if (y >= img.height || x >= img.width) {
-        // Pixel needs to be empty and transparent
-        newImage.data[idx] = 0;
-        newImage.data[idx + 1] = 0;
-        newImage.data[idx + 2] = 0;
-        newImage.data[idx + 3] = 0;
-      } else {
-        const sourceIdx = (sourceWidth * y + (x % sourceWidth)) << 2;
-        newImage.data[idx] = img.data[sourceIdx];
-        newImage.data[idx + 1] = img.data[sourceIdx + 1];
-        newImage.data[idx + 2] = img.data[sourceIdx + 2];
-        newImage.data[idx + 3] = img.data[sourceIdx + 3];
-      }
-    }
+
+  // whether the input bitmap has 4 bytes per pixel (rgb and alpha) or 3 (rgb - no alpha).
+  // Keeping this hardcoded like it was, but we should probably read the value from the IHDR header.
+  const BYTES_PER_PX = 4;
+  const bytesPerSourceRow = sourceWidth * BYTES_PER_PX;
+  const bytesPerTargetRow = width * BYTES_PER_PX;
+
+  for (let y = 0; y < sourceHeight; y++) {
+    const sourceRowStart = y * bytesPerSourceRow;
+    const sourceRowEnd = y * bytesPerSourceRow + bytesPerSourceRow;
+
+    const rowData = img.data.slice(sourceRowStart, sourceRowEnd);
+
+    const targetRowStart = y * bytesPerTargetRow;
+    rowData.copy(newImage.data, targetRowStart, 0, rowData.length);
   }
 
   return newImage;
