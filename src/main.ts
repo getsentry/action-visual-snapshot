@@ -256,6 +256,7 @@ async function run(): Promise<void> {
       changedSnapshots,
       missingSnapshots,
       newSnapshots,
+      terminationReason,
     } = await diffSnapshots({
       basePath,
       mergeBasePath,
@@ -284,6 +285,7 @@ async function run(): Promise<void> {
     gcsSpan?.finish();
     const changedArray = [...changedSnapshots];
     const results = {
+      terminationReason,
       baseFilesLength: baseFiles.length,
       changed: changedArray,
       missing: [...missingSnapshots],
