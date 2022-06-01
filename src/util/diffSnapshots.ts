@@ -21,7 +21,7 @@ function getDiffedTagBucket(n: number): string {
     return `>=${MAX_BUCKET}`;
   }
 
-  for (const bucket of [10, 25, 50, 100]) {
+  for (const bucket of [2, 5, 10, 25, 50, 100]) {
     if (n < bucket) {
       return `<${bucket}`;
     }
