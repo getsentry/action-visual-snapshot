@@ -16,6 +16,7 @@ type Params = {
     image_url: string;
   }[];
   results: {
+    terminationReason: 'maxChangedSnapshots' | null;
     baseFilesLength: number;
     changed: string[];
     missing: string[];
@@ -37,7 +38,13 @@ export async function finishBuild({token, ...body}: Params) {
     });
   } catch (err) {
     const {owner, repo, galleryUrl, id, images, results, octokit} = body;
-    const {baseFilesLength, changed, missing, added} = results;
+    const {
+      baseFilesLength,
+      changed,
+      missing,
+      added,
+      terminationReason,
+    } = results;
     const unchanged = baseFilesLength - (changed.length + missing.length);
 
     const totalChanged = changed.length + missing.length;
@@ -66,7 +73,13 @@ export async function finishBuild({token, ...body}: Params) {
         title,
         summary: `
 ${galleryUrl ? `[View Image Gallery](${galleryUrl})` : ''}
-
+${
+  terminationReason === 'maxChangedSnapshots'
+    ? 'Max number of changed snapshots exceeded (snapshot run was terminated early)</p>'
+    : terminationReason
+    ? `This run was terminated early with termination reason: ${terminationReason}`
+    : ''
+}
 * **${changed.length}** changed snapshots (${unchanged} unchanged)
 * **${missing.length}** missing snapshots
 * **${added.length}** new snapshots`,
