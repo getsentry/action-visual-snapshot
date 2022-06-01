@@ -13,6 +13,24 @@ import {getChildDirectories} from './getChildDirectories';
 
 const pngGlob = '/**/*.png';
 
+// Buckets n -  we use the tag buckets to tag runs in sentry
+// and separate performance data by nb of diffs that were made.
+function getDiffedTagBucket(n: number): string {
+  const MAX_BUCKET = 2000;
+  if (n >= MAX_BUCKET) {
+    return `>=${MAX_BUCKET}`;
+  }
+
+  for (const bucket of [2, 5, 10, 25, 50, 100]) {
+    if (n < bucket) {
+      return `<${bucket}`;
+    }
+  }
+
+  // Generate ranges of 100 increments for 100 - MAX_BUCKET
+  return `<${Math.ceil(n / 100) * 100}`;
+}
+
 type DiffSnapshotsParams = {
   basePath: string;
   mergeBasePath: string;
@@ -131,6 +149,13 @@ export async function diffSnapshots({
       }
     }
   }
+
+  // Set a sentry tag so we can compare transaction performance on
+  // runs that have a similar number of changed snapshots.
+  transaction?.setTag(
+    'snapshots.diffed.grouped',
+    getDiffedTagBucket(currentFiles.length)
+  );
 
   // Diff snapshots against base branch
   // This is to make sure we run the above tasks serially, otherwise we will
