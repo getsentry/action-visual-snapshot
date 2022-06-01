@@ -49,7 +49,11 @@ type DiffSnapshotsParams = {
 // Max number of changed snapshots - once this number is reached,
 // the diff process will early terminate and the non-processed snapshots
 // will be removed from the missingSnapshots sets.
-const DEFAULT_MAX_CHANGED_SNAPSHOTS = 20;
+
+// The magic number 30 comes from the fact that we have 24 email templates
+// and the current workflow for making changes to them is to use the visual
+// diffs to see if the changes reflected. 30 gives us a small buffer to deal with
+const DEFAULT_MAX_CHANGED_SNAPSHOTS = 30;
 
 /**
  * Given a list of files for
