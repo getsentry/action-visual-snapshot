@@ -17,6 +17,7 @@ import {retrieveBaseSnapshots} from './api/retrieveBaseSnapshots';
 import {startBuild} from './api/startBuild';
 import {finishBuild} from './api/finishBuild';
 import {failBuild} from './api/failBuild';
+import {getOSTags} from './util/osTags';
 import {SENTRY_DSN} from './config';
 import {Await} from './types';
 import {getPixelmatchOptions} from './getPixelmatchOptions';
@@ -360,7 +361,7 @@ const {headRef, headSha} = getGithubHeadRefInfo();
 const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   name: 'visual snapshot',
-  tags: {head_ref: headRef, head_sha: headSha},
+  tags: {head_ref: headRef, head_sha: headSha, ...getOSTags()},
 });
 
 Sentry.configureScope(scope => {
