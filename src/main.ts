@@ -73,10 +73,6 @@ function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
     workflowRunPullRequest?.head.sha ||
     workflowRunPayload?.head_sha;
 
-  if (typeof head_sha !== 'string') {
-    throw new Error('Could not read head sha');
-  }
-
   return {
     headRef:
       pullRequestPayload?.head.ref ||
