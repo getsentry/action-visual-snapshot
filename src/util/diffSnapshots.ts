@@ -176,18 +176,18 @@ export async function diffSnapshots({
   // Diff snapshots against base branch. This is to make sure we run the above tasks serially, otherwise we will face OOM issues
   const queue = [...currentFiles];
   while (queue.length > 0) {
-    const absoluteFile = queue.pop();
-    if (absoluteFile === undefined) {
-      // This should never happen, but *just in case*, we just skip the file
-      continue;
-    }
-
     // If we have a lot of changed snapshots, there is probably a flake somewhere
     // and diffing + uploading all of the diffs will take a very long time. We are
     // likely not interested in all of them and subset will be enough.
     if (changedSnapshots.size >= maxChangedSnapshots) {
       terminationReason = 'maxChangedSnapshots';
       break;
+    }
+
+    const absoluteFile = queue.pop();
+    if (absoluteFile === undefined) {
+      // This should never happen, but *just in case*, we just skip the file
+      continue;
     }
 
     // Since there is a chance that the loop terminates early, we need to keep this

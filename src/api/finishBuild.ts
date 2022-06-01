@@ -75,7 +75,7 @@ export async function finishBuild({token, ...body}: Params) {
 ${galleryUrl ? `[View Image Gallery](${galleryUrl})` : ''}
 ${
   terminationReason === 'maxChangedSnapshots'
-    ? 'Max number of changed snapshots exceeded (snapshot run was terminated early)</p>'
+    ? 'Max number of changed snapshots exceeded (snapshot run was terminated early)'
     : terminationReason
     ? `This run was terminated early with termination reason: ${terminationReason}`
     : ''
