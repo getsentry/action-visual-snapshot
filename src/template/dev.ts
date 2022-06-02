@@ -9,7 +9,7 @@ async function main() {
   await generateImageGallery(
     path.resolve(__dirname, '../../example_gallery/index.html'),
     {
-      terminationReason: null,
+      terminationReason: 'maxChangedSnapshots',
       baseFilesLength: 10,
       changed: [
         'acceptance/project-ownership.png',
