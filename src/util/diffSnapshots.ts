@@ -224,7 +224,7 @@ export async function diffSnapshots({
           );
         }
 
-        if (isDiff) {
+        if (isDiff > 0) {
           changedSnapshots.add(file);
           // Copy original + new files to results/output dirs
           await Promise.all([
