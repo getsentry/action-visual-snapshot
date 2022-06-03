@@ -1,5 +1,6 @@
 import path from 'path';
 
+import os from 'os';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as io from '@actions/io';
@@ -7,9 +8,8 @@ import * as Sentry from '@sentry/node';
 
 import {PixelmatchOptions} from '@app/types';
 
-import {createDiff} from './createDiff';
-import {multiCompare} from './multiCompare';
 import {getChildDirectories} from './getChildDirectories';
+import {WorkerPool} from './WorkerPool';
 
 const pngGlob = '/**/*.png';
 
@@ -43,6 +43,7 @@ type DiffSnapshotsParams = {
   newDirName?: string;
   missingDirName?: string;
   pixelmatchOptions?: PixelmatchOptions;
+  parallelism?: number;
   maxChangedSnapshots?: number;
 };
 
@@ -78,6 +79,7 @@ export async function diffSnapshots({
   newDirName = 'new',
   missingDirName = 'missing',
   pixelmatchOptions,
+  parallelism = os.cpus().length,
   maxChangedSnapshots = DEFAULT_MAX_CHANGED_SNAPSHOTS,
 }: DiffSnapshotsParams) {
   let terminationReason: 'maxChangedSnapshots' | null = null;
@@ -86,6 +88,7 @@ export async function diffSnapshots({
   const span = transaction?.startChild({
     op: 'diff snapshots',
     description: 'diff snapshots',
+    tags: {parallelism: Number(parallelism).toString()},
   });
 
   const newSnapshots = new Set<string>([]);
@@ -170,42 +173,50 @@ export async function diffSnapshots({
     getDiffedTagBucket(currentFiles.length)
   );
 
-  // Diff snapshots against base branch
-  // This is to make sure we run the above tasks serially, otherwise we will
-  // face OOM issues
+  // For tests, we cant directly import the ts file, so we need to use the js file
+  // which just proxies to ts-node and makes sure we get the compiled js version of our worker
+  const workerPath =
+    process.env.NODE_ENV === 'test'
+      ? path.resolve(__dirname, './../SnapshotDiffWorker.import.js')
+      : path.resolve(__dirname, './SnapshotDiffWorker.js');
+  const workerPool = new WorkerPool(workerPath, parallelism);
+
+  const processedFiles = new Set<string>();
   // Diff snapshots against base branch. This is to make sure we run the above tasks serially, otherwise we will face OOM issues
-  const queue = [...currentFiles];
-  while (queue.length > 0) {
-    // If we have a lot of changed snapshots, there is probably a flake somewhere
-    // and diffing + uploading all of the diffs will take a very long time. We are
-    // likely not interested in all of them and subset will be enough.
-    if (changedSnapshots.size >= maxChangedSnapshots) {
-      terminationReason = 'maxChangedSnapshots';
-      break;
-    }
+  const promises: Promise<any>[] = [];
 
-    const absoluteFile = queue.pop();
-    if (absoluteFile === undefined) {
-      // This should never happen, but *just in case*, we just skip the file
-      continue;
-    }
-
+  // eslint-disable-next-line
+  currentFiles.forEach(currentFile => {
     // Since there is a chance that the loop terminates early, we need to keep this
     // "file" in sync with the loop that reprocesses the leftover items and removes
     // them from the missingSnapshots set on L210. File basically means "key" in this case
-    const file = path.relative(currentPath, absoluteFile);
+    const file = path.relative(currentPath, currentFile);
     currentSnapshots.add(file);
+
+    async function onSuccess({result}: {result?: number}) {
+      const baseHead = path.resolve(basePath, file);
+      const branchHead = path.resolve(currentPath, file);
+
+      if (typeof result === 'number' && result > 0) {
+        changedSnapshots.add(file);
+        // Copy original + new files to results/output dirs
+        await Promise.all([
+          io.cp(baseHead, path.resolve(outputBasePath, file)),
+          io.cp(branchHead, path.resolve(outputCurrentPath, file)),
+        ]);
+      }
+    }
 
     if (baseSnapshots.has(file)) {
       const baseHead = path.resolve(basePath, file);
       const branchHead = path.resolve(currentPath, file);
 
-      try {
-        let isDiff;
+      let promise;
 
-        // If merge base snapshot exists, do a 3way diff
-        if (mergeBaseSnapshots.has(file)) {
-          isDiff = await multiCompare({
+      // If merge base snapshot exists, do a 3way diff
+      if (mergeBaseSnapshots.has(file)) {
+        promise = workerPool
+          .enqueue({
             branchBase: path.resolve(mergeBasePath, file),
             baseHead,
             branchHead,
@@ -213,41 +224,71 @@ export async function diffSnapshots({
             outputMergedPath,
             snapshotName: file,
             pixelmatchOptions,
+          })
+          .then(onSuccess)
+          .catch(err => {
+            core.debug(`Unable to diff: ${err.message}`);
           });
-        } else {
-          isDiff = await createDiff(
+      } else {
+        promise = workerPool
+          .enqueue({
             file,
             outputDiffPath,
             baseHead,
             branchHead,
-            pixelmatchOptions
-          );
-        }
-
-        if (isDiff > 0) {
-          changedSnapshots.add(file);
-          // Copy original + new files to results/output dirs
-          await Promise.all([
-            io.cp(baseHead, path.resolve(outputBasePath, file)),
-            io.cp(branchHead, path.resolve(outputCurrentPath, file)),
-          ]);
-        }
-
-        missingSnapshots.delete(file);
-      } catch (err) {
-        core.debug(`Unable to diff: ${err.message}`);
-        throw err;
+            pixelmatchOptions,
+          })
+          .then(onSuccess)
+          .catch(err => {
+            core.debug(`Unable to diff: ${err.message}`);
+          });
       }
+
+      promise.finally(() => {
+        processedFiles.add(file);
+        missingSnapshots.delete(file);
+
+        // If we have a lot of changed snapshots, there is probably a flake somewhere
+        // and diffing + uploading all of the diffs will take a very long time. We are
+        // likely not interested in all of them and subset will be enough.
+        if (changedSnapshots.size >= maxChangedSnapshots) {
+          terminationReason = 'maxChangedSnapshots';
+          workerPool.dispose();
+        }
+      });
+
+      promises.push(promise);
     } else {
-      newSnapshots.add(file);
+      promises.push(
+        new Promise<any>(resolve => {
+          newSnapshots.add(file);
+          resolve(undefined);
+        })
+      );
     }
-  }
+  });
+
+  await Promise.all(promises)
+    .then(async () => {
+      // Once we finish diffing, dispose the worker
+      await workerPool.dispose();
+    })
+    .catch(e => {
+      core.debug(`Failed to diff: ${e}`);
+    });
+
+  // Set a sentry tag so we can compare transaction performance on
+  // runs that have a similar number of changed snapshots.
+  transaction?.setTag(
+    'snapshots.diffed.grouped',
+    // Subtract what we have left in the queue from the total number of files that were checked
+    getDiffedTagBucket(currentFiles.length - processedFiles.size)
+  );
 
   // Since there is a chance that the loop terminates early, we need to reprocess the rest of the
   // snapshots that we may have skipped. Instead of marking them as missing, which could be missleading,
   // we just remove them from the set.
-  while (queue.length > 0) {
-    const absoluteFile = queue.pop();
+  for (const absoluteFile of processedFiles.values()) {
     if (absoluteFile === undefined) {
       // This should never happen, but *just in case*, we just skip the file
       continue;

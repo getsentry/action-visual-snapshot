@@ -6,30 +6,30 @@ import {createDiff} from './util/createDiff';
 
 import {parentPort} from 'worker_threads';
 
+process.on('warning', e => console.warn(e.stack));
+
 interface BaseDiff {
   taskId: number;
   baseHead: string;
   branchHead: string;
   outputDiffPath: string;
-  pixelmatchOptions: PixelmatchOptions;
+  pixelmatchOptions?: PixelmatchOptions;
 }
 
 interface MultiSnapshotDiff extends BaseDiff {
   branchBase: string;
   outputMergedPath: string;
   snapshotName: string;
-  pixelmatchOptions: PixelmatchOptions;
 }
 
 interface SingleSnapshotDiff extends BaseDiff {
   file: string;
-  pixelmatchOptions: PixelmatchOptions;
 }
 
 export type InboundWorkerAction = MultiSnapshotDiff | SingleSnapshotDiff;
 export interface OutboundWorkerAction {
   taskId: number;
-  result: number;
+  result?: number;
 }
 
 const isMultiDiffMessage = (
@@ -42,31 +42,49 @@ if (parentPort) {
     async (message: SingleSnapshotDiff | MultiSnapshotDiff) => {
       let result: number;
 
-      if (isMultiDiffMessage(message)) {
-        result = await multiCompare({
-          branchBase: message.branchBase,
-          baseHead: message.baseHead,
-          branchHead: message.branchHead,
-          outputDiffPath: message.outputDiffPath,
-          outputMergedPath: message.outputMergedPath,
-          snapshotName: message.snapshotName,
-          pixelmatchOptions: message.pixelmatchOptions,
-        });
-      } else {
-        result = await createDiff(
-          message.file,
-          message.outputDiffPath,
-          message.baseHead,
-          message.branchHead,
-          message.pixelmatchOptions
-        );
-      }
+      try {
+        if (isMultiDiffMessage(message)) {
+          result = await multiCompare({
+            branchBase: message.branchBase,
+            baseHead: message.baseHead,
+            branchHead: message.branchHead,
+            outputDiffPath: message.outputDiffPath,
+            outputMergedPath: message.outputMergedPath,
+            snapshotName: message.snapshotName,
+            pixelmatchOptions: message.pixelmatchOptions,
+          });
+        } else {
+          result = await createDiff(
+            message.file,
+            message.outputDiffPath,
+            message.baseHead,
+            message.branchHead,
+            message.pixelmatchOptions
+          );
+        }
 
-      const outboundMessage: OutboundWorkerAction = {
-        taskId: message.taskId,
-        result,
-      };
-      parentPort.postMessage(outboundMessage);
+        const outboundMessage: OutboundWorkerAction = {
+          taskId: message.taskId,
+          result,
+        };
+
+        if (parentPort) {
+          parentPort.postMessage(outboundMessage);
+        } else {
+          throw new Error('Failed to post to postMessage to parentPort.');
+        }
+      } catch (e) {
+        console.log(e);
+        const outboundMessage: OutboundWorkerAction = {
+          taskId: message.taskId,
+        };
+
+        if (parentPort) {
+          parentPort.postMessage(outboundMessage);
+        } else {
+          throw new Error('Failed to post to postMessage to parentPort.');
+        }
+      }
     }
   );
 } else {

@@ -41,6 +41,7 @@ jobs:
         git config user.email "github-actions-bot@sentry.io"
         git config user.name "github-actions[bot]"
         git add dist/index.js
+        git add dist/SnapshotDiffWorker.js
         git add dist/sourcemap-register.js
         git add src/template/index.ts
         # This can fail if `dist` was already run in branch

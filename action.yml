@@ -76,5 +76,5 @@ outputs:
   merge-base-images-path:
     description: 'path where merge base images are saved'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
