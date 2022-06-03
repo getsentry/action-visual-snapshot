@@ -1,9 +1,11 @@
+/* eslint-env node */
 import {PixelmatchOptions} from './types';
 
 import {multiCompare} from './util/multiCompare';
 import {createDiff} from './util/createDiff';
 
-const {parentPort} = require('node:worker_threads');
+import {parentPort} from 'worker_threads';
+
 interface BaseDiff {
   taskId: number;
   baseHead: string;
@@ -34,35 +36,39 @@ const isMultiDiffMessage = (
   message: InboundWorkerAction
 ): message is MultiSnapshotDiff => 'snapshotName' in message;
 
-parentPort.on(
-  'message',
-  async (message: SingleSnapshotDiff | MultiSnapshotDiff) => {
-    let result: number;
+if (parentPort) {
+  parentPort.on(
+    'message',
+    async (message: SingleSnapshotDiff | MultiSnapshotDiff) => {
+      let result: number;
 
-    if (isMultiDiffMessage(message)) {
-      result = await multiCompare({
-        branchBase: message.branchBase,
-        baseHead: message.baseHead,
-        branchHead: message.branchHead,
-        outputDiffPath: message.outputDiffPath,
-        outputMergedPath: message.outputMergedPath,
-        snapshotName: message.snapshotName,
-        pixelmatchOptions: message.pixelmatchOptions,
-      });
-    } else {
-      result = await createDiff(
-        message.file,
-        message.outputDiffPath,
-        message.baseHead,
-        message.branchHead,
-        message.pixelmatchOptions
-      );
+      if (isMultiDiffMessage(message)) {
+        result = await multiCompare({
+          branchBase: message.branchBase,
+          baseHead: message.baseHead,
+          branchHead: message.branchHead,
+          outputDiffPath: message.outputDiffPath,
+          outputMergedPath: message.outputMergedPath,
+          snapshotName: message.snapshotName,
+          pixelmatchOptions: message.pixelmatchOptions,
+        });
+      } else {
+        result = await createDiff(
+          message.file,
+          message.outputDiffPath,
+          message.baseHead,
+          message.branchHead,
+          message.pixelmatchOptions
+        );
+      }
+
+      const outboundMessage: OutboundWorkerAction = {
+        taskId: message.taskId,
+        result,
+      };
+      parentPort.postMessage(outboundMessage);
     }
-
-    const outboundMessage: OutboundWorkerAction = {
-      taskId: message.taskId,
-      result,
-    };
-    parentPort.postMessage(outboundMessage);
-  }
-);
+  );
+} else {
+  throw new Error("Can't find parent port");
+}
