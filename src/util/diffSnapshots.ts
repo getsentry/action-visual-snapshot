@@ -1,6 +1,5 @@
 import path from 'path';
 
-import os from 'os';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as io from '@actions/io';
@@ -43,7 +42,7 @@ type DiffSnapshotsParams = {
   newDirName?: string;
   missingDirName?: string;
   pixelmatchOptions?: PixelmatchOptions;
-  parallelism?: number;
+  parallelism: number;
   maxChangedSnapshots?: number;
 };
 
@@ -79,7 +78,7 @@ export async function diffSnapshots({
   newDirName = 'new',
   missingDirName = 'missing',
   pixelmatchOptions,
-  parallelism = os.cpus().length,
+  parallelism,
   maxChangedSnapshots = DEFAULT_MAX_CHANGED_SNAPSHOTS,
 }: DiffSnapshotsParams) {
   let terminationReason: 'maxChangedSnapshots' | null = null;
@@ -88,7 +87,6 @@ export async function diffSnapshots({
   const span = transaction?.startChild({
     op: 'diff snapshots',
     description: 'diff snapshots',
-    tags: {parallelism: Number(parallelism).toString()},
   });
 
   const newSnapshots = new Set<string>([]);
@@ -181,6 +179,9 @@ export async function diffSnapshots({
       : path.resolve(__dirname, './SnapshotDiffWorker.js');
   const workerPool = new WorkerPool(workerPath, parallelism);
 
+  // Set a sentry tag so we can see what parallelism we're using in runs.
+  transaction?.setTag('snapshots.diffing.parallelism', parallelism.toFixed(0));
+
   const processedFiles = new Set<string>();
   // Diff snapshots against base branch. This is to make sure we run the above tasks serially, otherwise we will face OOM issues
   const promises: Promise<any>[] = [];
@@ -259,10 +260,11 @@ export async function diffSnapshots({
 
       promises.push(promise);
     } else {
+      // If there is nothing to diff, return a
       promises.push(
-        new Promise<any>(resolve => {
+        new Promise<void>(resolve => {
           newSnapshots.add(file);
-          resolve(undefined);
+          resolve();
         })
       );
     }

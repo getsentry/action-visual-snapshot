@@ -1,5 +1,6 @@
 /* eslint-env node */
 import path from 'path';
+import os from 'os';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
@@ -23,6 +24,7 @@ import {Await} from './types';
 import {getPixelmatchOptions} from './getPixelmatchOptions';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 
+const parallelism = os.cpus().length;
 const {owner, repo} = github.context.repo;
 const token = core.getInput('github-token');
 const octokit = token && github.getOctokit(token);
@@ -263,6 +265,7 @@ async function run(): Promise<void> {
       currentPath,
       outputPath: resultsPath,
       pixelmatchOptions,
+      parallelism,
     });
 
     const resultsGlobber = await glob.create(`${resultsPath}${pngGlob}`, {
