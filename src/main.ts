@@ -265,6 +265,8 @@ async function run(): Promise<void> {
       pixelmatchOptions,
     });
 
+    console.log('Termination reason from diff', terminationReason);
+
     const resultsGlobber = await glob.create(`${resultsPath}${pngGlob}`, {
       followSymbolicLinks: false,
     });

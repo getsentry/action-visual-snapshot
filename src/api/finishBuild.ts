@@ -28,17 +28,23 @@ type Params = {
 };
 
 export async function finishBuild({token, ...body}: Params) {
+  console.log('Finishing build');
   try {
     if (!token) {
       throw new Error('No API token');
     }
 
+    console.log('Runnign finishBuild to /build');
     const put = bent(API_ENDPOINT, 'PUT', 'json', 200);
 
     return await put('/build', body, {
       'x-padding-token': token,
     });
   } catch (err) {
+    console.log(
+      "Running 'finishBuild', termination reason is:",
+      body.results.terminationReason
+    );
     const {owner, repo, galleryUrl, id, images, results, octokit} = body;
     const {
       baseFilesLength,
@@ -64,6 +70,7 @@ export async function finishBuild({token, ...body}: Params) {
         ? `${added.length} new snapshots`
         : 'No snapshot changes detected';
 
+    console.log('Termination Reason', terminationReason, results);
     return await octokit.rest.checks.update({
       check_run_id: id,
       owner,
@@ -81,9 +88,9 @@ ${galleryUrl ? `[View Image Gallery](${galleryUrl})` : ''}
         text: `
 ${
   terminationReason === 'maxChangedSnapshots'
-    ? '# Max number of changed snapshots exceeded (snapshot run was terminated early)'
+    ? '## Max number of changed snapshots exceeded (snapshot run was terminated early)'
     : terminationReason
-    ? `# This run was terminated early with termination reason: ${terminationReason}`
+    ? `## This run was terminated early with termination reason: ${terminationReason}`
     : ''
 }
 ${!changed.length && !missing.length && !added.length ? '## No changes' : ''}
