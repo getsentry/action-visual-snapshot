@@ -308,7 +308,11 @@
                       ? terminationReason
                       : ''}"
                     href="#${changed.length ? cleanSelector(changed[0]) : ''}"
-                    >Changed (${changed.length})</a
+                    >Changed
+                    (${changed.length}${terminationReason ===
+                    'maxChangedSnapshots'
+                      ? '+'
+                      : ''})</a
                   >
                   <a
                     class="${active[0] === 'added' ? 'selected' : ''}"
