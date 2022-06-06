@@ -1,5 +1,6 @@
 import path from 'path';
 
+import os from 'os';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as io from '@actions/io';
@@ -81,6 +82,11 @@ export async function diffSnapshots({
   parallelism,
   maxChangedSnapshots = DEFAULT_MAX_CHANGED_SNAPSHOTS,
 }: DiffSnapshotsParams) {
+  if (parallelism < 1 || parallelism > os.cpus().length) {
+    throw new Error(
+      'Parallelism option should be in the range of 1 - CPU count'
+    );
+  }
   let terminationReason: 'maxChangedSnapshots' | null = null;
 
   const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
