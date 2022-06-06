@@ -4,6 +4,14 @@ import {API_ENDPOINT} from '@app/config';
 
 type Octokit = ReturnType<typeof github.getOctokit>;
 
+export interface BuildResults {
+  terminationReason: 'maxChangedSnapshots' | null;
+  baseFilesLength: number;
+  changed: string[];
+  missing: string[];
+  added: string[];
+}
+
 type Params = {
   octokit: Octokit;
   id: number;
@@ -15,13 +23,7 @@ type Params = {
     alt: string;
     image_url: string;
   }[];
-  results: {
-    terminationReason: 'maxChangedSnapshots' | null;
-    baseFilesLength: number;
-    changed: string[];
-    missing: string[];
-    added: string[];
-  };
+  results: BuildResults;
   galleryUrl?: string;
 };
 
@@ -73,6 +75,10 @@ export async function finishBuild({token, ...body}: Params) {
         title,
         summary: `
 ${galleryUrl ? `[View Image Gallery](${galleryUrl})` : ''}
+* **${changed.length}** changed snapshots (${unchanged} unchanged)
+* **${missing.length}** missing snapshots
+* **${added.length}** new snapshots`,
+        text: `
 ${
   terminationReason === 'maxChangedSnapshots'
     ? '# Max number of changed snapshots exceeded (snapshot run was terminated early)'
@@ -80,10 +86,6 @@ ${
     ? `# This run was terminated early with termination reason: ${terminationReason}`
     : ''
 }
-* **${changed.length}** changed snapshots (${unchanged} unchanged)
-* **${missing.length}** missing snapshots
-* **${added.length}** new snapshots`,
-        text: `
 ${!changed.length && !missing.length && !added.length ? '## No changes' : ''}
 
 ${
