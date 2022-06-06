@@ -305,6 +305,19 @@ export async function diffSnapshots({
     missingSnapshots.delete(file);
   }
 
+  // Since there is a chance that the loop terminates early, we need to reprocess the rest of the
+  // snapshots that we may have skipped. Instead of marking them as missing, which could be missleading,
+  // we just remove them from the set.
+  while (queue.length > 0) {
+    const absoluteFile = queue.pop();
+    if (absoluteFile === undefined) {
+      // This should never happen, but *just in case*, we just skip the file
+      continue;
+    }
+    const file = path.relative(currentPath, absoluteFile);
+    missingSnapshots.delete(file);
+  }
+
   // TODO: Track cases where snapshot exists in `mergeBaseSnapshots`, but not
   // in current and base
   missingSnapshots.forEach(file => {
