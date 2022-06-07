@@ -279,7 +279,7 @@ export async function diffSnapshots({
 
       promises.push(promise);
     } else {
-      // If there is nothing to diff, return a
+      // If there is nothing to diff, return a resolved promise and add the file to the new snapshots set
       promises.push(
         new Promise<void>(resolve => {
           newSnapshots.add(file);
