@@ -74,7 +74,6 @@ if (parentPort) {
           throw new Error('Failed to post to postMessage to parentPort.');
         }
       } catch (e) {
-        console.log(e);
         const outboundMessage: OutboundWorkerAction = {
           taskId: message.taskId,
         };
