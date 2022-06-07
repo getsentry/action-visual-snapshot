@@ -6,8 +6,6 @@ import {createDiff} from './util/createDiff';
 
 import {parentPort} from 'worker_threads';
 
-process.on('warning', e => console.warn(e.stack));
-
 interface BaseDiff {
   taskId: number;
   baseHead: string;
@@ -58,8 +56,7 @@ if (parentPort) {
             message.file,
             message.outputDiffPath,
             message.baseHead,
-            message.branchHead,
-            message.pixelmatchOptions
+            message.branchHead
           );
         }
 
