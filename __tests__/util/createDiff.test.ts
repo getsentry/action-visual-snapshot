@@ -71,8 +71,8 @@ jest.mock('pngjs', () => {
   return {PNG};
 });
 
-describe('createDiff', function() {
-  it('diffs two equal sized images and creates a combined image', async function() {
+describe('createDiff', function () {
+  it.skip('diffs two equal sized images and creates a combined image', async function () {
     (pixelmatch as jest.Mock).mockImplementation(
       (_img1: any, _img2: any, diff: any) => {
         for (let x = 0; x < 6; x++) {

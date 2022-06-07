@@ -50,6 +50,7 @@ if (worker_threads_1.parentPort) {
             }
         }
         catch (e) {
+            console.log('Error', e);
             const outboundMessage = {
                 taskId: message.taskId,
             };
@@ -112,9 +113,9 @@ const getDiff_1 = __nccwpck_require__(8064);
  * Creates a combined diff of @file1 and @file2 and writes to disk
  *
  */
-function createDiff(snapshotName, output, file1, file2) {
+function createDiff(snapshotName, outputDir, file1, file2) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { result } = yield getDiff_1.getDiffObin(file1, file2, path_1.default.resolve(output, snapshotName));
+        const { result } = yield getDiff_1.getDiffObin(file1, file2, path_1.default.resolve(outputDir, snapshotName));
         return result;
     });
 }
@@ -222,18 +223,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getDiff = exports.getDiffObin = void 0;
 const pngjs_1 = __nccwpck_require__(6413);
+const path_1 = __importDefault(__nccwpck_require__(1017));
 const pixelmatch_1 = __importDefault(__nccwpck_require__(6097));
 const odiff_bin_1 = __nccwpck_require__(2586);
 const fileToPng_1 = __nccwpck_require__(9529);
 const resizeImage_1 = __nccwpck_require__(9410);
-function getDiffObin(file1, file2, diffPath) {
+function getDiffObin(file1, file2, diffPath, options = {}) {
     return __awaiter(this, void 0, void 0, function* () {
-        const diff = yield odiff_bin_1.compare(file1, file2, diffPath, {
-            antialiasing: true,
-            failOnLayoutDiff: false,
-            outputDiffMask: true,
-            threshold: 0.1,
-        });
+        const binaryPath = process.env.NODE_ENV === 'test'
+            ? undefined
+            : path_1.default.resolve(__dirname, './odiff.linux');
+        console.log('Using binary path', binaryPath);
+        const diff = yield odiff_bin_1.compare(file1, file2, diffPath, Object.assign(Object.assign({ antialiasing: true, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options), { 
+            // @ts-ignore,
+            __binaryPath: binaryPath }));
         if ('diffCount' in diff) {
             return { result: diff.diffCount };
         }
@@ -320,6 +323,8 @@ const getDiff_1 = __nccwpck_require__(8064);
 function multiCompare({ snapshotName, branchBase, baseHead, branchHead, outputDiffPath, outputMergedPath, pixelmatchOptions, }) {
     return __awaiter(this, void 0, void 0, function* () {
         const promises = [];
+        const outputPath = path_1.default.resolve(outputDiffPath, snapshotName);
+        const tmpOutputPath = outputPath.replace('.png', '.tmp.png');
         const [baseHeadImage, branchHeadMergedImage, branchBaseImage,] = yield Promise.all([
             fileToPng_1.fileToPng(baseHead),
             fileToPng_1.fileToPng(branchHead),
@@ -329,6 +334,7 @@ function multiCompare({ snapshotName, branchBase, baseHead, branchHead, outputDi
             // diff baseHeadImage and branchBaseImage -- alpha must be 0 so that we can
             // correctly identify the diffed pixels
             const { result: baseDiffResult, diff: branchBaseBaseHeadDiffImage, } = yield getDiff_1.getDiff(branchBaseImage, baseHeadImage, Object.assign(Object.assign({}, pixelmatchOptions), { alpha: 0 }));
+            yield fs_1.promises.writeFile(tmpOutputPath, pngjs_1.PNG.sync.write(branchHeadMergedImage));
             if (baseDiffResult > 0) {
                 // Find pixel locations that have changed from branch base ---> head
                 const changedPixels = findChangedPixels_1.findChangedPixels(branchBaseBaseHeadDiffImage);

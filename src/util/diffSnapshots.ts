@@ -202,6 +202,7 @@ export async function diffSnapshots({
     currentSnapshots.add(file);
 
     async function onSuccess({result}: {result?: number}) {
+      console.log('Successfully diffed', result);
       const baseHead = path.resolve(basePath, file);
       const branchHead = path.resolve(currentPath, file);
 
@@ -235,6 +236,7 @@ export async function diffSnapshots({
           })
           .then(onSuccess)
           .catch(err => {
+            console.log('Error processing file: ', file, err);
             if (terminationReason) {
               core.debug(
                 `Early termination: diffing ${file} was aborted due to ${terminationReason}`
@@ -254,6 +256,7 @@ export async function diffSnapshots({
           })
           .then(onSuccess)
           .catch(err => {
+            console.log('Error processing file: ', file, err);
             if (terminationReason) {
               core.debug(
                 `Early termination: diffing ${file} was aborted due to ${terminationReason}`

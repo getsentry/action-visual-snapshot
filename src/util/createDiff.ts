@@ -8,14 +8,14 @@ import {getDiffObin} from './getDiff';
  */
 export async function createDiff(
   snapshotName: string,
-  output: string,
+  outputDir: string,
   file1: string,
   file2: string
 ): Promise<number> {
   const {result} = await getDiffObin(
     file1,
     file2,
-    path.resolve(output, snapshotName)
+    path.resolve(outputDir, snapshotName)
   );
 
   return result;

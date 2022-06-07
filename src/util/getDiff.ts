@@ -1,8 +1,9 @@
 import {PNG} from 'pngjs';
+import path from 'path';
 import pixelmatch from 'pixelmatch';
 import {PixelmatchOptions} from '@app/types';
 
-import {compare} from 'odiff-bin';
+import {compare, ODiffOptions} from 'odiff-bin';
 
 import {fileToPng} from './fileToPng';
 import {resizeImage} from './resizeImage';
@@ -17,13 +18,24 @@ interface DiffResults {
 export async function getDiffObin(
   file1: string,
   file2: string,
-  diffPath: string
+  diffPath: string,
+  options: ODiffOptions = {}
 ): Promise<Pick<DiffResults, 'result'>> {
+  const binaryPath =
+    process.env.NODE_ENV === 'test'
+      ? undefined
+      : path.resolve(__dirname, './odiff.linux');
+
+  console.log('Using binary path', binaryPath);
+
   const diff = await compare(file1, file2, diffPath, {
     antialiasing: true,
     failOnLayoutDiff: false,
-    outputDiffMask: true,
+    outputDiffMask: false,
     threshold: 0.1,
+    ...options,
+    // @ts-ignore,
+    __binaryPath: binaryPath,
   });
 
   if ('diffCount' in diff) {

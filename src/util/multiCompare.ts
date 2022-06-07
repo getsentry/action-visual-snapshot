@@ -31,6 +31,9 @@ export async function multiCompare({
 }: Options): Promise<number> {
   const promises = [];
 
+  const outputPath = path.resolve(outputDiffPath, snapshotName);
+  const tmpOutputPath = outputPath.replace('.png', '.tmp.png');
+
   const [
     baseHeadImage,
     branchHeadMergedImage,
@@ -51,6 +54,8 @@ export async function multiCompare({
       ...pixelmatchOptions,
       alpha: 0,
     });
+
+    await fs.writeFile(tmpOutputPath, PNG.sync.write(branchHeadMergedImage));
 
     if (baseDiffResult > 0) {
       // Find pixel locations that have changed from branch base ---> head
@@ -92,6 +97,5 @@ export async function multiCompare({
   }
 
   await Promise.all(promises);
-
   return result;
 }
