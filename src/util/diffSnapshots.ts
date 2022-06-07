@@ -235,7 +235,13 @@ export async function diffSnapshots({
           })
           .then(onSuccess)
           .catch(err => {
-            core.debug(`Unable to diff: ${err.message}`);
+            if (terminationReason) {
+              core.debug(
+                `Early termination: diffing ${file} was aborted due to ${terminationReason}`
+              );
+            }
+
+            core.debug(`Error diffing: ${file} with ${err.message}`);
           });
       } else {
         promise = workerPool
@@ -248,7 +254,13 @@ export async function diffSnapshots({
           })
           .then(onSuccess)
           .catch(err => {
-            core.debug(`Unable to diff: ${err.message}`);
+            if (terminationReason) {
+              core.debug(
+                `Early termination: diffing ${file} was aborted due to ${terminationReason}`
+              );
+            }
+
+            core.debug(`Error diffing: ${file} with ${err.message}`);
           });
       }
 
