@@ -19,7 +19,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const multiCompare_1 = __nccwpck_require__(2744);
 const createDiff_1 = __nccwpck_require__(5510);
 const worker_threads_1 = __nccwpck_require__(1267);
-process.on('warning', e => console.warn(e.stack));
 const isMultiDiffMessage = (message) => 'snapshotName' in message;
 if (worker_threads_1.parentPort) {
     worker_threads_1.parentPort.on('message', (message) => __awaiter(void 0, void 0, void 0, function* () {
@@ -37,7 +36,7 @@ if (worker_threads_1.parentPort) {
                 });
             }
             else {
-                result = yield createDiff_1.createDiff(message.file, message.outputDiffPath, message.baseHead, message.branchHead, message.pixelmatchOptions);
+                result = yield createDiff_1.createDiff(message.file, message.outputDiffPath, message.baseHead, message.branchHead);
             }
             const outboundMessage = {
                 taskId: message.taskId,
@@ -107,20 +106,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.createDiff = void 0;
-const fs_1 = __nccwpck_require__(7147);
 const path_1 = __importDefault(__nccwpck_require__(1017));
-const pngjs_1 = __nccwpck_require__(6413);
 const getDiff_1 = __nccwpck_require__(8064);
 /**
  * Creates a combined diff of @file1 and @file2 and writes to disk
  *
  */
-function createDiff(snapshotName, output, file1, file2, pixelmatchOptions) {
+function createDiff(snapshotName, output, file1, file2) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { result, diff } = yield getDiff_1.getDiff(file1, file2, pixelmatchOptions);
-        if (result > 0) {
-            yield fs_1.promises.writeFile(path_1.default.resolve(output, snapshotName), pngjs_1.PNG.sync.write(diff));
-        }
+        const { result } = yield getDiff_1.getDiffObin(file1, file2, path_1.default.resolve(output, snapshotName));
         return result;
     });
 }
@@ -226,11 +220,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getDiff = void 0;
+exports.getDiff = exports.getDiffObin = void 0;
 const pngjs_1 = __nccwpck_require__(6413);
 const pixelmatch_1 = __importDefault(__nccwpck_require__(6097));
+const odiff_bin_1 = __nccwpck_require__(2586);
 const fileToPng_1 = __nccwpck_require__(9529);
 const resizeImage_1 = __nccwpck_require__(9410);
+function getDiffObin(file1, file2, diffPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const diff = yield odiff_bin_1.compare(file1, file2, diffPath, {
+            antialiasing: true,
+            failOnLayoutDiff: false,
+            outputDiffMask: true,
+            threshold: 0.1,
+        });
+        if ('diffCount' in diff) {
+            return { result: diff.diffCount };
+        }
+        return {
+            result: 0,
+        };
+    });
+}
+exports.getDiffObin = getDiffObin;
 function getDiff(file1, file2, _a = {}) {
     var { includeAA = true, threshold = 0.1 } = _a, options = __rest(_a, ["includeAA", "threshold"]);
     return __awaiter(this, void 0, void 0, function* () {
@@ -11813,6 +11825,175 @@ function plural(ms, msAbs, n, name) {
 
 /***/ }),
 
+/***/ 2586:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// @ts-check
+const path = __nccwpck_require__(1017);
+const { execFile } = __nccwpck_require__(2081);
+
+function optionsToArgs(options) {
+  let argArray = ["--parsable-stdout"];
+
+  if (!options) {
+    return argArray;
+  }
+
+  const setArgWithValue = (name, value) => {
+    argArray.push(`--${name}=${value.toString()}`);
+  };
+
+  const setFlag = (name, value) => {
+    if (value) {
+      argArray.push(`--${name}`);
+    }
+  };
+
+  Object.entries(options).forEach((optionEntry) => {
+    /**
+     * @type {[keyof import('./odiff').ODiffOptions, unknown]}
+     * @ts-expect-error */
+    const [option, value] = optionEntry;
+
+    switch (option) {
+      case "failOnLayoutDiff":
+        setFlag("fail-on-layout", value);
+        break;
+
+      case "outputDiffMask":
+        setFlag("diff-mask", value);
+        break;
+
+      case "threshold":
+        setArgWithValue("threshold", value);
+        break;
+
+      case "diffColor":
+        setArgWithValue("diff-color", value);
+        break;
+
+      case "antialiasing":
+        setFlag("antialiasing", value);
+        break;
+
+      case "ignoreRegions": {
+        const regions = value
+          .map(
+            (region) => `${region.x1}:${region.y1}-${region.x2}:${region.y2}`
+          )
+          .join(",");
+
+        setArgWithValue("ignore", regions);
+        break;
+      }
+    }
+  });
+
+  return argArray;
+}
+
+/** @type {(stdout: string) => Partial<{ diffCount: number, diffPercentage: number }>} */
+function parsePixelDiffStdout(stdout) {
+  try {
+    const parts = stdout.split(";");
+
+    if (parts.length === 2) {
+      const [diffCount, diffPercentage] = parts;
+
+      return {
+        diffCount: parseInt(diffCount),
+        diffPercentage: parseFloat(diffPercentage),
+      };
+    } else {
+      throw new Error(`Weird pixel diff stdout: ${stdout}`);
+    }
+  } catch (e) {
+    console.warn(
+      "Can't parse output from internal process. Please submit an issue at https://github.com/dmtrKovalenko/odiff/issues/new with the following stacktrace:",
+      e
+    );
+  }
+
+  return {};
+}
+
+const CMD_BIN_HELPER_MSG =
+  "Usage: odiff [OPTION]... [BASE] [COMPARING] [DIFF]\nTry `odiff --help' for more information.\n";
+
+async function compare(basePath, comparePath, diffOutput, options = {}) {
+  return new Promise((resolve, reject) => {
+    let producedStdout, producedStdError;
+
+    const binaryPath =
+      options && options.__binaryPath
+        ? options.__binaryPath
+        : __nccwpck_require__.ab + "odiff";
+
+    execFile(
+      binaryPath,
+      [basePath, comparePath, diffOutput, ...optionsToArgs(options)],
+      (_, stdout, stderr) => {
+        producedStdout = stdout;
+        producedStdError = stderr;
+      }
+    ).on("close", (code) => {
+      switch (code) {
+        case 0:
+          resolve({ match: true });
+          break;
+        case 21:
+          resolve({ match: false, reason: "layout-diff" });
+          break;
+        case 22:
+          resolve({
+            match: false,
+            reason: "pixel-diff",
+            ...parsePixelDiffStdout(producedStdout),
+          });
+          break;
+        case 124:
+          /** @type string */
+          const originalErrorMessage = (
+            producedStdError || "Invalid Argument Exception"
+          ).replace(CMD_BIN_HELPER_MSG, "");
+
+          const noFileOrDirectoryMatches = originalErrorMessage.match(
+            /no\n\s*`(.*)'\sfile or\n\s*directory/
+          );
+
+          if (options.noFailOnFsErrors && noFileOrDirectoryMatches[1]) {
+            resolve({
+              match: false,
+              reason: "file-not-exists",
+              file: noFileOrDirectoryMatches[1],
+            });
+          } else {
+            reject(new TypeError(originalErrorMessage));
+          }
+          break;
+
+        default:
+          reject(
+            new Error(
+              (producedStdError || producedStdout).replace(
+                CMD_BIN_HELPER_MSG,
+                ""
+              )
+            )
+          );
+          break;
+      }
+    });
+  });
+}
+
+module.exports = {
+  compare,
+};
+
+
+/***/ }),
+
 /***/ 6097:
 /***/ ((module) => {
 
@@ -15184,6 +15365,14 @@ module.exports = require("assert");
 
 "use strict";
 module.exports = require("buffer");
+
+/***/ }),
+
+/***/ 2081:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");
 
 /***/ }),
 
