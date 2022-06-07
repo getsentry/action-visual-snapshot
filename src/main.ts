@@ -42,7 +42,7 @@ function getParallelismInput() {
   return os.cpus().length;
 }
 
-const parallelism = 4 || getParallelismInput();
+const parallelism = getParallelismInput();
 const {owner, repo} = github.context.repo;
 const token = core.getInput('github-token');
 const octokit = token && github.getOctokit(token);
