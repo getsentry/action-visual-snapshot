@@ -28,7 +28,7 @@ export async function multiCompare({
   outputDiffPath,
   outputMergedPath,
   pixelmatchOptions,
-}: Options) {
+}: Options): Promise<number> {
   const promises = [];
 
   const [
