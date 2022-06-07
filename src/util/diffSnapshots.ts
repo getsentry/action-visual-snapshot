@@ -188,6 +188,7 @@ export async function diffSnapshots({
   // Set a sentry tag so we can see what parallelism we're using in runs.
   transaction?.setTag('snapshots.diffing.parallelism', parallelism.toFixed(0));
 
+  // Keep track of the files that were processed. In case of early termination, we want to be able to remove the files that were processed.
   const processedFiles = new Set<string>();
   // Diff snapshots against base branch. This is to make sure we run the above tasks serially, otherwise we will face OOM issues
   const promises: Promise<any>[] = [];
@@ -297,19 +298,6 @@ export async function diffSnapshots({
   // snapshots that we may have skipped. Instead of marking them as missing, which could be missleading,
   // we just remove them from the set.
   for (const absoluteFile of processedFiles.values()) {
-    if (absoluteFile === undefined) {
-      // This should never happen, but *just in case*, we just skip the file
-      continue;
-    }
-    const file = path.relative(currentPath, absoluteFile);
-    missingSnapshots.delete(file);
-  }
-
-  // Since there is a chance that the loop terminates early, we need to reprocess the rest of the
-  // snapshots that we may have skipped. Instead of marking them as missing, which could be missleading,
-  // we just remove them from the set.
-  while (queue.length > 0) {
-    const absoluteFile = queue.pop();
     if (absoluteFile === undefined) {
       // This should never happen, but *just in case*, we just skip the file
       continue;
