@@ -43,7 +43,17 @@ type DiffSnapshotsParams = {
   newDirName?: string;
   missingDirName?: string;
   pixelmatchOptions?: PixelmatchOptions;
+  maxChangedSnapshots?: number;
 };
+
+// Max number of changed snapshots - once this number is reached,
+// the diff process will early terminate and the non-processed snapshots
+// will be removed from the missingSnapshots sets.
+
+// The magic number 30 comes from the fact that we have 24 email templates
+// and the current workflow for making changes to them is to use the visual
+// diffs to see if the changes reflected. 30 gives us a small buffer to deal with
+const DEFAULT_MAX_CHANGED_SNAPSHOTS = 30;
 
 /**
  * Given a list of files for
@@ -68,7 +78,10 @@ export async function diffSnapshots({
   newDirName = 'new',
   missingDirName = 'missing',
   pixelmatchOptions,
+  maxChangedSnapshots = DEFAULT_MAX_CHANGED_SNAPSHOTS,
 }: DiffSnapshotsParams) {
+  let terminationReason: 'maxChangedSnapshots' | null = null;
+
   const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
   const span = transaction?.startChild({
     op: 'diff snapshots',
@@ -157,10 +170,26 @@ export async function diffSnapshots({
     getDiffedTagBucket(currentFiles.length)
   );
 
-  // Diff snapshots against base branch
-  // This is to make sure we run the above tasks serially, otherwise we will
-  // face OOM issues
-  for (const absoluteFile of currentFiles) {
+  // Diff snapshots against base branch. This is to make sure we run the above tasks serially, otherwise we will face OOM issues
+  const queue = [...currentFiles];
+  while (queue.length > 0) {
+    // If we have a lot of changed snapshots, there is probably a flake somewhere
+    // and diffing + uploading all of the diffs will take a very long time. We are
+    // likely not interested in all of them and subset will be enough.
+    if (changedSnapshots.size >= maxChangedSnapshots) {
+      terminationReason = 'maxChangedSnapshots';
+      break;
+    }
+
+    const absoluteFile = queue.pop();
+    if (absoluteFile === undefined) {
+      // This should never happen, but *just in case*, we just skip the file
+      continue;
+    }
+
+    // Since there is a chance that the loop terminates early, we need to keep this
+    // "file" in sync with the loop that reprocesses the leftover items and removes
+    // them from the missingSnapshots set on L210. File basically means "key" in this case
     const file = path.relative(currentPath, absoluteFile);
     currentSnapshots.add(file);
 
@@ -211,9 +240,21 @@ export async function diffSnapshots({
     }
   }
 
+  // Since there is a chance that the loop terminates early, we need to reprocess the rest of the
+  // snapshots that we may have skipped. Instead of marking them as missing, which could be missleading,
+  // we just remove them from the set.
+  while (queue.length > 0) {
+    const absoluteFile = queue.pop();
+    if (absoluteFile === undefined) {
+      // This should never happen, but *just in case*, we just skip the file
+      continue;
+    }
+    const file = path.relative(currentPath, absoluteFile);
+    missingSnapshots.delete(file);
+  }
+
   // TODO: Track cases where snapshot exists in `mergeBaseSnapshots`, but not
   // in current and base
-
   missingSnapshots.forEach(file => {
     if (mergeBaseFiles.length && !mergeBaseSnapshots.has(file)) {
       // It's possible this isn't desirable, but seems likely that this snapshot was
@@ -256,6 +297,7 @@ export async function diffSnapshots({
 
   span?.finish();
   return {
+    terminationReason,
     baseFiles,
     missingSnapshots,
     newSnapshots,

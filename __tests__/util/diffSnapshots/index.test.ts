@@ -11,13 +11,13 @@ jest.mock('@actions/core', () => ({
   warning: jest.fn(),
 }));
 
-describe('diffSnapshots (integration)', function() {
-  beforeEach(async function() {
+describe('diffSnapshots (integration)', function () {
+  beforeEach(async function () {
     await io.rmRF(RESULTS_PATH);
   });
 
   jest.setTimeout(600000);
-  it('can diff snapshots', async function() {
+  it('can diff snapshots', async function () {
     const diffResults = await diffSnapshots({
       basePath: path.resolve(__dirname, 'imgs', 'base'),
       mergeBasePath: path.resolve(__dirname, 'imgs', 'mergeBase'),
@@ -27,6 +27,7 @@ describe('diffSnapshots (integration)', function() {
 
     expect(diffResults).toEqual(
       expect.objectContaining({
+        terminationReason: null,
         changedSnapshots: new Set(['acceptance/test.png']),
         missingSnapshots: new Set(['acceptance/both-base.png']),
         newSnapshots: new Set(['acceptance/added-in-current.png']),
@@ -60,7 +61,43 @@ describe('diffSnapshots (integration)', function() {
     expect(results).toEqual(results.map(() => undefined));
   });
 
-  it('can diff snapshots without merge base', async function() {
+  it('terminates early if maxChangedSnapshots is exceeded', async function () {
+    const diffResults = await diffSnapshots({
+      maxChangedSnapshots: 1,
+      basePath: path.resolve(__dirname, 'imgs', 'base'),
+      mergeBasePath: path.resolve(__dirname, 'imgs', 'mergeBase'),
+      currentPath: path.resolve(__dirname, 'imgs', 'current'),
+      outputPath: path.resolve(RESULTS_PATH),
+    });
+
+    expect(diffResults).toEqual(
+      expect.objectContaining({
+        terminationReason: 'maxChangedSnapshots',
+        changedSnapshots: new Set(['acceptance/test.png']),
+        missingSnapshots: new Set([]),
+        newSnapshots: new Set([]),
+        potentialFlakes: new Set([]),
+      })
+    );
+
+    // Things should exist
+    const results = await Promise.all([
+      fs.access(path.resolve(RESULTS_PATH, 'diffs', 'acceptance', 'test.png')),
+      fs.access(path.resolve(RESULTS_PATH, 'merged', 'acceptance', 'test.png')),
+      fs.access(
+        path.resolve(RESULTS_PATH, 'changed', 'acceptance', 'test.png')
+      ),
+      fs.access(
+        path.resolve(RESULTS_PATH, 'original', 'acceptance', 'test.png')
+      ),
+    ]);
+
+    // fs.access will resolve with "error" value if it can not access file
+    // so undefined means file/dir exists
+    expect(results).toEqual(results.map(() => undefined));
+  });
+
+  it('can diff snapshots without merge base', async function () {
     const diffResults = await diffSnapshots({
       basePath: path.resolve(__dirname, 'imgs', 'base'),
       mergeBasePath: path.resolve(__dirname, 'imgs', 'invalidMergeBase'),
@@ -70,6 +107,7 @@ describe('diffSnapshots (integration)', function() {
 
     expect(diffResults).toEqual(
       expect.objectContaining({
+        terminationReason: null,
         changedSnapshots: new Set(['acceptance/test.png']),
         missingSnapshots: new Set(['acceptance/both-base.png']),
         newSnapshots: new Set(['acceptance/added-in-current.png']),
@@ -103,7 +141,7 @@ describe('diffSnapshots (integration)', function() {
     expect(results).toEqual(results.map(() => undefined));
   });
 
-  it('diffs different sized snapshots', async function() {
+  it('diffs different sized snapshots', async function () {
     const diffResults = await diffSnapshots({
       basePath: path.resolve(__dirname, 'imgs', 'base'),
       mergeBasePath: path.resolve(__dirname, 'imgs', 'mergeBase'),
@@ -113,6 +151,7 @@ describe('diffSnapshots (integration)', function() {
 
     expect(diffResults).toEqual(
       expect.objectContaining({
+        terminationReason: null,
         changedSnapshots: new Set([]),
         missingSnapshots: new Set(['acceptance/both-base.png']),
         newSnapshots: new Set(['acceptance/added-in-current.png']),

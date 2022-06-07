@@ -55,7 +55,7 @@
 
       .top-nav a.selected {
         font-weight: bold;
-        background-color: rgb(244, 56, 47);#f7de54;
+        background-color: rgb(244, 56, 47);
       }
 
       .no-changes {
@@ -136,9 +136,7 @@
           <h3 class="snapshot-header">
             ${props.image}
 
-            <div class="button-bar">
-              ${props.buttons}
-            </div>
+            <div class="button-bar">${props.buttons}</div>
           </h3>
           <div class="image-wrapper">
             <img
@@ -287,7 +285,7 @@
         }
 
         render({page}, {todos = []}) {
-          const {added, missing, changed} = __images;
+          const {added, missing, changed, terminationReason} = __images;
           const active = Object.entries(this.state.thresholds).reduce(
             (acc, [type, value]) => (value > acc[1] ? [type, value] : acc),
             [null, -1]
@@ -304,8 +302,17 @@
                 <nav class="top-nav">
                   <a
                     class="${active[0] === 'changed' ? 'selected' : ''}"
+                    title="${terminationReason === 'maxChangedSnapshots'
+                      ? `Max number of changed snapshots exceeded (snapshot run was terminated early)`
+                      : terminationReason
+                      ? terminationReason
+                      : ''}"
                     href="#${changed.length ? cleanSelector(changed[0]) : ''}"
-                    >Changed (${changed.length})</a
+                    >Changed
+                    (${changed.length}${terminationReason ===
+                    'maxChangedSnapshots'
+                      ? '+'
+                      : ''})</a
                   >
                   <a
                     class="${active[0] === 'added' ? 'selected' : ''}"
@@ -322,120 +329,113 @@
 
               <main tabindex="-1" onKeyDown=${this.handleMainKeyDown}>
                 ${hasNoChanges &&
-                  html`
-                    <h1 class="no-changes">No Changes</h1>
-                  `}
+                html` <h1 class="no-changes">No Changes</h1> `}
                 ${!!changed.length &&
-                  html`
-                    <div data-type="changed" class="snapshots">
-                      ${changed.map((img, i) => {
-                        const typeIndex = this.state.images[img] || 0;
-                        const getSource = p =>
-                          `results/${IMAGE_DIRS[typeIndex]}/${p.image}`;
-                        const buttons = States.map(
-                          (state, i) => html`
-                            <button
-                              class="${`button${
-                                i === typeIndex ? ' selected' : ''
-                              }`}"
-                              type="button"
-                              onKeyDown="${e => this.handleKeyDown(img, e)}"
-                              onClick="${() =>
-                                this.handleSelectState(img, state)}"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        );
-
-                        return html`
-                          <${Snapshot}
-                            buttons=${buttons}
-                            image=${img}
-                            index=${i}
-                            getSource=${getSource}
-                            onLoad="${this.handleImageLoaded}"
-                            onClick="${e => this.handleImageClick(img, i, e)}"
+                html`
+                  <div data-type="changed" class="snapshots">
+                    ${changed.map((img, i) => {
+                      const typeIndex = this.state.images[img] || 0;
+                      const getSource = p =>
+                        `results/${IMAGE_DIRS[typeIndex]}/${p.image}`;
+                      const buttons = States.map(
+                        (state, i) => html`
+                          <button
+                            class="${`button${
+                              i === typeIndex ? ' selected' : ''
+                            }`}"
+                            type="button"
                             onKeyDown="${e => this.handleKeyDown(img, e)}"
-                          />
-                        `;
-                      })}
-                    </div>
-                  `}
+                            onClick="${() =>
+                              this.handleSelectState(img, state)}"
+                          >
+                            ${state}
+                          </button>
+                        `
+                      );
+
+                      return html`
+                        <${Snapshot}
+                          buttons=${buttons}
+                          image=${img}
+                          index=${i}
+                          getSource=${getSource}
+                          onLoad="${this.handleImageLoaded}"
+                          onClick="${e => this.handleImageClick(img, i, e)}"
+                          onKeyDown="${e => this.handleKeyDown(img, e)}"
+                        />
+                      `;
+                    })}
+                  </div>
+                `}
                 ${!!added.length &&
-                  html`
-                    <div data-type="added" class="snapshots">
-                      ${added.map((img, i) => {
-                        const getSource = p =>
-                          `results/${IMAGE_DIRS[IMAGE_DIRS.indexOf('new')]}/${
-                            p.image
-                          }`;
-                        const buttons = States.map(
-                          state => html`
-                            <button
-                              class="${`button${
-                                state === 'New' ? ' selected' : ''
-                              }${state !== 'New' ? ' disabled' : ''}`}"
-                              type="button"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        );
-                        return html`
-                          <${Snapshot}
-                            buttons=${buttons}
-                            image=${img}
-                            index=${i}
-                            getSource=${getSource}
-                          />
-                        `;
-                      })}
-                    </div>
-                  `}
+                html`
+                  <div data-type="added" class="snapshots">
+                    ${added.map((img, i) => {
+                      const getSource = p =>
+                        `results/${IMAGE_DIRS[IMAGE_DIRS.indexOf('new')]}/${
+                          p.image
+                        }`;
+                      const buttons = States.map(
+                        state => html`
+                          <button
+                            class="${`button${
+                              state === 'New' ? ' selected' : ''
+                            }${state !== 'New' ? ' disabled' : ''}`}"
+                            type="button"
+                          >
+                            ${state}
+                          </button>
+                        `
+                      );
+                      return html`
+                        <${Snapshot}
+                          buttons=${buttons}
+                          image=${img}
+                          index=${i}
+                          getSource=${getSource}
+                        />
+                      `;
+                    })}
+                  </div>
+                `}
                 ${!!missing.length &&
-                  html`
-                    <div data-type="missing" class="snapshots">
-                      ${missing.map((img, i) => {
-                        const getSource = p =>
-                          `results/${
-                            IMAGE_DIRS[IMAGE_DIRS.indexOf('original')]
-                          }/${p.image}`;
-                        const buttons = States.map(
-                          state => html`
-                            <button
-                              class="${`button${
-                                state === 'Original' ? ' selected' : ''
-                              }${state !== 'Original' ? ' disabled' : ''}`}"
-                              type="button"
-                            >
-                              ${state}
-                            </button>
-                          `
-                        );
-                        return html`
-                          <${Snapshot}
-                            buttons=${buttons}
-                            image=${img}
-                            index=${i}
-                            getSource=${getSource}
-                          />
-                        `;
-                      })}
-                    </div>
-                  `}
+                html`
+                  <div data-type="missing" class="snapshots">
+                    ${missing.map((img, i) => {
+                      const getSource = p =>
+                        `results/${
+                          IMAGE_DIRS[IMAGE_DIRS.indexOf('original')]
+                        }/${p.image}`;
+                      const buttons = States.map(
+                        state => html`
+                          <button
+                            class="${`button${
+                              state === 'Original' ? ' selected' : ''
+                            }${state !== 'Original' ? ' disabled' : ''}`}"
+                            type="button"
+                          >
+                            ${state}
+                          </button>
+                        `
+                      );
+                      return html`
+                        <${Snapshot}
+                          buttons=${buttons}
+                          image=${img}
+                          index=${i}
+                          getSource=${getSource}
+                        />
+                      `;
+                    })}
+                  </div>
+                `}
               </main>
             </div>
           `;
         }
       }
 
-      render(
-        html`
-          <${App} page="All" />
-        `,
-        document.body
-      );
+      render(html` <${App} page="All" /> `, document.body);
     </script>
   </head>
 

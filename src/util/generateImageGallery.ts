@@ -5,6 +5,7 @@ import ejs from 'ejs';
 export async function generateImageGallery(
   target: string,
   data: {
+    terminationReason: 'maxChangedSnapshots' | null;
     baseFilesLength: number;
     changed: string[];
     missing?: string[];

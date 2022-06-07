@@ -15,7 +15,7 @@ import {getStorageClient} from './util/getStorageClient';
 import {diffSnapshots} from './util/diffSnapshots';
 import {retrieveBaseSnapshots} from './api/retrieveBaseSnapshots';
 import {startBuild} from './api/startBuild';
-import {finishBuild} from './api/finishBuild';
+import {finishBuild, BuildResults} from './api/finishBuild';
 import {failBuild} from './api/failBuild';
 import {getOSTags} from './util/osTags';
 import {SENTRY_DSN} from './config';
@@ -256,6 +256,7 @@ async function run(): Promise<void> {
       changedSnapshots,
       missingSnapshots,
       newSnapshots,
+      terminationReason,
     } = await diffSnapshots({
       basePath,
       mergeBasePath,
@@ -263,6 +264,8 @@ async function run(): Promise<void> {
       outputPath: resultsPath,
       pixelmatchOptions,
     });
+
+    console.log('Termination reason from diff', terminationReason);
 
     const resultsGlobber = await glob.create(`${resultsPath}${pngGlob}`, {
       followSymbolicLinks: false,
@@ -283,7 +286,8 @@ async function run(): Promise<void> {
     });
     gcsSpan?.finish();
     const changedArray = [...changedSnapshots];
-    const results = {
+    const results: BuildResults = {
+      terminationReason,
       baseFilesLength: baseFiles.length,
       changed: changedArray,
       missing: [...missingSnapshots],
