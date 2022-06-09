@@ -71,14 +71,16 @@ function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
   const head_sha =
     pullRequestPayload?.head.sha ||
     workflowRunPullRequest?.head.sha ||
-    workflowRunPayload?.head_sha;
+    workflowRunPayload?.head_sha ||
+    github.context.sha;
 
   return {
     headRef:
       pullRequestPayload?.head.ref ||
       workflowRunPullRequest?.head.ref ||
       (workflowRunPayload?.head_branch &&
-        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`),
+        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`) ||
+      github.context.ref,
     headSha: head_sha,
   };
 }
