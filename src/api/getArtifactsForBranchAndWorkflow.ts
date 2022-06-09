@@ -78,7 +78,7 @@ export async function getArtifactsForBranchAndWorkflow(
     //
     // If this needs to be more generic, this should be an option.
     const workflowRuns = response.data.filter(
-      workflowRun =>
+      (workflowRun: any) =>
         workflowRun.head_repository.full_name === `${owner}/${repo}`
     );
 
@@ -125,7 +125,9 @@ export async function getArtifactsForBranchAndWorkflow(
         `Unable to fetch artifacts for branch: ${branch}, workflow: ${workflow_id}, workflowRunId: ${workflowRun.id}`
       );
     } else {
-      const foundArtifact = artifacts.find(({name}) => name === artifactName);
+      const foundArtifact = artifacts.find(
+        ({name}: {name: string}) => name === artifactName
+      );
       if (foundArtifact) {
         core.debug(`Found suitable artifact: ${foundArtifact.url}`);
         core.endGroup();

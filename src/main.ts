@@ -111,7 +111,8 @@ async function run(): Promise<void> {
   const mergeBaseSha: string =
     core.getInput('merge-base') ||
     pullRequestPayload?.base?.sha ||
-    workflowRunPullRequest?.base.sha;
+    workflowRunPullRequest?.base.sha ||
+    github.context.payload.before;
 
   // Forward `results-path` to outputs
   core.startGroup('Set outputs');
@@ -210,7 +211,9 @@ async function run(): Promise<void> {
           run_id: workflowRunPayload?.id,
         });
 
-        const artifact = data.artifacts.find(({name}) => name === artifactName);
+        const artifact = data.artifacts.find(
+          ({name}: {name: string}) => name === artifactName
+        );
 
         if (!artifact) {
           throw new Error(
