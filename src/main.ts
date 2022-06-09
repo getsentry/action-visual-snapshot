@@ -64,23 +64,23 @@ function handleError(error: Error) {
 }
 
 function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
-  const workflowRunPayload = github.context.payload.workflow_run;
-  const pullRequestPayload = github.context.payload.pull_request;
-  const workflowRunPullRequest = workflowRunPayload?.pull_requests?.[0];
+  // const workflowRunPayload = github.context.payload.workflow_run;
+  // const pullRequestPayload = github.context.payload.pull_request;
+  // const workflowRunPullRequest = workflowRunPayload?.pull_requests?.[0];
 
-  const head_sha =
-    pullRequestPayload?.head.sha ||
-    workflowRunPullRequest?.head.sha ||
-    workflowRunPayload?.head_sha ||
-    github.context.sha;
+  const head_sha = github.context.sha;
+  // pullRequestPayload?.head.sha ||
+  // workflowRunPullRequest?.head.sha ||
+  // workflowRunPayload?.head_sha ||
+  // github.context.sha;
 
   return {
-    headRef:
-      pullRequestPayload?.head.ref ||
-      workflowRunPullRequest?.head.ref ||
-      (workflowRunPayload?.head_branch &&
-        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`) ||
-      github.context.ref,
+    headRef: github.context.ref,
+    // pullRequestPayload?.head.ref ||
+    // workflowRunPullRequest?.head.ref ||
+    // (workflowRunPayload?.head_branch &&
+    //   `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`) ||
+    // github.context.ref,
     headSha: head_sha,
   };
 }
