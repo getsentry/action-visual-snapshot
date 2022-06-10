@@ -1,4 +1,4 @@
-import {multiCompareODiff} from '@app/util/multiCompareOdiff';
+import {multiCompareODiff} from '@app/util/multiCompareODiff';
 
 describe('multiCompare', function () {
   it('does a 3 way diff', async () => {

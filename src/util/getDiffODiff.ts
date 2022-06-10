@@ -4,7 +4,7 @@ interface DiffResults {
   result: number;
 }
 
-export async function getDiffOdiff(
+export async function getDiffODiff(
   file1: string,
   file2: string,
   diffPath: string,

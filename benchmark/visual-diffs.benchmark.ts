@@ -4,7 +4,7 @@ import fs from 'fs';
 import {performance} from 'perf_hooks';
 
 import {getDiff} from '../src/util/getDiff';
-import {getDiffOdiff} from '../src/util/getDiffOdiff';
+import {getDiffODiff} from '../src/util/getDiffODiff';
 
 import {multiCompare} from '../src/util/multiCompare';
 import {multiCompareODiff} from '../src/util/multiCompareODiff';
@@ -64,8 +64,8 @@ async function getDiffBenchmark() {
   }
 }
 
-async function getDiffOdiffBenchmark() {
-  await getDiffOdiff(baseHead, branchHead, resultPath);
+async function getDiffODiffBenchmark() {
+  await getDiffODiff(baseHead, branchHead, resultPath);
 }
 
 async function multiCompareBenchmark() {
@@ -133,9 +133,9 @@ function logResults(results: any) {
   // await benchmark(100, getDiffBenchmark, singleDiffResults);
   // await benchmark(1000, getDiffBenchmark, singleDiffResults);
 
-  await benchmark(10, getDiffOdiffBenchmark, singleDiffResults);
-  // await benchmark(100, getDiffOdiffBenchmark, singleDiffResults);
-  // await benchmark(1000, getDiffOdiffBenchmark, singleDiffResults);
+  await benchmark(10, getDiffODiffBenchmark, singleDiffResults);
+  // await benchmark(100, getDiffODiffBenchmark, singleDiffResults);
+  // await benchmark(1000, getDiffODiffBenchmark, singleDiffResults);
   logResults(singleDiffResults);
 
   prepare();

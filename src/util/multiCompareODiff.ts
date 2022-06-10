@@ -2,7 +2,7 @@ import sharp from 'sharp';
 import {readFileSync, unlinkSync} from 'fs';
 import path from 'path';
 
-import {getDiffOdiff} from './getDiffOdiff';
+import {getDiffODiff} from './getDiffODiff';
 
 type Options = {
   snapshotName: string;
@@ -31,7 +31,7 @@ export async function multiCompareODiff({
     snapshotName.replace('.png', '.b.png')
   );
 
-  const {result: diffB} = await getDiffOdiff(
+  const {result: diffB} = await getDiffODiff(
     baseHead,
     branchHead,
     outputMergedMaskPathB,
@@ -47,7 +47,7 @@ export async function multiCompareODiff({
     return 0;
   }
 
-  const {result: diffA} = await getDiffOdiff(
+  const {result: diffA} = await getDiffODiff(
     baseHead,
     branchBase,
     outputMergedMaskPathA,
