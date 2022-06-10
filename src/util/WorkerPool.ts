@@ -27,6 +27,7 @@ export class WorkerPool {
       this.availableWorkers.push(worker);
 
       worker.on('message', (message: OutboundWorkerAction) => {
+        console.log('Worker message:', message);
         this.availableWorkers.push(worker);
         const task = this.tasks.get(message.taskId);
         if (task) {
@@ -34,6 +35,7 @@ export class WorkerPool {
         }
       });
       worker.on('error', (message: OutboundWorkerAction) => {
+        console.log('Worker error:', message);
         this.availableWorkers.push(worker);
         const task = this.tasks.get(message.taskId);
         if (task) {

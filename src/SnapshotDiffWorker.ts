@@ -1,10 +1,10 @@
 /* eslint-env node */
 import {PixelmatchOptions} from './types';
 
-import {multiCompare} from './util/multiCompare';
 import {createDiff} from './util/createDiff';
 
 import {parentPort} from 'worker_threads';
+import {multiCompareODiff} from '@app/util/multiCompareODiff';
 
 interface BaseDiff {
   taskId: number;
@@ -42,14 +42,13 @@ if (parentPort) {
 
       try {
         if (isMultiDiffMessage(message)) {
-          result = await multiCompare({
+          result = await multiCompareODiff({
             branchBase: message.branchBase,
             baseHead: message.baseHead,
             branchHead: message.branchHead,
             outputDiffPath: message.outputDiffPath,
             outputMergedPath: message.outputMergedPath,
             snapshotName: message.snapshotName,
-            pixelmatchOptions: message.pixelmatchOptions,
           });
         } else {
           result = await createDiff(
@@ -71,7 +70,7 @@ if (parentPort) {
           throw new Error('Failed to post to postMessage to parentPort.');
         }
       } catch (e) {
-        console.log('Error', e);
+        console.log('Error from catch', e?.message, e);
         const outboundMessage: OutboundWorkerAction = {
           taskId: message.taskId,
         };
