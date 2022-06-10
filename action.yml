@@ -79,5 +79,12 @@ outputs:
   merge-base-images-path:
     description: 'path where merge base images are saved'
 runs:
-  using: 'node16'
-  main: 'dist/index.js'
+  using: composite
+  steps:
+  - run: echo "$WAT" "$WAT2"
+    env:
+      WAT: ${{ github.action_repository }}
+      WAT2: ${{ github.action_ref }}
+    shell: bash
+  - run: node dist/index.js
+    shell: bash
