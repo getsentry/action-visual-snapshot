@@ -1,3 +1,4 @@
+import path from 'path';
 import {compare, ODiffOptions} from 'odiff-bin';
 
 interface DiffResults {
@@ -16,6 +17,11 @@ export async function getDiffObin(
     outputDiffMask: false,
     threshold: 0.1,
     ...options,
+    // @ts-ignore
+    __binaryPath:
+      process.env.NODE_ENV === 'test'
+        ? undefined
+        : path.resolve(__dirname, './odiff'),
   });
   console.log('Compared', file1, file2, diffPath);
 
