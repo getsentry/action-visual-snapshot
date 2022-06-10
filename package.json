@@ -5,13 +5,14 @@
   "description": "GitHub Action to diff images",
   "main": "lib/main.js",
   "scripts": {
-    "build": "yarn tsc --build tsconfig.build.json",
+    "build": "yarn tsc --build tsconfig.build.json && yarn tsc --build tsconfig.build.worker.json",
     "build-template": "yarn ts-node src/template/build",
     "dev:gallery": "nodemon --watch src/template/index.ejs --watch src/template/dev.ts --exec \"ts-node\" ./src/template/dev.ts",
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
-    "dist": "yarn build-template && yarn build && yarn ncc build -C -s",
+    "dist": "yarn build-template && yarn build && yarn dist:worker && yarn ncc build -C -s ",
+    "dist:worker": "yarn ncc build ./lib/SnapshotDiffWorker.js -C -s && mv ./dist/index.js ./dist/SnapshotDiffWorker.js",
     "test": "yarn jest",
     "all": "yarn build && yarn format && yarn lint && yarn test && yarn dist"
   },

@@ -68,6 +68,9 @@ inputs:
   gcs-bucket:
     require: false
     description: 'if this is set, upload to google cloud storage'
+  parallelism: 
+    required: false
+    description: 'number of threads to use when diffing images'
 outputs:
   results-path:
     description: 'path where results are saved'
@@ -76,5 +79,5 @@ outputs:
   merge-base-images-path:
     description: 'path where merge base images are saved'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'

@@ -19,6 +19,7 @@ describe('diffSnapshots (integration)', function () {
   jest.setTimeout(600000);
   it('can diff snapshots', async function () {
     const diffResults = await diffSnapshots({
+      parallelism: 1,
       basePath: path.resolve(__dirname, 'imgs', 'base'),
       mergeBasePath: path.resolve(__dirname, 'imgs', 'mergeBase'),
       currentPath: path.resolve(__dirname, 'imgs', 'current'),
@@ -63,6 +64,7 @@ describe('diffSnapshots (integration)', function () {
 
   it('terminates early if maxChangedSnapshots is exceeded', async function () {
     const diffResults = await diffSnapshots({
+      parallelism: 1,
       maxChangedSnapshots: 1,
       basePath: path.resolve(__dirname, 'imgs', 'base'),
       mergeBasePath: path.resolve(__dirname, 'imgs', 'mergeBase'),
@@ -99,6 +101,7 @@ describe('diffSnapshots (integration)', function () {
 
   it('can diff snapshots without merge base', async function () {
     const diffResults = await diffSnapshots({
+      parallelism: 1,
       basePath: path.resolve(__dirname, 'imgs', 'base'),
       mergeBasePath: path.resolve(__dirname, 'imgs', 'invalidMergeBase'),
       currentPath: path.resolve(__dirname, 'imgs', 'current'),
@@ -143,6 +146,7 @@ describe('diffSnapshots (integration)', function () {
 
   it('diffs different sized snapshots', async function () {
     const diffResults = await diffSnapshots({
+      parallelism: 1,
       basePath: path.resolve(__dirname, 'imgs', 'base'),
       mergeBasePath: path.resolve(__dirname, 'imgs', 'mergeBase'),
       currentPath: path.resolve(__dirname, 'imgs', 'size'),

@@ -16,7 +16,7 @@ export async function createDiff(
   file1: string,
   file2: string,
   pixelmatchOptions?: PixelmatchOptions
-) {
+): Promise<number> {
   const {result, diff} = await getDiff(file1, file2, pixelmatchOptions);
 
   if (result > 0) {

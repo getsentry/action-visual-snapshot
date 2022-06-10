@@ -1,5 +1,6 @@
 /* eslint-env node */
 import path from 'path';
+import os from 'os';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
@@ -23,6 +24,25 @@ import {Await} from './types';
 import {getPixelmatchOptions} from './getPixelmatchOptions';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 
+function getParallelismInput() {
+  const input = core.getInput('parallelism');
+
+  if (typeof input === 'string') {
+    const parsed = parseInt(input, 10);
+
+    if (isNaN(parsed)) {
+      core.debug('Invalid parallelism input, defaulting to CPU count');
+      return os.cpus().length;
+    }
+
+    return parsed;
+  }
+
+  core.debug('No parallelism input, defaulting to CPU count');
+  return os.cpus().length;
+}
+
+const parallelism = getParallelismInput();
 const {owner, repo} = github.context.repo;
 const token = core.getInput('github-token');
 const octokit = token && github.getOctokit(token);
@@ -268,9 +288,8 @@ async function run(): Promise<void> {
       currentPath,
       outputPath: resultsPath,
       pixelmatchOptions,
+      parallelism,
     });
-
-    console.log('Termination reason from diff', terminationReason);
 
     const resultsGlobber = await glob.create(`${resultsPath}${pngGlob}`, {
       followSymbolicLinks: false,

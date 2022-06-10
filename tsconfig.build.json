@@ -8,5 +8,6 @@
       "@app/*": ["src/*"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/SnapshotDiffWorker.ts", "src/SnapshotDiffWorker.import.js"],
 }
