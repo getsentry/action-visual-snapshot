@@ -382,6 +382,9 @@ const {headRef, headSha} = getGithubHeadRefInfo();
 
 // Only report to Sentry if executing from the main branch
 if (core.getInput('_ref') === 'main') {
+  core.debug(
+    'A performance transaction will be sent to Sentry for the execution of this action.'
+  );
   const transaction = Sentry.startTransaction({
     op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
     name: 'visual snapshot',
@@ -395,5 +398,6 @@ if (core.getInput('_ref') === 'main') {
 
   run().then(() => transaction.finish());
 } else {
+  core.debug('No transaction will be submitted to Sentry for this run.');
   run();
 }
