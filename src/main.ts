@@ -378,6 +378,13 @@ async function run(): Promise<void> {
 const {headRef, headSha} = getGithubHeadRefInfo();
 // core.debug(process.env);
 core.debug(JSON.stringify(process.env, null, 2));
+console.log(process.env.INPUT__REPO);
+console.log(process.env.INPUT__REF);
+const _repo = core.getInput('_repo');
+const _ref = core.getInput('_repo');
+core.debug(_repo);
+core.debug(_ref);
+console.log(_repo);
 
 const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
