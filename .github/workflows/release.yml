@@ -37,6 +37,7 @@ jobs:
         SENTRY_VERSION: ${{ steps.get-version.outputs.version }}
       run: |
         yarn dist
+        cp -r node_modules/odiff-bin/3 dist
         git config user.email "github-actions-bot@sentry.io"
         git config user.name "github-actions[bot]"
         git add dist
