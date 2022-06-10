@@ -58,6 +58,8 @@ Sentry.init({
   ],
   release: process.env.VERSION,
   tracesSampleRate: 1.0,
+  environment:
+    process.env.GITHUB_ACTION_REF === 'main' ? 'production' : 'development',
 });
 
 Sentry.setContext('actionEnvironment', {
@@ -111,9 +113,6 @@ async function run(): Promise<void> {
   const apiToken = core.getInput('api-token');
   const actionName = core.getInput('action-name');
   const snapshotPath: string = core.getInput('snapshot-path');
-  if (core.getInput('')) {
-    return;
-  }
 
   const resultsPath = path.resolve(resultsRootPath, 'visual-snapshots-results');
   const basePath = path.resolve('/tmp/visual-snapshots-base');
@@ -380,24 +379,14 @@ async function run(): Promise<void> {
 
 const {headRef, headSha} = getGithubHeadRefInfo();
 
-// Only report to Sentry if executing from the main branch
-if (core.getInput('_ref') === 'main') {
-  core.debug(
-    'A performance transaction will be sent to Sentry for the execution of this action.'
-  );
-  const transaction = Sentry.startTransaction({
-    op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
-    name: 'visual snapshot',
-    // These values are from _where_ the GH action got executed (workflow calling this action)
-    tags: {head_ref: headRef, head_sha: headSha, ...getOSTags()},
-  });
+const transaction = Sentry.startTransaction({
+  op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
+  name: 'visual snapshot',
+  tags: {head_ref: headRef, head_sha: headSha, ...getOSTags()},
+});
 
-  Sentry.configureScope(scope => {
-    scope.setSpan(transaction);
-  });
+Sentry.configureScope(scope => {
+  scope.setSpan(transaction);
+});
 
-  run().then(() => transaction.finish());
-} else {
-  core.debug('No transaction will be submitted to Sentry for this run.');
-  run();
-}
+run().then(() => transaction.finish());
