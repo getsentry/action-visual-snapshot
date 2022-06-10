@@ -2,14 +2,10 @@ name: 'action-visual-snapshot'
 description: 'Visual snapshot tester for GitHub Actions'
 author: 'Sentry'
 inputs:
-  _repo:
-    required: false
-    default: ${{ github.action_repository }}
-    description: 'Use to instrospect about the action itself.'
   _ref:
     required: false
     default: ${{ github.action_ref }}
-    description: 'Use to instrospect about the action itself.'
+    description: 'Used for instrospection about the action itself.'
   threshold:
     description: 'Matching threshold, ranges from 0 to 1. Smaller values make the comparison more sensitive. 0.1 by default.'
     default: 0.05
