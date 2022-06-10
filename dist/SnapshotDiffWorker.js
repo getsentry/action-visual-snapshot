@@ -123,12 +123,20 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getDiffObin = void 0;
+const path_1 = __importDefault(__nccwpck_require__(17));
 const odiff_bin_1 = __nccwpck_require__(586);
 function getDiffObin(file1, file2, diffPath, options = {}) {
     return __awaiter(this, void 0, void 0, function* () {
-        const diff = yield odiff_bin_1.compare(file1, file2, diffPath, Object.assign({ antialiasing: true, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options));
+        const diff = yield odiff_bin_1.compare(file1, file2, diffPath, Object.assign(Object.assign({ antialiasing: true, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options), { 
+            // @ts-ignore
+            __binaryPath: process.env.NODE_ENV === 'test'
+                ? undefined
+                : path_1.default.resolve(__dirname, './odiff') }));
         console.log('Compared', file1, file2, diffPath);
         if ('diffCount' in diff) {
             return { result: diff.diffCount };
@@ -6897,7 +6905,7 @@ module.exports = function (Sharp) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 function __ncc_wildcard$0 (arg) {
-  if (arg === "darwin-arm64v8") return __nccwpck_require__(80);
+  if (arg === "linux-x64") return __nccwpck_require__(460);
 }
 'use strict';
 
@@ -7899,10 +7907,10 @@ module.exports = function isArrayish(obj) {
 
 /***/ }),
 
-/***/ 80:
+/***/ 460:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-darwin-arm64v8.node")
+module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-linux-x64.node")
 
 /***/ }),
 
