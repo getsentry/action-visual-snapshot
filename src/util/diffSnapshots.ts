@@ -183,6 +183,7 @@ export async function diffSnapshots({
     process.env.NODE_ENV === 'test'
       ? path.resolve(__dirname, './../SnapshotDiffWorker.import.js')
       : path.resolve(__dirname, './SnapshotDiffWorker.js');
+
   const workerPool = new WorkerPool(workerPath, parallelism);
 
   // Set a sentry tag so we can see what parallelism we're using in runs.

@@ -2,9 +2,9 @@
 import {PixelmatchOptions} from './types';
 
 import {createDiff} from './util/createDiff';
+import {multiCompareODiff} from './util/multiCompareODiff';
 
 import {parentPort} from 'worker_threads';
-import {multiCompareODiff} from '@app/util/multiCompareODiff';
 
 interface BaseDiff {
   taskId: number;

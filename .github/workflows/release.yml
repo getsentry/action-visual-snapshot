@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - v*
+      - jb/perf/diff-lib
 
 jobs:
   release:
@@ -31,8 +32,6 @@ jobs:
 
     - run: yarn lint
 
-    - run: yarn test
-
     - name: build
       env:
         SENTRY_VERSION: ${{ steps.get-version.outputs.version }}
@@ -40,6 +39,7 @@ jobs:
         yarn dist
         git config user.email "github-actions-bot@sentry.io"
         git config user.name "github-actions[bot]"
+        git add dist
         git add dist/index.js
         git add dist/SnapshotDiffWorker.js
         git add dist/sourcemap-register.js
