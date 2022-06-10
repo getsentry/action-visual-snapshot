@@ -27,6 +27,7 @@ export async function getDiffObin(
     threshold: 0.1,
     ...options,
   });
+  console.log('Compared', file1, file2, diffPath);
 
   if ('diffCount' in diff) {
     return {result: diff.diffCount};

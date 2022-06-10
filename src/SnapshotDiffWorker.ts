@@ -42,6 +42,7 @@ if (parentPort) {
 
       try {
         if (isMultiDiffMessage(message)) {
+          console.log('Multi diff');
           result = await multiCompareODiff({
             branchBase: message.branchBase,
             baseHead: message.baseHead,
@@ -51,6 +52,7 @@ if (parentPort) {
             snapshotName: message.snapshotName,
           });
         } else {
+          console.log('Single diff');
           result = await createDiff(
             message.file,
             message.outputDiffPath,
@@ -59,6 +61,7 @@ if (parentPort) {
           );
         }
 
+        console.log('Change', result);
         const outboundMessage: OutboundWorkerAction = {
           taskId: message.taskId,
           result,
@@ -84,5 +87,6 @@ if (parentPort) {
     }
   );
 } else {
+  console.log("Couldn't find parentPort");
   throw new Error("Can't find parent port");
 }

@@ -222,6 +222,7 @@ export async function diffSnapshots({
     }
 
     if (baseSnapshots.has(file)) {
+      console.log('Enqueue task');
       const baseHead = path.resolve(basePath, file);
       const branchHead = path.resolve(currentPath, file);
 
@@ -286,6 +287,7 @@ export async function diffSnapshots({
 
       promises.push(promise);
     } else {
+      console.log('Nothing to diff');
       // If there is nothing to diff, return a resolved promise and add the file to the new snapshots set
       promises.push(
         new Promise<void>(resolve => {
