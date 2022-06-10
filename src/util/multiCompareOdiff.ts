@@ -37,7 +37,7 @@ export async function multiCompareODiff({
     outputMergedMaskPathB,
     {
       outputDiffMask: true,
-      antialiasing: true,
+      antialiasing: false,
     }
   );
 
@@ -53,7 +53,7 @@ export async function multiCompareODiff({
     outputMergedMaskPathA,
     {
       outputDiffMask: true,
-      antialiasing: true,
+      antialiasing: false,
     }
   );
 
