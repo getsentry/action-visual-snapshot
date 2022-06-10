@@ -12,7 +12,6 @@ describe('multiCompare', function () {
       outputDiffPath: './__tests__/util/diffSnapshots/imgs/diff',
       outputMergedPath: './__tests__/util/diffSnapshots/imgs/merged',
     });
-
     // Hardcoded nb of diffed pixels
     expect(result).toBe(16120);
   });

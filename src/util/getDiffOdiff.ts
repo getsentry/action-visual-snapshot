@@ -11,7 +11,7 @@ export async function getDiffOdiff(
   options: ODiffOptions = {}
 ): Promise<Pick<DiffResults, 'result'>> {
   const diff = await compare(file1, file2, diffPath, {
-    antialiasing: true,
+    antialiasing: false,
     failOnLayoutDiff: false,
     outputDiffMask: false,
     threshold: 0.1,

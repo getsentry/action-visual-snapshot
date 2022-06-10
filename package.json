@@ -7,6 +7,7 @@
   "scripts": {
     "build": "yarn tsc --build tsconfig.build.json && yarn tsc --build tsconfig.build.worker.json",
     "build-template": "yarn ts-node src/template/build",
+    "benchmark": "yarn run ts-node benchmark/visual-diffs.benchmark.ts",
     "dev:gallery": "nodemon --watch src/template/index.ejs --watch src/template/dev.ts --exec \"ts-node\" ./src/template/dev.ts",
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
