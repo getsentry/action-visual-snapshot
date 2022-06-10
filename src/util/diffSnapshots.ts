@@ -186,6 +186,9 @@ export async function diffSnapshots({
 
   const workerPool = new WorkerPool(workerPath, parallelism);
 
+  console.log('Path', workerPath);
+  console.log('Pool', workerPool);
+
   // Set a sentry tag so we can see what parallelism we're using in runs.
   transaction?.setTag('snapshots.diffing.parallelism', parallelism.toFixed(0));
 
@@ -194,8 +197,9 @@ export async function diffSnapshots({
   // Diff snapshots against base branch. This is to make sure we run the above tasks serially, otherwise we will face OOM issues
   const promises: Promise<any>[] = [];
 
-  // eslint-disable-next-line
+  console.log('CurrentFiles', currentFiles);
   currentFiles.forEach(currentFile => {
+    console.log('Iterating over', currentFile);
     // Since there is a chance that the loop terminates early, we need to keep this
     // "file" in sync with the loop that reprocesses the leftover items and removes
     // them from the missingSnapshots set on L210. File basically means "key" in this case
@@ -203,7 +207,7 @@ export async function diffSnapshots({
     currentSnapshots.add(file);
 
     async function onSuccess({result}: {result?: number}) {
-      console.log('Successfully diffed', result);
+      console.log('Successfully diffed', file, result);
       const baseHead = path.resolve(basePath, file);
       const branchHead = path.resolve(currentPath, file);
 
@@ -233,7 +237,6 @@ export async function diffSnapshots({
             outputDiffPath,
             outputMergedPath,
             snapshotName: file,
-            pixelmatchOptions,
           })
           .then(onSuccess)
           .catch(err => {
@@ -295,6 +298,7 @@ export async function diffSnapshots({
 
   await Promise.all(promises)
     .then(async () => {
+      console.log('Finished diffing all files');
       // Once we finish diffing, dispose the worker
       await workerPool.dispose();
     })
