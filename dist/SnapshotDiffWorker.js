@@ -17,8 +17,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const createDiff_1 = __nccwpck_require__(5510);
+const multiCompareODiff_1 = __nccwpck_require__(3654);
 const worker_threads_1 = __nccwpck_require__(1267);
-const multiCompareODiff_1 = __nccwpck_require__(2273);
 const isMultiDiffMessage = (message) => 'snapshotName' in message;
 if (worker_threads_1.parentPort) {
     worker_threads_1.parentPort.on('message', (message) => __awaiter(void 0, void 0, void 0, function* () {
@@ -216,6 +216,68 @@ function getDiff(file1, file2, _a = {}) {
     });
 }
 exports.getDiff = getDiff;
+
+
+/***/ }),
+
+/***/ 3654:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.multiCompareODiff = void 0;
+const sharp_1 = __importDefault(__nccwpck_require__(4185));
+const fs_1 = __nccwpck_require__(7147);
+const path_1 = __importDefault(__nccwpck_require__(1017));
+const getDiff_1 = __nccwpck_require__(8064);
+function multiCompareODiff({ snapshotName, baseHead, branchBase, branchHead, outputDiffPath, outputMergedPath, }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const outputPath = path_1.default.resolve(outputDiffPath, snapshotName);
+        const outputMergedMaskPathA = path_1.default.resolve(outputMergedPath, snapshotName.replace('.png', '.a.png'));
+        const outputMergedMaskPathB = path_1.default.resolve(outputMergedPath, snapshotName.replace('.png', '.b.png'));
+        const { result: diffB } = yield getDiff_1.getDiffObin(baseHead, branchHead, outputMergedMaskPathB, {
+            outputDiffMask: true,
+            antialiasing: true,
+        });
+        // Hot path for when baseHead and branchBase do not have any respective changes,
+        // we can indue that there is nothing to merge and we can skip the 2nd image diff operation
+        if (diffB === 0) {
+            return 0;
+        }
+        const { result: diffA } = yield getDiff_1.getDiffObin(baseHead, branchBase, outputMergedMaskPathA, {
+            outputDiffMask: true,
+            antialiasing: true,
+        });
+        const maskA = fs_1.readFileSync(outputMergedMaskPathA);
+        const maskB = fs_1.readFileSync(outputMergedMaskPathB);
+        const finalMask = yield sharp_1.default(maskA)
+            .composite([{ input: maskB, blend: 'xor' }])
+            .toBuffer();
+        fs_1.unlinkSync(outputMergedMaskPathA);
+        fs_1.unlinkSync(outputMergedMaskPathB);
+        const result = Math.abs(diffB - diffA);
+        if (result > 0) {
+            yield sharp_1.default(fs_1.readFileSync(baseHead))
+                .composite([{ input: finalMask, blend: 'over' }])
+                .toFile(outputPath);
+        }
+        return result;
+    });
+}
+exports.multiCompareODiff = multiCompareODiff;
 
 
 /***/ }),
@@ -9867,7 +9929,7 @@ module.exports = function (Sharp) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 function __ncc_wildcard$0 (arg) {
-  if (arg === "darwin-arm64v8") return __nccwpck_require__(4382);
+  if (arg === "linux-x64") return __nccwpck_require__(7460);
 }
 'use strict';
 
@@ -10869,222 +10931,10 @@ module.exports = function isArrayish(obj) {
 
 /***/ }),
 
-/***/ 5494:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.fileToPng = void 0;
-const fs_1 = __nccwpck_require__(7147);
-const pngjs_1 = __nccwpck_require__(6413);
-/**
- * Given a path to a PNG, returns a pngjs object
- */
-function fileToPng(file) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return new Promise((resolve, reject) => fs_1.createReadStream(file)
-            .pipe(new pngjs_1.PNG({
-            filterType: 4,
-        }))
-            .on('parsed', function () {
-            resolve(this);
-        })
-            .on('error', function (err) {
-            reject(err);
-        }));
-    });
-}
-exports.fileToPng = fileToPng;
-
-
-/***/ }),
-
-/***/ 2778:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getDiff = exports.getDiffObin = void 0;
-const pngjs_1 = __nccwpck_require__(6413);
-const pixelmatch_1 = __importDefault(__nccwpck_require__(6097));
-const odiff_bin_1 = __nccwpck_require__(2586);
-const fileToPng_1 = __nccwpck_require__(5494);
-const resizeImage_1 = __nccwpck_require__(3485);
-function getDiffObin(file1, file2, diffPath, options = {}) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const diff = yield odiff_bin_1.compare(file1, file2, diffPath, Object.assign({ antialiasing: true, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options));
-        if ('diffCount' in diff) {
-            return { result: diff.diffCount };
-        }
-        return {
-            result: 0,
-        };
-    });
-}
-exports.getDiffObin = getDiffObin;
-function getDiff(file1, file2, _a = {}) {
-    var { includeAA = true, threshold = 0.1 } = _a, options = __rest(_a, ["includeAA", "threshold"]);
-    return __awaiter(this, void 0, void 0, function* () {
-        let img1 = typeof file1 === 'string' ? yield fileToPng_1.fileToPng(file1) : file1;
-        let img2 = typeof file2 === 'string' ? yield fileToPng_1.fileToPng(file2) : file2;
-        const width = Math.max(img1.width, img2.width);
-        const height = Math.max(img1.height, img2.height);
-        const diff = new pngjs_1.PNG({ width, height });
-        if (img1.width !== img2.width || img1.height !== img2.height) {
-            // resize images
-            img1 = resizeImage_1.resizeImage(img1, width, height);
-            img2 = resizeImage_1.resizeImage(img2, width, height);
-        }
-        const result = pixelmatch_1.default(img1.data, img2.data, diff.data, width, height, Object.assign({ includeAA,
-            threshold }, options));
-        return {
-            result,
-            diff,
-            img1,
-            img2,
-        };
-    });
-}
-exports.getDiff = getDiff;
-
-
-/***/ }),
-
-/***/ 2273:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.multiCompareODiff = void 0;
-const sharp_1 = __importDefault(__nccwpck_require__(4185));
-const fs_1 = __nccwpck_require__(7147);
-const path_1 = __importDefault(__nccwpck_require__(1017));
-const getDiff_1 = __nccwpck_require__(2778);
-function multiCompareODiff({ snapshotName, baseHead, branchBase, branchHead, outputDiffPath, outputMergedPath, }) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const outputPath = path_1.default.resolve(outputDiffPath, snapshotName);
-        const outputMergedMaskPathA = path_1.default.resolve(outputMergedPath, snapshotName.replace('.png', '.a.png'));
-        const outputMergedMaskPathB = path_1.default.resolve(outputMergedPath, snapshotName.replace('.png', '.b.png'));
-        const { result: diffB } = yield getDiff_1.getDiffObin(baseHead, branchHead, outputMergedMaskPathB, {
-            outputDiffMask: true,
-            antialiasing: true,
-        });
-        // Hot path for when baseHead and branchBase do not have any respective changes,
-        // we can indue that there is nothing to merge and we can skip the 2nd image diff operation
-        if (diffB === 0) {
-            return 0;
-        }
-        const { result: diffA } = yield getDiff_1.getDiffObin(baseHead, branchBase, outputMergedMaskPathA, {
-            outputDiffMask: true,
-            antialiasing: true,
-        });
-        const maskA = fs_1.readFileSync(outputMergedMaskPathA);
-        const maskB = fs_1.readFileSync(outputMergedMaskPathB);
-        const finalMask = yield sharp_1.default(maskA)
-            .composite([{ input: maskB, blend: 'xor' }])
-            .toBuffer();
-        fs_1.unlinkSync(outputMergedMaskPathA);
-        fs_1.unlinkSync(outputMergedMaskPathB);
-        const result = Math.abs(diffB - diffA);
-        if (result > 0) {
-            yield sharp_1.default(fs_1.readFileSync(baseHead))
-                .composite([{ input: finalMask, blend: 'over' }])
-                .toFile(outputPath);
-        }
-        return result;
-    });
-}
-exports.multiCompareODiff = multiCompareODiff;
-
-
-/***/ }),
-
-/***/ 3485:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.resizeImage = void 0;
-const pngjs_1 = __nccwpck_require__(6413);
-function resizeImage(img, width, height) {
-    const { width: sourceWidth, height: sourceHeight } = img;
-    // return if w/h is the same
-    if (sourceWidth === width && sourceHeight === height) {
-        return img;
-    }
-    // Initialize the image buffers through PNG
-    const newImage = new pngjs_1.PNG({ width, height });
-    // whether the input bitmap has 4 bytes per pixel (rgb and alpha) or 3 (rgb - no alpha).
-    // Keeping this hardcoded like it was, but we should probably read the value from the IHDR header.
-    const BYTES_PER_PX = 4;
-    const bytesPerSourceRow = sourceWidth * BYTES_PER_PX;
-    const bytesPerTargetRow = width * BYTES_PER_PX;
-    for (let y = 0; y < sourceHeight; y++) {
-        const sourceRowStart = y * bytesPerSourceRow;
-        const sourceRowEnd = y * bytesPerSourceRow + bytesPerSourceRow;
-        const rowData = img.data.slice(sourceRowStart, sourceRowEnd);
-        const targetRowStart = y * bytesPerTargetRow;
-        rowData.copy(newImage.data, targetRowStart, 0, rowData.length);
-    }
-    return newImage;
-}
-exports.resizeImage = resizeImage;
-
-
-/***/ }),
-
-/***/ 4382:
+/***/ 7460:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-darwin-arm64v8.node")
+module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-linux-x64.node")
 
 /***/ }),
 
