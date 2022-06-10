@@ -2,7 +2,7 @@ import sharp from 'sharp';
 import {readFileSync, unlinkSync} from 'fs';
 import path from 'path';
 
-import {getDiffObin} from './getDiff';
+import {getDiffObin} from './getDiffObin';
 
 type Options = {
   snapshotName: string;

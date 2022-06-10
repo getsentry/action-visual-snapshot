@@ -197,8 +197,9 @@ export async function diffSnapshots({
   // Diff snapshots against base branch. This is to make sure we run the above tasks serially, otherwise we will face OOM issues
   const promises: Promise<any>[] = [];
 
-  console.log('CurrentFiles', currentFiles);
-  currentFiles.forEach(currentFile => {
+  console.log('Nb files to diff', currentFiles.length);
+
+  for (const currentFile of currentFiles) {
     console.log('Iterating over', currentFile);
     // Since there is a chance that the loop terminates early, we need to keep this
     // "file" in sync with the loop that reprocesses the leftover items and removes
@@ -206,6 +207,7 @@ export async function diffSnapshots({
     const file = path.relative(currentPath, currentFile);
     currentSnapshots.add(file);
 
+    // eslint-disable-next-line
     async function onSuccess({result}: {result?: number}) {
       console.log('Successfully diffed', file, result);
       const baseHead = path.resolve(basePath, file);
@@ -222,7 +224,6 @@ export async function diffSnapshots({
     }
 
     if (baseSnapshots.has(file)) {
-      console.log('Enqueue task');
       const baseHead = path.resolve(basePath, file);
       const branchHead = path.resolve(currentPath, file);
 
@@ -240,6 +241,7 @@ export async function diffSnapshots({
             snapshotName: file,
           })
           .then(onSuccess)
+          // eslint-disable-next-line
           .catch(err => {
             console.log('Error processing file: ', file, err);
             if (terminationReason) {
@@ -260,6 +262,7 @@ export async function diffSnapshots({
             pixelmatchOptions,
           })
           .then(onSuccess)
+          // eslint-disable-next-line
           .catch(err => {
             console.log('Error processing file: ', file, err);
             if (terminationReason) {
@@ -272,6 +275,7 @@ export async function diffSnapshots({
           });
       }
 
+      // eslint-disable-next-line
       promise.finally(() => {
         processedFiles.add(file);
         missingSnapshots.delete(file);
@@ -290,17 +294,17 @@ export async function diffSnapshots({
       console.log('Nothing to diff');
       // If there is nothing to diff, return a resolved promise and add the file to the new snapshots set
       promises.push(
-        new Promise<void>(resolve => {
+        new Promise<number>(resolve => {
           newSnapshots.add(file);
-          resolve();
+          resolve(0);
         })
       );
     }
-  });
+  }
 
   await Promise.all(promises)
-    .then(async () => {
-      console.log('Finished diffing all files');
+    .then(async results => {
+      console.log('Finished diffing all files', results);
       // Once we finish diffing, dispose the worker
       await workerPool.dispose();
     })

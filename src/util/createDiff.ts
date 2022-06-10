@@ -1,6 +1,6 @@
 import path from 'path';
 
-import {getDiffObin} from './getDiff';
+import {getDiffObin} from './getDiffObin';
 
 /**
  * Creates a combined diff of @file1 and @file2 and writes to disk

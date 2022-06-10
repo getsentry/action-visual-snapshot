@@ -28,6 +28,9 @@
     "testing",
     "visual-regression"
   ],
+  "config": {
+    "libvips": "8.11.3"
+  },
   "author": "Sentry",
   "license": "MIT",
   "husky": {

@@ -2,8 +2,6 @@ import {PNG} from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import {PixelmatchOptions} from '@app/types';
 
-import {compare, ODiffOptions} from 'odiff-bin';
-
 import {fileToPng} from './fileToPng';
 import {resizeImage} from './resizeImage';
 
@@ -12,30 +10,6 @@ interface DiffResults {
   diff: PNG;
   img1: PNG;
   img2: PNG;
-}
-
-export async function getDiffObin(
-  file1: string,
-  file2: string,
-  diffPath: string,
-  options: ODiffOptions = {}
-): Promise<Pick<DiffResults, 'result'>> {
-  const diff = await compare(file1, file2, diffPath, {
-    antialiasing: true,
-    failOnLayoutDiff: false,
-    outputDiffMask: false,
-    threshold: 0.1,
-    ...options,
-  });
-  console.log('Compared', file1, file2, diffPath);
-
-  if ('diffCount' in diff) {
-    return {result: diff.diffCount};
-  }
-
-  return {
-    result: 0,
-  };
 }
 
 export async function getDiff(
