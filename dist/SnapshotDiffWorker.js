@@ -130,7 +130,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getDiffObin = void 0;
 const path_1 = __importDefault(__nccwpck_require__(17));
 const odiff_bin_1 = __nccwpck_require__(586);
-console.log(path_1.default.resolve(__dirname, './odiff'))
 function getDiffObin(file1, file2, diffPath, options = {}) {
     return __awaiter(this, void 0, void 0, function* () {
         const diff = yield odiff_bin_1.compare(file1, file2, diffPath, Object.assign(Object.assign({ antialiasing: true, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options), { 
