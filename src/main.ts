@@ -376,10 +376,13 @@ async function run(): Promise<void> {
 }
 
 const {headRef, headSha} = getGithubHeadRefInfo();
+// core.debug(process.env);
+core.debug(JSON.stringify(process.env, null, 2));
 
 const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   name: 'visual snapshot',
+  // These values are from where GH action got executed (e.g. values of the PR)
   tags: {head_ref: headRef, head_sha: headSha, ...getOSTags()},
 });
 
