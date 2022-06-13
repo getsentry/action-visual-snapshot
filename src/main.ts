@@ -58,6 +58,8 @@ Sentry.init({
   ],
   release: process.env.VERSION,
   tracesSampleRate: 1.0,
+  environment:
+    process.env.GITHUB_ACTION_REF === 'main' ? 'production' : 'development',
 });
 
 Sentry.setContext('actionEnvironment', {
