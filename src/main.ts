@@ -393,16 +393,16 @@ Sentry.configureScope(scope => {
   scope.setSpan(transaction);
 });
 
-let status = SpanStatus.Ok;
-
-run().catch(err => {
-  // If an error has not been caugth within the run method we should report it
-  // and mark the transaction has failed
-  Sentry.captureException(new Error(err.message));
-  status = SpanStatus.InternalError;
-});
-
-// Since we're doing custom instrumentation we need to set the status, otherwise,
-// all transactions would be marked as Unknown status
-transaction.setStatus(status);
-transaction.finish();
+run()
+  .then(() => {
+    // Since we're doing custom instrumentation we need to set the status, otherwise,
+    // all transactions would be marked as Unknown status
+    transaction.setStatus(SpanStatus.Ok);
+  })
+  .catch(err => {
+    // If an error has not been caugth within the run method we should report it
+    // and mark the transaction has failed
+    Sentry.captureException(new Error(err.message));
+    transaction.setStatus(SpanStatus.InternalError);
+  })
+  .finally(() => transaction.finish());
