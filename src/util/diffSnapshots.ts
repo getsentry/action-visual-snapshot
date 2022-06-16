@@ -1,4 +1,5 @@
 import path from 'path';
+import {ODiffOptions} from 'odiff-bin';
 
 import os from 'os';
 import * as fs from 'fs';
@@ -8,9 +9,7 @@ import * as io from '@actions/io';
 import * as Sentry from '@sentry/node';
 
 import {getChildDirectories} from './getChildDirectories';
-import {ODiffOptions} from 'odiff-bin';
 import {WorkerPool} from './WorkerPool';
-import {ODiffOptions} from 'odiff-bin';
 
 const pngGlob = '/**/*.png';
 // https://sharp.pixelplumbing.com/install#worker-threads
