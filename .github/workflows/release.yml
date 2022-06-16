@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - v*
+      - jb/feat/odiff-build
 
 jobs:
   release:
