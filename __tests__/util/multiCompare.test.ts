@@ -1,9 +1,8 @@
-import {multiCompare} from '@app/util/multiCompare';
+import {multiCompareODiff} from '@app/util/multiCompareODiff';
 
 describe('multiCompare', function () {
-  // Sadly, this is so slow that it times out in CI...
-  it.skip('does a 3 way diff', async () => {
-    const result = await multiCompare({
+  it('does a 3 way diff', async () => {
+    const result = await multiCompareODiff({
       snapshotName: 'test.png',
       baseHead: './__tests__/util/diffSnapshots/imgs/base/acceptance/test.png',
       branchBase:
@@ -13,6 +12,7 @@ describe('multiCompare', function () {
       outputDiffPath: './__tests__/util/diffSnapshots/imgs/diff',
       outputMergedPath: './__tests__/util/diffSnapshots/imgs/merged',
     });
+
     // Hardcoded nb of diffed pixels
     expect(result).toBe(16120);
   });

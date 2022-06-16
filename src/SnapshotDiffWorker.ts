@@ -1,8 +1,6 @@
 /* eslint-env node */
-import {PixelmatchOptions} from './types';
-
 import {multiCompare} from './util/multiCompare';
-import {createDiff} from './util/createDiff';
+import {getDiffODiff} from './util/getDiffODiff';
 
 import {parentPort} from 'worker_threads';
 
@@ -54,7 +52,7 @@ if (parentPort) {
             pixelmatchOptions: message.pixelmatchOptions,
           });
         } else {
-          result = await createDiff(
+          result = await getDiffODiff(
             message.file,
             message.outputDiffPath,
             message.baseHead,
