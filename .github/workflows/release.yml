@@ -40,6 +40,7 @@ jobs:
         yarn dist
         git config user.email "github-actions-bot@sentry.io"
         git config user.name "github-actions[bot]"
+        git add dist
         git add dist/index.js
         git add dist/SnapshotDiffWorker.js
         git add dist/sourcemap-register.js
