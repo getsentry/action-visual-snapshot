@@ -12,7 +12,10 @@ jest.mock('@actions/core', () => ({
 }));
 
 describe('diffSnapshots (integration)', function () {
-  beforeEach(async function () {
+  beforeEach(async () => {
+    await io.mkdirP(RESULTS_PATH);
+  });
+  afterEach(async function () {
     await io.rmRF(RESULTS_PATH);
   });
 
@@ -42,7 +45,6 @@ describe('diffSnapshots (integration)', function () {
     // Things should exist
     const results = await Promise.all([
       fs.access(path.resolve(RESULTS_PATH, 'diffs', 'acceptance', 'test.png')),
-      fs.access(path.resolve(RESULTS_PATH, 'merged', 'acceptance', 'test.png')),
       fs.access(
         path.resolve(RESULTS_PATH, 'changed', 'acceptance', 'test.png')
       ),
@@ -85,7 +87,6 @@ describe('diffSnapshots (integration)', function () {
     // Things should exist
     const results = await Promise.all([
       fs.access(path.resolve(RESULTS_PATH, 'diffs', 'acceptance', 'test.png')),
-      fs.access(path.resolve(RESULTS_PATH, 'merged', 'acceptance', 'test.png')),
       fs.access(
         path.resolve(RESULTS_PATH, 'changed', 'acceptance', 'test.png')
       ),
@@ -124,7 +125,6 @@ describe('diffSnapshots (integration)', function () {
     // Things should exist
     const results = await Promise.all([
       fs.access(path.resolve(RESULTS_PATH, 'diffs', 'acceptance', 'test.png')),
-      // fs.access(path.resolve(RESULTS_PATH, 'merged', 'acceptance', 'test.png')),
       fs.access(
         path.resolve(RESULTS_PATH, 'changed', 'acceptance', 'test.png')
       ),

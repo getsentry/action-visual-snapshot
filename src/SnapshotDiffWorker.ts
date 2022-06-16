@@ -1,14 +1,14 @@
 /* eslint-env node */
+import path from 'path';
 import {multiCompareODiff} from './util/multiCompareODiff';
 import {getDiffODiff} from './util/getDiffODiff';
 
 import {parentPort} from 'worker_threads';
 import {ODiffOptions} from 'odiff-bin';
 
-process.on('warning', e => console.warn(e.stack));
-
 interface BaseDiff {
   taskId: number;
+  file: string;
   baseHead: string;
   branchHead: string;
   outputDiffPath: string;
@@ -18,14 +18,9 @@ interface BaseDiff {
 interface MultiSnapshotDiff extends BaseDiff {
   branchBase: string;
   outputMergedPath: string;
-  snapshotName: string;
 }
 
-interface SingleSnapshotDiff extends BaseDiff {
-  file: string;
-}
-
-export type InboundWorkerAction = MultiSnapshotDiff | SingleSnapshotDiff;
+export type InboundWorkerAction = MultiSnapshotDiff | BaseDiff;
 export interface OutboundWorkerAction {
   taskId: number;
   result?: number;
@@ -36,54 +31,51 @@ const isMultiDiffMessage = (
 ): message is MultiSnapshotDiff => 'snapshotName' in message;
 
 if (parentPort) {
-  parentPort.on(
-    'message',
-    async (message: SingleSnapshotDiff | MultiSnapshotDiff) => {
-      let result: number;
+  parentPort.on('message', async (message: BaseDiff | MultiSnapshotDiff) => {
+    let result: number;
+    const outputDiffPath = path.resolve(message.outputDiffPath, message.file);
 
-      try {
-        if (isMultiDiffMessage(message)) {
-          result = await multiCompareODiff({
-            branchBase: message.branchBase,
-            baseHead: message.baseHead,
-            branchHead: message.branchHead,
-            outputDiffPath: message.outputDiffPath,
-            outputMergedPath: message.outputMergedPath,
-            snapshotName: message.snapshotName,
-            diffOptions: message.diffOptions,
-          });
-        } else {
-          result = await getDiffODiff(
-            message.baseHead,
-            message.branchHead,
-            message.outputDiffPath,
-            message.diffOptions
-          );
-        }
+    try {
+      if (isMultiDiffMessage(message)) {
+        result = await multiCompareODiff({
+          branchBase: message.branchBase,
+          baseHead: message.baseHead,
+          branchHead: message.branchHead,
+          outputDiffPath,
+          outputMergedPath: message.outputMergedPath,
+          diffOptions: message.diffOptions,
+        });
+      } else {
+        result = await getDiffODiff(
+          message.baseHead,
+          message.branchHead,
+          outputDiffPath,
+          message.diffOptions
+        );
+      }
 
-        const outboundMessage: OutboundWorkerAction = {
-          taskId: message.taskId,
-          result,
-        };
+      const outboundMessage: OutboundWorkerAction = {
+        taskId: message.taskId,
+        result,
+      };
 
-        if (parentPort) {
-          parentPort.postMessage(outboundMessage);
-        } else {
-          throw new Error('Failed to post to postMessage to parentPort.');
-        }
-      } catch (e) {
-        const outboundMessage: OutboundWorkerAction = {
-          taskId: message.taskId,
-        };
+      if (parentPort) {
+        parentPort.postMessage(outboundMessage);
+      } else {
+        throw new Error('Failed to post to postMessage to parentPort.');
+      }
+    } catch (e) {
+      const outboundMessage: OutboundWorkerAction = {
+        taskId: message.taskId,
+      };
 
-        if (parentPort) {
-          parentPort.postMessage(outboundMessage);
-        } else {
-          throw new Error('Failed to post to postMessage to parentPort.');
-        }
+      if (parentPort) {
+        parentPort.postMessage(outboundMessage);
+      } else {
+        throw new Error('Failed to post to postMessage to parentPort.');
       }
     }
-  );
+  });
 } else {
   throw new Error("Can't find parent port");
 }

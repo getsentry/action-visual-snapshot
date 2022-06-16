@@ -6,7 +6,6 @@ import {getDiffODiff} from './getDiffODiff';
 import {ODiffOptions} from 'odiff-bin';
 
 type Options = {
-  snapshotName: string;
   branchBase: string;
   baseHead: string;
   branchHead: string;
@@ -16,7 +15,6 @@ type Options = {
 };
 
 export async function multiCompareODiff({
-  snapshotName,
   baseHead,
   branchBase,
   branchHead,
@@ -24,14 +22,14 @@ export async function multiCompareODiff({
   outputMergedPath,
   diffOptions = {},
 }: Options): Promise<number> {
-  const outputPath = path.resolve(outputDiffPath, snapshotName);
+  const fileBaseName = path.basename(outputDiffPath);
   const outputMergedMaskPathA = path.resolve(
     outputMergedPath,
-    snapshotName.replace('.png', '.a.png')
+    fileBaseName.replace('.png', '.a.png')
   );
   const outputMergedMaskPathB = path.resolve(
     outputMergedPath,
-    snapshotName.replace('.png', '.b.png')
+    fileBaseName.replace('.png', '.b.png')
   );
 
   const diffB = await getDiffODiff(
@@ -77,7 +75,7 @@ export async function multiCompareODiff({
   if (result > 0) {
     await sharp(readFileSync(baseHead))
       .composite([{input: finalMask, blend: 'over'}])
-      .toFile(outputPath);
+      .toFile(outputDiffPath);
   }
 
   return result;
