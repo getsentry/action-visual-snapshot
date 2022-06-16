@@ -6,10 +6,9 @@ import * as glob from '@actions/glob';
 import * as io from '@actions/io';
 import * as Sentry from '@sentry/node';
 
-import {PixelmatchOptions} from '@app/types';
-
 import {getChildDirectories} from './getChildDirectories';
 import {WorkerPool} from './WorkerPool';
+import {ODiffOptions} from 'odiff-bin';
 
 const pngGlob = '/**/*.png';
 
@@ -42,7 +41,7 @@ type DiffSnapshotsParams = {
   currentDirName?: string;
   newDirName?: string;
   missingDirName?: string;
-  pixelmatchOptions?: PixelmatchOptions;
+  diffOptions?: ODiffOptions;
   parallelism: number;
   maxChangedSnapshots?: number;
 };
@@ -78,7 +77,7 @@ export async function diffSnapshots({
   currentDirName = 'changed',
   newDirName = 'new',
   missingDirName = 'missing',
-  pixelmatchOptions,
+  diffOptions,
   parallelism,
   maxChangedSnapshots = DEFAULT_MAX_CHANGED_SNAPSHOTS,
 }: DiffSnapshotsParams) {
@@ -231,7 +230,7 @@ export async function diffSnapshots({
             outputDiffPath,
             outputMergedPath,
             snapshotName: file,
-            pixelmatchOptions,
+            diffOptions,
           })
           .then(onSuccess)
           .catch(err => {
@@ -250,7 +249,7 @@ export async function diffSnapshots({
             outputDiffPath,
             baseHead,
             branchHead,
-            pixelmatchOptions,
+            diffOptions,
           })
           .then(onSuccess)
           .catch(err => {

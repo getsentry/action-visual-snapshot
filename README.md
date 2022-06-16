@@ -1,6 +1,6 @@
 # action-visual-snapshot ![test](https://github.com/getsentry/action-visual-snapshot/workflows/test/badge.svg)
 
-This is a GitHub action that compares 2-3 sets of images and produces a diff using [pixelmatch](https://github.com/mapbox/pixelmatch). The idea is to have your tests generate screenshots, save those screenshots as an artifact in GitHub, compare them to a "base" (e.g. main branch) set of images and produce a diff image of the changed pixels, and then upload those diffs as an artifact as well.
+This is a GitHub action that compares 2-3 sets of images and produces a diff using [odiff](https://github.com/dmtrKovalenko/odiff). The idea is to have your tests generate screenshots, save those screenshots as an artifact in GitHub, compare them to a "base" (e.g. main branch) set of images and produce a diff image of the changed pixels, and then upload those diffs as an artifact as well.
 
 ## Usage
 

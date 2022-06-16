@@ -3,6 +3,7 @@ import {readFileSync, unlinkSync} from 'fs';
 import path from 'path';
 
 import {getDiffODiff} from './getDiffODiff';
+import {ODiffOptions} from 'odiff-bin';
 
 type Options = {
   snapshotName: string;
@@ -11,6 +12,7 @@ type Options = {
   branchHead: string;
   outputDiffPath: string;
   outputMergedPath: string;
+  diffOptions?: ODiffOptions;
 };
 
 export async function multiCompareODiff({
@@ -20,6 +22,7 @@ export async function multiCompareODiff({
   branchHead,
   outputDiffPath,
   outputMergedPath,
+  diffOptions = {},
 }: Options): Promise<number> {
   const outputPath = path.resolve(outputDiffPath, snapshotName);
   const outputMergedMaskPathA = path.resolve(
@@ -31,13 +34,14 @@ export async function multiCompareODiff({
     snapshotName.replace('.png', '.b.png')
   );
 
-  const {result: diffB} = await getDiffODiff(
+  const diffB = await getDiffODiff(
     baseHead,
     branchHead,
     outputMergedMaskPathB,
     {
       outputDiffMask: true,
       antialiasing: false,
+      ...diffOptions,
     }
   );
 
@@ -47,13 +51,14 @@ export async function multiCompareODiff({
     return 0;
   }
 
-  const {result: diffA} = await getDiffODiff(
+  const diffA = await getDiffODiff(
     baseHead,
     branchBase,
     outputMergedMaskPathA,
     {
       outputDiffMask: true,
       antialiasing: false,
+      ...diffOptions,
     }
   );
 
