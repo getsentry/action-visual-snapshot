@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/node';
 import {getChildDirectories} from './getChildDirectories';
 import {ODiffOptions} from 'odiff-bin';
 import {WorkerPool} from './WorkerPool';
+import {ODiffOptions} from 'odiff-bin';
 
 // https://sharp.pixelplumbing.com/install#worker-threads
 require('sharp');

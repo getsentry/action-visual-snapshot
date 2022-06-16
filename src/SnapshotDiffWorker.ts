@@ -1,10 +1,18 @@
 /* eslint-env node */
+<<<<<<< HEAD
 import path from 'path';
+=======
+>>>>>>> 0f3c28e (ref(pixelmatch): drop pixelmatch entirely and use new methods)
 import {multiCompareODiff} from './util/multiCompareODiff';
 import {getDiffODiff} from './util/getDiffODiff';
 
 import {parentPort} from 'worker_threads';
 import {ODiffOptions} from 'odiff-bin';
+<<<<<<< HEAD
+=======
+
+process.on('warning', e => console.warn(e.stack));
+>>>>>>> 0f3c28e (ref(pixelmatch): drop pixelmatch entirely and use new methods)
 
 interface BaseDiff {
   taskId: number;
