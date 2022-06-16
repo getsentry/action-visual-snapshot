@@ -42,6 +42,10 @@ function getParallelismInput() {
   return os.cpus().length;
 }
 
+if (process.env.NODE_ENV !== 'test' && os.platform() !== 'linux') {
+  throw new Error('This action is only supported on Linux');
+}
+
 const parallelism = getParallelismInput();
 const {owner, repo} = github.context.repo;
 const token = core.getInput('github-token');
