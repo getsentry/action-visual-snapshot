@@ -224,12 +224,12 @@ export async function diffSnapshots({
       if (mergeBaseSnapshots.has(file)) {
         promise = workerPool
           .enqueue({
+            file,
             branchBase: path.resolve(mergeBasePath, file),
             baseHead,
             branchHead,
             outputDiffPath,
             outputMergedPath,
-            snapshotName: file,
             diffOptions,
           })
           .then(onSuccess)
