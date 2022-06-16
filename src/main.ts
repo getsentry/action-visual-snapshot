@@ -21,7 +21,7 @@ import {failBuild} from './api/failBuild';
 import {getOSTags} from './util/osTags';
 import {SENTRY_DSN} from './config';
 import {Await} from './types';
-import {getPixelmatchOptions} from './getPixelmatchOptions';
+import {getODiffOptionsFromWorkflowInputs} from './getODiffOptionsFromWorkflowInputs';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 
 function getParallelismInput() {
@@ -268,8 +268,8 @@ async function run(): Promise<void> {
 
     core.startGroup('Starting diff of snapshots...');
 
-    // Get pixelmatch options from workflow inputs
-    const pixelmatchOptions = getPixelmatchOptions();
+    // Get odiff options from workflow inputs
+    const diffOptions = getODiffOptionsFromWorkflowInputs();
 
     await io.mkdirP(resultsPath);
 
@@ -284,7 +284,7 @@ async function run(): Promise<void> {
       mergeBasePath,
       currentPath,
       outputPath: resultsPath,
-      pixelmatchOptions,
+      diffOptions,
       parallelism,
     });
 

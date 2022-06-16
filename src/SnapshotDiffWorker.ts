@@ -1,8 +1,9 @@
 /* eslint-env node */
-import {multiCompare} from './util/multiCompare';
+import {multiCompareODiff} from './util/multiCompareODiff';
 import {getDiffODiff} from './util/getDiffODiff';
 
 import {parentPort} from 'worker_threads';
+import {ODiffOptions} from 'odiff-bin';
 
 process.on('warning', e => console.warn(e.stack));
 
@@ -11,7 +12,7 @@ interface BaseDiff {
   baseHead: string;
   branchHead: string;
   outputDiffPath: string;
-  pixelmatchOptions?: PixelmatchOptions;
+  diffOptions?: ODiffOptions;
 }
 
 interface MultiSnapshotDiff extends BaseDiff {
@@ -42,22 +43,21 @@ if (parentPort) {
 
       try {
         if (isMultiDiffMessage(message)) {
-          result = await multiCompare({
+          result = await multiCompareODiff({
             branchBase: message.branchBase,
             baseHead: message.baseHead,
             branchHead: message.branchHead,
             outputDiffPath: message.outputDiffPath,
             outputMergedPath: message.outputMergedPath,
             snapshotName: message.snapshotName,
-            pixelmatchOptions: message.pixelmatchOptions,
+            diffOptions: message.diffOptions,
           });
         } else {
           result = await getDiffODiff(
-            message.file,
-            message.outputDiffPath,
             message.baseHead,
             message.branchHead,
-            message.pixelmatchOptions
+            message.outputDiffPath,
+            message.diffOptions
           );
         }
 
