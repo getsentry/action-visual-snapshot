@@ -315,6 +315,13 @@ async function run(): Promise<void> {
       missing: [...missingSnapshots],
       added: [...newSnapshots],
     };
+    // This allows using Discover to distinguish transactions that require approval
+    const {changed, missing} = results;
+    if (changed.length + missing.length > 0) {
+      transaction?.setTag('snapshots.approvalRequired', 'true');
+    } else {
+      transaction?.setTag('snapshots.approvalRequired', 'false');
+    }
     core.endGroup();
 
     core.startGroup('Generating image gallery...');
@@ -364,14 +371,6 @@ async function run(): Promise<void> {
         results,
       }),
     ]);
-
-    const {changed, missing} = results;
-    // This allows using Discover to distinguish transactions that require approval
-    if (changed.length + missing.length > 0) {
-      finishSpan?.setTag('requireApproval', 'true');
-    } else {
-      finishSpan?.setTag('requireApproval', 'false');
-    }
     finishSpan?.finish();
   } catch (error) {
     handleError(error);
