@@ -186,6 +186,7 @@ async function run(): Promise<void> {
     name: actionName,
   });
 
+  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
   try {
     const [
       didDownloadLatest,
@@ -294,7 +295,6 @@ async function run(): Promise<void> {
     });
     const resultsFiles = await resultsGlobber.glob();
 
-    const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
     const gcsSpan = transaction?.startChild({
       op: 'upload',
       description: 'Upload to GCS',
@@ -372,7 +372,13 @@ async function run(): Promise<void> {
       }),
     ]);
     finishSpan?.finish();
+    // Setting the status correctly helps to distinguish transactions
+    // that have failed rather than not
+    transaction?.setStatus(SpanStatus.Ok);
   } catch (error) {
+    core.debug('Top level error handling.');
+    // This helps making this transaction count towards the failure rate
+    transaction?.setStatus(SpanStatus.InternalError);
     handleError(error);
     failBuild({
       octokit,
@@ -383,6 +389,8 @@ async function run(): Promise<void> {
       token: apiToken,
     });
   }
+
+  //
 }
 
 const {headRef, headSha} = getGithubHeadRefInfo();
@@ -401,23 +409,7 @@ Sentry.configureScope(scope => {
   scope.setSpan(transaction);
 });
 
-run()
-  .then(() => {
-    // Since we're doing custom instrumentation we need to set the status, otherwise,
-    // all transactions would be marked as Unknown status
-    transaction.setStatus(SpanStatus.Ok);
-    core.debug('Everything is fine');
-  })
-  .catch(err => {
-    core.debug('Error block');
-    // If an error has not been caugth within the run method we should
-    // report it as an error and mark the transaction as failed
-    // Marking the transaction as failed allows using failure_rate() in Discover
-    transaction.setStatus(SpanStatus.InternalError);
-    Sentry.captureException(err);
-    core.debug('Error block end');
-  })
-  .finally(() => {
-    core.debug('Finishing the transaction.');
-    transaction.finish();
-  });
+run().then(() => {
+  core.debug('Finishing the transaction.');
+  transaction.finish();
+});
