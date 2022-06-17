@@ -410,7 +410,7 @@ run()
     // If an error has not been caugth within the run method we should
     // report it as an error and mark the transaction as failed
     // Marking the transaction as failed allows using failure_rate() in Discover
-    Sentry.captureException(new Error(err.message));
     transaction.setStatus(SpanStatus.InternalError);
+    Sentry.captureException(err);
   })
   .finally(() => transaction.finish());
