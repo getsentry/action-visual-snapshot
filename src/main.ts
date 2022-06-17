@@ -364,6 +364,14 @@ async function run(): Promise<void> {
         results,
       }),
     ]);
+
+    const {changed, missing} = results;
+    // This allows using Discover to distinguish transactions that require approval
+    if (changed.length + missing.length > 0) {
+      finishSpan?.setTag('requireApproval', 'true');
+    } else {
+      finishSpan?.setTag('requireApproval', 'false');
+    }
     finishSpan?.finish();
   } catch (error) {
     handleError(error);
@@ -400,8 +408,9 @@ run()
     transaction.setStatus(SpanStatus.Ok);
   })
   .catch(err => {
-    // If an error has not been caugth within the run method we should report it
-    // and mark the transaction has failed
+    // If an error has not been caugth within the run method we should
+    // report it as an error and mark the transaction as failed
+    // Marking the transaction as failed allows using failure_rate() in Discover
     Sentry.captureException(new Error(err.message));
     transaction.setStatus(SpanStatus.InternalError);
   })
