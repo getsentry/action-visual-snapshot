@@ -6,8 +6,7 @@ module.exports = {
     '^@test/(.*)$': '<rootDir>/test/$1',
   },
   testEnvironment: 'node',
-  testMatch: ['**/*.test.ts'],
-  testPathIgnorePatterns: ['.integration.test.ts'],
+  testMatch: ['**/*.integration.test.ts'],
   testRunner: 'jest-circus/runner',
   transform: {
     '^.+\\.ts$': 'ts-jest',

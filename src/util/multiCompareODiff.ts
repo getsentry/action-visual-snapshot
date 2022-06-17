@@ -73,9 +73,11 @@ export async function multiCompareODiff({
   const result = Math.abs(diffB - diffA);
 
   if (result > 0) {
-    await sharp(readFileSync(baseHead))
-      .composite([{input: finalMask, blend: 'over'}])
-      .toFile(outputDiffPath);
+    const final = sharp(readFileSync(baseHead)).composite([
+      {input: finalMask, blend: 'over'},
+    ]);
+
+    await final.toFile(outputDiffPath);
   }
 
   return result;

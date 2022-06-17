@@ -19,7 +19,6 @@ describe('diffSnapshots (integration)', function () {
     await io.rmRF(RESULTS_PATH);
   });
 
-  jest.setTimeout(600000);
   it('can diff snapshots', async function () {
     const diffResults = await diffSnapshots({
       parallelism: 1,
