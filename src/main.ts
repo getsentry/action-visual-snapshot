@@ -404,7 +404,7 @@ run()
   .then(() => {
     // Since we're doing custom instrumentation we need to set the status, otherwise,
     // all transactions would be marked as Unknown status
-    transaction.setStatus(SpanStatus.Ok);
+    transaction.setStatus(SpanStatus.UnknownError);
   })
   .catch(err => {
     // If an error has not been caugth within the run method we should
