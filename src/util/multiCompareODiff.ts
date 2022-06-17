@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import {readFileSync, unlinkSync} from 'fs';
+import {readFileSync, unlinkSync, existsSync} from 'fs';
 import path from 'path';
 
 import {getDiffODiff} from './getDiffODiff';
@@ -46,7 +46,15 @@ export async function multiCompareODiff({
   // Hot path for when baseHead and branchBase do not have any respective changes,
   // we can indue that there is nothing to merge and we can skip the 2nd image diff operation
   if (diffB === 0) {
+    unlinkSync(outputMergedMaskPathB);
     return 0;
+  }
+
+  if (!existsSync(branchBase)) {
+    await sharp(readFileSync(baseHead))
+      .composite([{input: outputMergedMaskPathB, blend: 'over'}])
+      .toFile(outputMergedPath);
+    return diffB;
   }
 
   const diffA = await getDiffODiff(

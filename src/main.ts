@@ -24,6 +24,9 @@ import {Await} from './types';
 import {getODiffOptionsFromWorkflowInputs} from './getODiffOptionsFromWorkflowInputs';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 
+// https://sharp.pixelplumbing.com/install#worker-threads
+require('sharp');
+
 function getParallelismInput() {
   const input = core.getInput('parallelism');
 

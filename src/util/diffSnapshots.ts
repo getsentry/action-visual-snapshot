@@ -11,9 +11,6 @@ import {ODiffOptions} from 'odiff-bin';
 import {getChildDirectories} from './getChildDirectories';
 import {WorkerPool} from './WorkerPool';
 
-// https://sharp.pixelplumbing.com/install#worker-threads
-require('sharp');
-
 const pngGlob = '/**/*.png';
 // https://sharp.pixelplumbing.com/install#worker-threads
 require('sharp');
