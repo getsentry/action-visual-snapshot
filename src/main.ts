@@ -389,7 +389,8 @@ const {headRef, headSha} = getGithubHeadRefInfo();
 
 const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
-  name: 'visual snapshot',
+  // This is the title field in Discover
+  name: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   tags: {head_ref: headRef, head_sha: headSha, ...getOSTags()},
 });
 
@@ -404,13 +405,19 @@ run()
   .then(() => {
     // Since we're doing custom instrumentation we need to set the status, otherwise,
     // all transactions would be marked as Unknown status
-    transaction.setStatus(SpanStatus.UnknownError);
+    transaction.setStatus(SpanStatus.Ok);
+    core.debug('Everything is fine');
   })
   .catch(err => {
+    core.debug('Error block');
     // If an error has not been caugth within the run method we should
     // report it as an error and mark the transaction as failed
     // Marking the transaction as failed allows using failure_rate() in Discover
     transaction.setStatus(SpanStatus.InternalError);
     Sentry.captureException(err);
+    core.debug('Error block end');
   })
-  .finally(() => transaction.finish());
+  .finally(() => {
+    core.debug('Finishing the transaction.');
+    transaction.finish();
+  });
