@@ -6,15 +6,17 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as io from '@actions/io';
 import * as Sentry from '@sentry/node';
+import {ODiffOptions} from 'odiff-bin';
 
 import {getChildDirectories} from './getChildDirectories';
-import {ODiffOptions} from 'odiff-bin';
 import {WorkerPool} from './WorkerPool';
 
 // https://sharp.pixelplumbing.com/install#worker-threads
 require('sharp');
 
 const pngGlob = '/**/*.png';
+// https://sharp.pixelplumbing.com/install#worker-threads
+require('sharp');
 
 // Buckets n -  we use the tag buckets to tag runs in sentry
 // and separate performance data by nb of diffs that were made.

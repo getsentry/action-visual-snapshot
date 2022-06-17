@@ -1,5 +1,6 @@
 /* eslint-env node */
 import path from 'path';
+
 import {multiCompareODiff} from './util/multiCompareODiff';
 import {getDiffODiff} from './util/getDiffODiff';
 
