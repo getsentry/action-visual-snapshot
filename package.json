@@ -14,13 +14,16 @@
     "lint": "eslint src/**/*.ts",
     "dist": "yarn build-template && yarn build && yarn dist:worker && yarn ncc build -C -s ",
     "dist:worker": "yarn ncc build ./lib/SnapshotDiffWorker.js -C -s && mv ./dist/index.js ./dist/SnapshotDiffWorker.js",
-    "test": "yarn jest",
+    "test": "yarn test:unit && yarn test:integration",
+    "test:unit": "yarn jest -c jest.config.js",
+    "test:integration": "yarn jest -c jest.config.integration.js",
     "all": "yarn build && yarn format && yarn lint && yarn test && yarn dist"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/getsentry/action-visual-snapshot.git"
   },
+  "os": ["darwin", "linux"],
   "keywords": [
     "actions",
     "node",

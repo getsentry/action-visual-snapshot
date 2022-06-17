@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - v*
-      - jb/feat/odiff-build
 
 jobs:
   release:
@@ -19,7 +18,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
       with:
-        node-version: 12
+        node-version: 16
     - name: yarn install
       run: |
         echo "$(yarn global bin)" >> $GITHUB_PATH
