@@ -233,9 +233,7 @@ async function run(): Promise<void> {
           run_id: workflowRunPayload?.id,
         });
 
-        const artifact = data.artifacts.find(
-          ({name}: {name: string}) => name === artifactName
-        );
+        const artifact = data.artifacts.find(({name}) => name === artifactName);
 
         if (!artifact) {
           throw new Error(
