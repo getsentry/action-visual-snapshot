@@ -93,14 +93,16 @@ function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
   const head_sha =
     pullRequestPayload?.head.sha ||
     workflowRunPullRequest?.head.sha ||
-    workflowRunPayload?.head_sha;
+    workflowRunPayload?.head_sha ||
+    github.context.sha;
 
   return {
     headRef:
       pullRequestPayload?.head.ref ||
       workflowRunPullRequest?.head.ref ||
       (workflowRunPayload?.head_branch &&
-        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`),
+        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`) ||
+      github.context.ref,
     headSha: head_sha,
   };
 }
@@ -131,7 +133,8 @@ async function run(): Promise<void> {
   const mergeBaseSha: string =
     core.getInput('merge-base') ||
     pullRequestPayload?.base?.sha ||
-    workflowRunPullRequest?.base.sha;
+    workflowRunPullRequest?.base.sha ||
+    github.context.payload.before;
 
   // Forward `results-path` to outputs
   core.startGroup('Set outputs');
