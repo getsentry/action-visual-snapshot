@@ -389,8 +389,6 @@ async function run(): Promise<void> {
       token: apiToken,
     });
   }
-
-  //
 }
 
 const {headRef, headSha} = getGithubHeadRefInfo();
