@@ -24,17 +24,6 @@ import {Await} from './types';
 import {getODiffOptionsFromWorkflowInputs} from './getODiffOptionsFromWorkflowInputs';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 
-function ensureCurrentWorkingDirectoryIsDist() {
-  console.log('Starting directory: ' + process.cwd());
-  try {
-    process.chdir(`${process.env.GITHUB_ACTION_PATH}/dist`);
-  } catch (err) {
-    core.debug('Failed to change directory');
-    Sentry.captureException(err);
-  }
-  core.debug('Working directory: ' + process.cwd());
-}
-
 // https://sharp.pixelplumbing.com/install#worker-threads
 require('sharp');
 
@@ -124,8 +113,6 @@ function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
 }
 
 async function run(): Promise<void> {
-  ensureCurrentWorkingDirectoryIsDist();
-
   const resultsRootPath: string = core.getInput('results-path');
   const baseBranch = core.getInput('base-branch');
   const artifactName = core.getInput('artifact-name');
