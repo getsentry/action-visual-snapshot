@@ -55,7 +55,6 @@ if (worker_threads_1.parentPort) {
             }
         }
         catch (e) {
-            console.log('Diffing errored with', e);
             const outboundMessage = {
                 taskId: message.taskId,
             };
@@ -108,7 +107,6 @@ function getDiffODiff(file1, file2, diffPath, options = {}) {
         const __binaryPath = process.env.NODE_ENV === 'test'
             ? undefined
             : path_1.default.resolve(__dirname, './odiff');
-        console.log('Using binary path', __binaryPath, __dirname);
         const diff = yield odiff_bin_1.compare(file1, file2, diffPath, Object.assign(Object.assign({ antialiasing: false, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options), { 
             // @ts-ignore
             __binaryPath }));
