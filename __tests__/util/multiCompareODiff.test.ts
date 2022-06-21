@@ -28,6 +28,6 @@ describe('multiCompare', function () {
     });
 
     // Hardcoded nb of diffed pixels
-    expect(result).toBe(16120);
+    expect(result).toBe(8923);
   });
 });
