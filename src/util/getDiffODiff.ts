@@ -30,6 +30,11 @@ export async function getDiffODiff(
     __binaryPath,
   });
 
+  if (diff.match) {
+    // If there was a match, then the nb diffed pixels was below threshold
+    return 0;
+  }
+
   if ('diffCount' in diff) {
     return diff.diffCount;
   }
