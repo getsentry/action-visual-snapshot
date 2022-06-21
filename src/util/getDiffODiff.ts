@@ -5,10 +5,9 @@ import {compare, ODiffOptions} from 'odiff-bin';
 
 import {OVERLAY_COMPOSITE} from './multiCompareODiff';
 
-type Awaited<T> = T extends PromiseLike<infer U>
-  ? {0: Awaited<U>; 1: U}[U extends PromiseLike<any> ? 0 : 1]
-  : T;
 const tmpMaskPath = '/tmp/mask.tmp.png';
+
+type Required<T> = {[K in keyof T]-?: T[K]};
 
 export async function getDiffODiff(
   file1: string,
@@ -28,20 +27,26 @@ export async function getDiffODiff(
       ? undefined
       : path.resolve(__dirname, './odiff');
 
-  const OPTIONS: ODiffOptions = {
+  const OPTIONS: Required<ODiffOptions> = {
     antialiasing: false,
     failOnLayoutDiff: false,
     outputDiffMask: false,
     threshold: 0.1,
     ...options,
-    // @ts-ignorew
+    // @ts-ignore
     __binaryPath,
   };
 
   // If a user explicitly asks for the diffmask, then we output it.
   if (options.outputDiffMask) {
     const diff = await compare(file1, file2, diffPath, OPTIONS);
-    if (diff.match) {
+
+    // odiff will return match false even when match.diffPercentage is < threshold
+    if (
+      diff.match ||
+      ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)
+    ) {
+      unlinkSync(diffPath);
       return 0;
     }
     if ('diffCount' in diff) {
@@ -58,6 +63,15 @@ export async function getDiffODiff(
     outputDiffMask: true,
   });
 
+  // odiff will return match false even when match.diffPercentage is < threshold
+  if (
+    diff.match ||
+    ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)
+  ) {
+    unlinkSync(tmpMaskPath);
+    return 0;
+  }
+
   const withAlpha = await sharp(readFileSync(file1))
     .composite(OVERLAY_COMPOSITE)
     .toBuffer();
@@ -68,11 +82,9 @@ export async function getDiffODiff(
 
   unlinkSync(tmpMaskPath);
 
-  if (diff.match) {
-    return 0;
-  }
   if ('diffCount' in diff) {
     return diff.diffCount;
   }
+
   return 0;
 }
