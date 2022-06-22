@@ -389,7 +389,12 @@ const {headRef, headSha} = getGithubHeadRefInfo();
 const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   name: 'visual snapshot',
-  tags: {head_ref: headRef, head_sha: headSha, ...getOSTags()},
+  tags: {
+    head_ref: headRef,
+    head_sha: headSha,
+    diffing_library: 'odiff',
+    ...getOSTags(),
+  },
 });
 
 Sentry.configureScope(scope => {

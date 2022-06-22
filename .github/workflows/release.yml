@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - v*
+      - jb/feat/replace-pixelmatch
 jobs:
   release:
     runs-on: ubuntu-latest
