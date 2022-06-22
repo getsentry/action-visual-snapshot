@@ -116,7 +116,10 @@ function getDiffODiff(file1, file2, diffPath, options = {}) {
         // If a user explicitly asks for the diffmask, then we output it.
         if (options.outputDiffMask) {
             const diff = yield odiff_bin_1.compare(file1, file2, diffPath, OPTIONS);
-            if (diff.match) {
+            // odiff will return match false even when match.diffPercentage is < threshold
+            if (diff.match ||
+                ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)) {
+                fs_1.unlinkSync(diffPath);
                 return 0;
             }
             if ('diffCount' in diff) {
@@ -128,12 +131,12 @@ function getDiffODiff(file1, file2, diffPath, options = {}) {
         // and overlay it on top of the base image with opacity so that
         // diffs are easier to see.
         const diff = yield odiff_bin_1.compare(file1, file2, tmpMaskPath, Object.assign(Object.assign({}, OPTIONS), { outputDiffMask: true }));
-        if (diff.match) {
-            console.log('Matched', diff);
+        // odiff will return match false even when match.diffPercentage is < threshold
+        if (diff.match ||
+            ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)) {
             fs_1.unlinkSync(tmpMaskPath);
             return 0;
         }
-        console.log('Did not match - creating alpha overlay', diff);
         const withAlpha = yield sharp_1.default(fs_1.readFileSync(file1))
             .composite(multiCompareODiff_1.OVERLAY_COMPOSITE)
             .toBuffer();
