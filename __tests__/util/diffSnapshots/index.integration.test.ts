@@ -15,9 +15,9 @@ describe('diffSnapshots (integration)', function () {
   beforeEach(async () => {
     await io.mkdirP(RESULTS_PATH);
   });
-  // afterEach(async function () {
-  //   await io.rmRF(RESULTS_PATH);
-  // });
+  afterEach(async function () {
+    await io.rmRF(RESULTS_PATH);
+  });
 
   it('can diff snapshots', async function () {
     const diffResults = await diffSnapshots({

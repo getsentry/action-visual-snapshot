@@ -33,7 +33,7 @@ export async function getDiffODiff(
     outputDiffMask: false,
     threshold: 0.1,
     ...options,
-    // @ts-ignore
+    // @ts-expect-error this is a hidden library option
     __binaryPath,
   };
 
