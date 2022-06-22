@@ -24,6 +24,9 @@ import {Await} from './types';
 import {getODiffOptionsFromWorkflowInputs} from './getODiffOptionsFromWorkflowInputs';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 
+// https://sharp.pixelplumbing.com/install#worker-threads
+require('sharp');
+
 function getParallelismInput() {
   const input = core.getInput('parallelism');
 
@@ -40,6 +43,10 @@ function getParallelismInput() {
 
   core.debug('No parallelism input, defaulting to CPU count');
   return os.cpus().length;
+}
+
+if (process.env.NODE_ENV !== 'test' && os.platform() !== 'linux') {
+  throw new Error('This action is only supported on Linux');
 }
 
 const parallelism = getParallelismInput();

@@ -96,7 +96,8 @@ ${JSON.stringify(workflowRun, null, 2)}`);
           await downloadOtherWorkflowArtifact(octokit, {
             owner,
             repo,
-            artifactId: mergeBaseArtifacts!.artifact.id, // eslint-disable-line @typescript-eslint/no-non-null-assertion
+            // @ts-ignore
+            artifactId: mergeBaseArtifacts.artifact.id, // eslint-disable-line @typescript-eslint/no-non-null-assertion
             downloadPath: mergeBasePath,
           }),
         {
