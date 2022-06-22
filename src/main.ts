@@ -23,6 +23,7 @@ import {SENTRY_DSN} from './config';
 import {Await} from './types';
 import {getPixelmatchOptions} from './getPixelmatchOptions';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
+import {SpanStatus} from '@sentry/tracing';
 
 function getParallelismInput() {
   const input = core.getInput('parallelism');
@@ -93,14 +94,16 @@ function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
   const head_sha =
     pullRequestPayload?.head.sha ||
     workflowRunPullRequest?.head.sha ||
-    workflowRunPayload?.head_sha;
+    workflowRunPayload?.head_sha ||
+    github.context.sha;
 
   return {
     headRef:
       pullRequestPayload?.head.ref ||
       workflowRunPullRequest?.head.ref ||
       (workflowRunPayload?.head_branch &&
-        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`),
+        `${workflowRunPayload?.head_repository?.full_name}/${workflowRunPayload?.head_branch}`) ||
+      github.context.ref,
     headSha: head_sha,
   };
 }
@@ -131,7 +134,8 @@ async function run(): Promise<void> {
   const mergeBaseSha: string =
     core.getInput('merge-base') ||
     pullRequestPayload?.base?.sha ||
-    workflowRunPullRequest?.base.sha;
+    workflowRunPullRequest?.base.sha ||
+    github.context.payload.before;
 
   // Forward `results-path` to outputs
   core.startGroup('Set outputs');
@@ -185,6 +189,7 @@ async function run(): Promise<void> {
     name: actionName,
   });
 
+  const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
   try {
     const [
       didDownloadLatest,
@@ -293,7 +298,6 @@ async function run(): Promise<void> {
     });
     const resultsFiles = await resultsGlobber.glob();
 
-    const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
     const gcsSpan = transaction?.startChild({
       op: 'upload',
       description: 'Upload to GCS',
@@ -314,6 +318,13 @@ async function run(): Promise<void> {
       missing: [...missingSnapshots],
       added: [...newSnapshots],
     };
+    // This allows using Discover to distinguish transactions that require approval
+    const {changed, missing} = results;
+    if (changed.length + missing.length > 0) {
+      transaction?.setTag('snapshots.approvalRequired', 'true');
+    } else {
+      transaction?.setTag('snapshots.approvalRequired', 'false');
+    }
     core.endGroup();
 
     core.startGroup('Generating image gallery...');
@@ -364,7 +375,13 @@ async function run(): Promise<void> {
       }),
     ]);
     finishSpan?.finish();
+    // Setting the status correctly helps to distinguish transactions
+    // that have failed rather than not
+    transaction?.setStatus(SpanStatus.Ok);
   } catch (error) {
+    core.debug('Top level error handling.');
+    // This helps making this transaction count towards the failure rate
+    transaction?.setStatus(SpanStatus.InternalError);
     handleError(error);
     failBuild({
       octokit,
@@ -381,7 +398,8 @@ const {headRef, headSha} = getGithubHeadRefInfo();
 
 const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
-  name: 'visual snapshot',
+  // This is the title field in Discover
+  name: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   tags: {
     head_ref: headRef,
     head_sha: headSha,
@@ -390,8 +408,14 @@ const transaction = Sentry.startTransaction({
   },
 });
 
+// Note that we set the transaction as the span on the scope.
+// This step makes sure that if an error happens during the lifetime of the transaction
+// the transaction context will be attached to the error event
 Sentry.configureScope(scope => {
   scope.setSpan(transaction);
 });
 
-run().then(() => transaction.finish());
+run().then(() => {
+  core.debug('Finishing the transaction.');
+  transaction.finish();
+});
