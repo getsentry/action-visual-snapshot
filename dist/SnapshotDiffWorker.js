@@ -111,7 +111,7 @@ function getDiffODiff(file1, file2, diffPath, options = {}) {
             ? undefined
             : path_1.default.resolve(__dirname, './odiff');
         const OPTIONS = Object.assign(Object.assign({ antialiasing: false, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options), { 
-            // @ts-ignore
+            // @ts-expect-error this is a hidden library option
             __binaryPath });
         // If a user explicitly asks for the diffmask, then we output it.
         if (options.outputDiffMask) {
