@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - v*
-
+      - jb/feat/diff-opacity
 jobs:
   release:
     runs-on: ubuntu-latest

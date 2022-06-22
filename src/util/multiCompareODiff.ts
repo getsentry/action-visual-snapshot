@@ -14,6 +14,20 @@ type Options = {
   diffOptions?: ODiffOptions;
 };
 
+export const OVERLAY_OPACITY = 0.8;
+export const OVERLAY_COMPOSITE: sharp.OverlayOptions[] = [
+  {
+    input: Buffer.from([255, 255, 255, Math.round(255 * OVERLAY_OPACITY)]),
+    raw: {
+      width: 1,
+      height: 1,
+      channels: 4,
+    },
+    blend: 'over',
+    tile: true,
+  },
+];
+
 export async function multiCompareODiff({
   baseHead,
   branchBase,
@@ -38,7 +52,7 @@ export async function multiCompareODiff({
     outputMergedMaskPathB,
     {
       outputDiffMask: true,
-      antialiasing: false,
+      antialiasing: true,
       ...diffOptions,
     }
   );
@@ -51,9 +65,14 @@ export async function multiCompareODiff({
   }
 
   if (!existsSync(branchBase)) {
-    await sharp(readFileSync(baseHead))
+    const withAlpha = await sharp(readFileSync(baseHead))
+      .composite(OVERLAY_COMPOSITE)
+      .toBuffer();
+
+    await sharp(withAlpha)
       .composite([{input: outputMergedMaskPathB, blend: 'over'}])
       .toFile(outputMergedPath);
+
     return diffB;
   }
 
@@ -63,7 +82,7 @@ export async function multiCompareODiff({
     outputMergedMaskPathA,
     {
       outputDiffMask: true,
-      antialiasing: false,
+      antialiasing: true,
       ...diffOptions,
     }
   );
@@ -81,11 +100,13 @@ export async function multiCompareODiff({
   const result = Math.abs(diffB - diffA);
 
   if (result > 0) {
-    const final = sharp(readFileSync(baseHead)).composite([
-      {input: finalMask, blend: 'over'},
-    ]);
+    const withAlpha = await sharp(readFileSync(baseHead))
+      .composite(OVERLAY_COMPOSITE)
+      .toBuffer();
 
-    await final.toFile(outputDiffPath);
+    await sharp(withAlpha)
+      .composite([{input: finalMask, blend: 'over'}])
+      .toFile(outputDiffPath);
   }
 
   return result;
