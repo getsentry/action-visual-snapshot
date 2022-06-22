@@ -1,6 +1,8 @@
 import path from 'path';
+import {ODiffOptions} from 'odiff-bin';
 
 import os from 'os';
+import * as fs from 'fs';
 import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as io from '@actions/io';
@@ -8,7 +10,6 @@ import * as Sentry from '@sentry/node';
 
 import {getChildDirectories} from './getChildDirectories';
 import {WorkerPool} from './WorkerPool';
-import {ODiffOptions} from 'odiff-bin';
 
 const pngGlob = '/**/*.png';
 // https://sharp.pixelplumbing.com/install#worker-threads
@@ -165,6 +166,9 @@ export async function diffSnapshots({
     for (const childPath of [...childPaths]) {
       try {
         await io.mkdirP(path.resolve(base, childPath));
+        fs.closeSync(
+          fs.openSync(path.resolve(base, childPath) + '/placeholder.txt', 'w')
+        );
       } catch (err) {
         Sentry.captureException(new Error(err.message));
       }
@@ -184,6 +188,7 @@ export async function diffSnapshots({
     process.env.NODE_ENV === 'test'
       ? path.resolve(__dirname, './../SnapshotDiffWorker.import.js')
       : path.resolve(__dirname, './SnapshotDiffWorker.js');
+
   const workerPool = new WorkerPool(workerPath, parallelism);
 
   // Set a sentry tag so we can see what parallelism we're using in runs.
@@ -226,12 +231,12 @@ export async function diffSnapshots({
       if (mergeBaseSnapshots.has(file)) {
         promise = workerPool
           .enqueue({
+            file,
             branchBase: path.resolve(mergeBasePath, file),
             baseHead,
             branchHead,
             outputDiffPath,
             outputMergedPath,
-            snapshotName: file,
             diffOptions,
           })
           .then(onSuccess)
@@ -295,8 +300,9 @@ export async function diffSnapshots({
       // Once we finish diffing, dispose the worker
       await workerPool.dispose();
     })
-    .catch(e => {
+    .catch(async e => {
       core.debug(`Failed to diff: ${e}`);
+      await workerPool.dispose();
     });
 
   // Set a sentry tag so we can compare transaction performance on

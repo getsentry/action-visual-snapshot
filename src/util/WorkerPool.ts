@@ -3,6 +3,7 @@ import type {
   InboundWorkerAction,
   OutboundWorkerAction,
 } from '../SnapshotDiffWorker';
+import * as Sentry from '@sentry/node';
 
 // Unfortunately Omit does not work well across unions, so we need this
 type DistributiveOmit<T, K extends keyof any> = T extends any
@@ -33,7 +34,9 @@ export class WorkerPool {
           task.resolve(message);
         }
       });
-      worker.on('error', (message: OutboundWorkerAction) => {
+      worker.on('error', (message: any) => {
+        Sentry.captureException(new Error(message));
+
         this.availableWorkers.push(worker);
         const task = this.tasks.get(message.taskId);
         if (task) {

@@ -1,12 +1,8 @@
 import path from 'path';
-import {PNG} from 'pngjs';
-import fs from 'fs';
 import {performance} from 'perf_hooks';
 
-import {getDiff} from '../src/util/getDiff';
 import {getDiffODiff} from '../src/util/getDiffODiff';
 
-import {multiCompare} from '../src/util/multiCompare';
 import {multiCompareODiff} from '../src/util/multiCompareODiff';
 
 const quantile = (arr: number[], q: number) => {
@@ -55,44 +51,12 @@ const baseHead = path.resolve(__dirname, '../benchmark/baseHead.png');
 const branchBase = path.resolve(__dirname, '../benchmark/branchBase.png');
 const branchHead = path.resolve(__dirname, '../benchmark/branchHead.png');
 
-async function getDiffBenchmark() {
-  const {result, diff} = await getDiff(baseHead, branchHead);
-  // We need to make sure we output to file inside the benchmark so
-  // that is resembled odiffs's functionality. We dont io to skew the benchmark
-  if (result > 0) {
-    fs.writeFileSync(resultPath, PNG.sync.write(diff));
-  }
-}
-
 async function getDiffODiffBenchmark() {
   await getDiffODiff(baseHead, branchHead, resultPath);
 }
 
-async function multiCompareBenchmark() {
-  await multiCompare({
-    snapshotName: 'test.png',
-    baseHead,
-    branchBase,
-    branchHead,
-    outputDiffPath: outdir,
-    outputMergedPath: mergedDir,
-  });
-}
-
 async function multiCompareODiffBenchmark() {
   await multiCompareODiff({
-    snapshotName: 'test.png',
-    baseHead,
-    branchBase: baseHead,
-    branchHead: baseHead,
-    outputDiffPath: outdir,
-    outputMergedPath: mergedDir,
-  });
-}
-
-async function multiCompareBenchmarkSlow() {
-  await multiCompare({
-    snapshotName: 'test.png',
     baseHead,
     branchBase: baseHead,
     branchHead: baseHead,
@@ -103,7 +67,6 @@ async function multiCompareBenchmarkSlow() {
 
 async function multiCompareODiffBenchmarkSlow() {
   await multiCompareODiff({
-    snapshotName: 'test.png',
     baseHead,
     branchBase,
     branchHead,
@@ -129,10 +92,6 @@ function logResults(results: any) {
 
 (async () => {
   const singleDiffResults: any[] = [];
-  await benchmark(10, getDiffBenchmark, singleDiffResults);
-  // await benchmark(100, getDiffBenchmark, singleDiffResults);
-  // await benchmark(1000, getDiffBenchmark, singleDiffResults);
-
   await benchmark(10, getDiffODiffBenchmark, singleDiffResults);
   // await benchmark(100, getDiffODiffBenchmark, singleDiffResults);
   // await benchmark(1000, getDiffODiffBenchmark, singleDiffResults);
@@ -140,10 +99,6 @@ function logResults(results: any) {
 
   prepare();
   const multiDiffResults: any[] = [];
-  await benchmark(10, multiCompareBenchmark, multiDiffResults);
-  // await benchmark(100, multiCompareBenchmark, multiDiffResults);
-  // await benchmark(500, multiCompareBenchmark, multiDiffResults);
-  // await benchmark(1000, multiCompareBenchmark, multiDiffResults);
 
   await benchmark(10, multiCompareODiffBenchmark, multiDiffResults);
   // await benchmark(100, multiCompareODiffBenchmark, multiDiffResults);
@@ -154,11 +109,6 @@ function logResults(results: any) {
 
   prepare();
   const multiDiffResultsSlow: any[] = [];
-  await benchmark(10, multiCompareBenchmarkSlow, multiDiffResultsSlow);
-  // await benchmark(100, multiCompareBenchmarkSlow, multiDiffResultsSlow);
-  // await benchmark(500, multiCompareBenchmarkSlow, multiDiffResultsSlow);
-  // await benchmark(1000, multiCompareBenchmarkSlow, multiDiffResultsSlow);
-
   await benchmark(10, multiCompareODiffBenchmarkSlow, multiDiffResultsSlow);
   // await benchmark(100, multiCompareODiffBenchmarkSlow, multiDiffResultsSlow);
   // await benchmark(500, multiCompareODiffBenchmarkSlow, multiDiffResultsSlow);
