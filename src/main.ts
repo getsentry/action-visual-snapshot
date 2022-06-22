@@ -400,7 +400,12 @@ const transaction = Sentry.startTransaction({
   op: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
   // This is the title field in Discover
   name: shouldSaveOnly !== 'false' ? 'save snapshots' : 'run',
-  tags: {head_ref: headRef, head_sha: headSha, ...getOSTags()},
+  tags: {
+    head_ref: headRef,
+    head_sha: headSha,
+    diffing_library: 'pixelmatch',
+    ...getOSTags(),
+  },
 });
 
 // Note that we set the transaction as the span on the scope.
