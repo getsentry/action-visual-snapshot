@@ -28,7 +28,7 @@ export async function getDiffODiff(
       : path.resolve(__dirname, './odiff');
 
   const OPTIONS: Required<ODiffOptions> = {
-    antialiasing: false,
+    antialiasing: true,
     failOnLayoutDiff: false,
     outputDiffMask: false,
     threshold: 0.1,
@@ -46,7 +46,9 @@ export async function getDiffODiff(
       diff.match ||
       ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)
     ) {
-      unlinkSync(diffPath);
+      if (existsSync(diffPath)) {
+        unlinkSync(diffPath);
+      }
       return 0;
     }
     if ('diffCount' in diff) {
@@ -68,7 +70,9 @@ export async function getDiffODiff(
     diff.match ||
     ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)
   ) {
-    unlinkSync(tmpMaskPath);
+    if (existsSync(tmpMaskPath)) {
+      unlinkSync(tmpMaskPath);
+    }
     return 0;
   }
 
@@ -76,11 +80,15 @@ export async function getDiffODiff(
     .composite(OVERLAY_COMPOSITE)
     .toBuffer();
 
-  await sharp(withAlpha)
-    .composite([{input: tmpMaskPath, blend: 'over'}])
-    .toFile(diffPath);
+  if (existsSync(tmpMaskPath)) {
+    await sharp(withAlpha)
+      .composite([{input: tmpMaskPath, blend: 'over'}])
+      .toFile(diffPath);
+  }
 
-  unlinkSync(tmpMaskPath);
+  if (existsSync(tmpMaskPath)) {
+    unlinkSync(tmpMaskPath);
+  }
 
   if ('diffCount' in diff) {
     return diff.diffCount;
