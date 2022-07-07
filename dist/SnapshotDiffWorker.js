@@ -110,7 +110,7 @@ function getDiffODiff(file1, file2, diffPath, options = {}) {
         const __binaryPath = process.env.NODE_ENV === 'test'
             ? undefined
             : path_1.default.resolve(__dirname, './odiff');
-        const OPTIONS = Object.assign(Object.assign({ antialiasing: false, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options), { 
+        const OPTIONS = Object.assign(Object.assign({ antialiasing: true, failOnLayoutDiff: false, outputDiffMask: false, threshold: 0.1 }, options), { 
             // @ts-expect-error this is a hidden library option
             __binaryPath });
         // If a user explicitly asks for the diffmask, then we output it.
@@ -119,7 +119,9 @@ function getDiffODiff(file1, file2, diffPath, options = {}) {
             // odiff will return match false even when match.diffPercentage is < threshold
             if (diff.match ||
                 ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)) {
-                fs_1.unlinkSync(diffPath);
+                if (fs_1.existsSync(diffPath)) {
+                    fs_1.unlinkSync(diffPath);
+                }
                 return 0;
             }
             if ('diffCount' in diff) {
@@ -134,16 +136,22 @@ function getDiffODiff(file1, file2, diffPath, options = {}) {
         // odiff will return match false even when match.diffPercentage is < threshold
         if (diff.match ||
             ('diffPercentage' in diff && diff.diffPercentage <= OPTIONS.threshold)) {
-            fs_1.unlinkSync(tmpMaskPath);
+            if (fs_1.existsSync(tmpMaskPath)) {
+                fs_1.unlinkSync(tmpMaskPath);
+            }
             return 0;
         }
         const withAlpha = yield sharp_1.default(fs_1.readFileSync(file1))
             .composite(multiCompareODiff_1.OVERLAY_COMPOSITE)
             .toBuffer();
-        yield sharp_1.default(withAlpha)
-            .composite([{ input: tmpMaskPath, blend: 'over' }])
-            .toFile(diffPath);
-        fs_1.unlinkSync(tmpMaskPath);
+        if (fs_1.existsSync(tmpMaskPath)) {
+            yield sharp_1.default(withAlpha)
+                .composite([{ input: tmpMaskPath, blend: 'over' }])
+                .toFile(diffPath);
+        }
+        if (fs_1.existsSync(tmpMaskPath)) {
+            fs_1.unlinkSync(tmpMaskPath);
+        }
         if ('diffCount' in diff) {
             return diff.diffCount;
         }
@@ -200,34 +208,41 @@ function multiCompareODiff({ baseHead, branchBase, branchHead, outputDiffPath, o
         // Hot path for when baseHead and branchBase do not have any respective changes,
         // we can indue that there is nothing to merge and we can skip the 2nd image diff operation
         if (diffB === 0) {
-            fs_1.unlinkSync(outputMergedMaskPathB);
+            if (fs_1.existsSync(outputMergedMaskPathB)) {
+                fs_1.unlinkSync(outputMergedMaskPathB);
+            }
             return 0;
         }
+        // If branchbase does not exist, but a mask was generated
         if (!fs_1.existsSync(branchBase)) {
-            const withAlpha = yield sharp_1.default(fs_1.readFileSync(baseHead))
-                .composite(exports.OVERLAY_COMPOSITE)
-                .toBuffer();
-            yield sharp_1.default(withAlpha)
-                .composite([{ input: outputMergedMaskPathB, blend: 'over' }])
-                .toFile(outputMergedPath);
+            if (fs_1.existsSync(outputMergedMaskPathB)) {
+                const withAlpha = yield sharp_1.default(fs_1.readFileSync(baseHead))
+                    .composite(exports.OVERLAY_COMPOSITE)
+                    .toBuffer();
+                yield sharp_1.default(withAlpha)
+                    .composite([{ input: outputMergedMaskPathB, blend: 'over' }])
+                    .toFile(outputMergedPath);
+            }
             return diffB;
         }
         const diffA = yield getDiffODiff_1.getDiffODiff(baseHead, branchBase, outputMergedMaskPathA, Object.assign({ outputDiffMask: true, antialiasing: true }, diffOptions));
-        const maskA = fs_1.readFileSync(outputMergedMaskPathA);
-        const maskB = fs_1.readFileSync(outputMergedMaskPathB);
-        const finalMask = yield sharp_1.default(maskA)
-            .composite([{ input: maskB, blend: 'xor' }])
-            .toBuffer();
-        fs_1.unlinkSync(outputMergedMaskPathA);
-        fs_1.unlinkSync(outputMergedMaskPathB);
         const result = Math.abs(diffB - diffA);
-        if (result > 0) {
-            const withAlpha = yield sharp_1.default(fs_1.readFileSync(baseHead))
-                .composite(exports.OVERLAY_COMPOSITE)
+        if (fs_1.existsSync(outputMergedMaskPathA) && fs_1.existsSync(outputMergedMaskPathB)) {
+            const maskA = fs_1.readFileSync(outputMergedMaskPathA);
+            const maskB = fs_1.readFileSync(outputMergedMaskPathB);
+            const finalMask = yield sharp_1.default(maskA)
+                .composite([{ input: maskB, blend: 'xor' }])
                 .toBuffer();
-            yield sharp_1.default(withAlpha)
-                .composite([{ input: finalMask, blend: 'over' }])
-                .toFile(outputDiffPath);
+            fs_1.unlinkSync(outputMergedMaskPathA);
+            fs_1.unlinkSync(outputMergedMaskPathB);
+            if (result > 0) {
+                const withAlpha = yield sharp_1.default(fs_1.readFileSync(baseHead))
+                    .composite(exports.OVERLAY_COMPOSITE)
+                    .toBuffer();
+                yield sharp_1.default(withAlpha)
+                    .composite([{ input: finalMask, blend: 'over' }])
+                    .toFile(outputDiffPath);
+            }
         }
         return result;
     });
