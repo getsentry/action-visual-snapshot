@@ -60,18 +60,23 @@ export async function multiCompareODiff({
   // Hot path for when baseHead and branchBase do not have any respective changes,
   // we can indue that there is nothing to merge and we can skip the 2nd image diff operation
   if (diffB === 0) {
-    unlinkSync(outputMergedMaskPathB);
+    if (existsSync(outputMergedMaskPathB)) {
+      unlinkSync(outputMergedMaskPathB);
+    }
     return 0;
   }
 
+  // If branchbase does not exist, but a mask was generated
   if (!existsSync(branchBase)) {
-    const withAlpha = await sharp(readFileSync(baseHead))
-      .composite(OVERLAY_COMPOSITE)
-      .toBuffer();
+    if (existsSync(outputMergedMaskPathB)) {
+      const withAlpha = await sharp(readFileSync(baseHead))
+        .composite(OVERLAY_COMPOSITE)
+        .toBuffer();
 
-    await sharp(withAlpha)
-      .composite([{input: outputMergedMaskPathB, blend: 'over'}])
-      .toFile(outputMergedPath);
+      await sharp(withAlpha)
+        .composite([{input: outputMergedMaskPathB, blend: 'over'}])
+        .toFile(outputMergedPath);
+    }
 
     return diffB;
   }
@@ -87,27 +92,31 @@ export async function multiCompareODiff({
     }
   );
 
-  const maskA = readFileSync(outputMergedMaskPathA);
-  const maskB = readFileSync(outputMergedMaskPathB);
+  if (existsSync(outputMergedMaskPathA) && existsSync(outputMergedMaskPathB)) {
+    const maskA = readFileSync(outputMergedMaskPathA);
+    const maskB = readFileSync(outputMergedMaskPathB);
 
-  const finalMask = await sharp(maskA)
-    .composite([{input: maskB, blend: 'xor'}])
-    .toBuffer();
-
-  unlinkSync(outputMergedMaskPathA);
-  unlinkSync(outputMergedMaskPathB);
-
-  const result = Math.abs(diffB - diffA);
-
-  if (result > 0) {
-    const withAlpha = await sharp(readFileSync(baseHead))
-      .composite(OVERLAY_COMPOSITE)
+    const finalMask = await sharp(maskA)
+      .composite([{input: maskB, blend: 'xor'}])
       .toBuffer();
 
-    await sharp(withAlpha)
-      .composite([{input: finalMask, blend: 'over'}])
-      .toFile(outputDiffPath);
+    unlinkSync(outputMergedMaskPathA);
+    unlinkSync(outputMergedMaskPathB);
+
+    const result = Math.abs(diffB - diffA);
+
+    if (result > 0) {
+      const withAlpha = await sharp(readFileSync(baseHead))
+        .composite(OVERLAY_COMPOSITE)
+        .toBuffer();
+
+      await sharp(withAlpha)
+        .composite([{input: finalMask, blend: 'over'}])
+        .toFile(outputDiffPath);
+    }
+
+    return result;
   }
 
-  return result;
+  return Math.abs(diffB - diffA);
 }

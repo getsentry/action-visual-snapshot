@@ -18,7 +18,7 @@ describe('getDiffODiff', function () {
       {outputDiffMask: true}
     );
 
-    expect(result).toBe(20238);
+    expect(result).toBe(10952);
   });
 
   it('outputs a full image with alpha', async () => {
@@ -37,6 +37,6 @@ describe('getDiffODiff', function () {
       {outputDiffMask: false}
     );
 
-    expect(result).toBe(20238);
+    expect(result).toBe(10952);
   });
 });
