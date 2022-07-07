@@ -57,6 +57,7 @@ if (worker_threads_1.parentPort) {
         catch (e) {
             const outboundMessage = {
                 taskId: message.taskId,
+                error: e,
             };
             if (worker_threads_1.parentPort) {
                 worker_threads_1.parentPort.postMessage(outboundMessage);
