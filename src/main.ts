@@ -21,12 +21,9 @@ import {failBuild} from './api/failBuild';
 import {getOSTags} from './util/osTags';
 import {SENTRY_DSN} from './config';
 import {Await} from './types';
-import {getODiffOptionsFromWorkflowInputs} from './getODiffOptionsFromWorkflowInputs';
+import {getPixelmatchOptions} from './getPixelmatchOptions';
 import {downloadOtherWorkflowArtifact} from './api/downloadOtherWorkflowArtifact';
 import {SpanStatus} from '@sentry/tracing';
-
-// https://sharp.pixelplumbing.com/install#worker-threads
-require('sharp');
 
 function getParallelismInput() {
   const input = core.getInput('parallelism');
@@ -44,10 +41,6 @@ function getParallelismInput() {
 
   core.debug('No parallelism input, defaulting to CPU count');
   return os.cpus().length;
-}
-
-if (process.env.NODE_ENV !== 'test' && os.platform() !== 'linux') {
-  throw new Error('This action is only supported on Linux');
 }
 
 const parallelism = getParallelismInput();
@@ -280,8 +273,8 @@ async function run(): Promise<void> {
 
     core.startGroup('Starting diff of snapshots...');
 
-    // Get odiff options from workflow inputs
-    const diffOptions = getODiffOptionsFromWorkflowInputs();
+    // Get pixelmatch options from workflow inputs
+    const pixelmatchOptions = getPixelmatchOptions();
 
     await io.mkdirP(resultsPath);
 
@@ -296,7 +289,7 @@ async function run(): Promise<void> {
       mergeBasePath,
       currentPath,
       outputPath: resultsPath,
-      diffOptions,
+      pixelmatchOptions,
       parallelism,
     });
 
@@ -410,7 +403,7 @@ const transaction = Sentry.startTransaction({
   tags: {
     head_ref: headRef,
     head_sha: headSha,
-    diffing_library: 'odiff',
+    diffing_library: 'pixelmatch',
     ...getOSTags(),
   },
 });

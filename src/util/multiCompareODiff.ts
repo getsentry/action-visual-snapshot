@@ -1,89 +1,59 @@
 import sharp from 'sharp';
-import {readFileSync, unlinkSync, existsSync} from 'fs';
+import {readFileSync, unlinkSync} from 'fs';
 import path from 'path';
 
 import {getDiffODiff} from './getDiffODiff';
-import {ODiffOptions} from 'odiff-bin';
 
 type Options = {
+  snapshotName: string;
   branchBase: string;
   baseHead: string;
   branchHead: string;
   outputDiffPath: string;
   outputMergedPath: string;
-  diffOptions?: ODiffOptions;
 };
 
-export const OVERLAY_OPACITY = 0.8;
-export const OVERLAY_COMPOSITE: sharp.OverlayOptions[] = [
-  {
-    input: Buffer.from([255, 255, 255, Math.round(255 * OVERLAY_OPACITY)]),
-    raw: {
-      width: 1,
-      height: 1,
-      channels: 4,
-    },
-    blend: 'over',
-    tile: true,
-  },
-];
-
 export async function multiCompareODiff({
+  snapshotName,
   baseHead,
   branchBase,
   branchHead,
   outputDiffPath,
   outputMergedPath,
-  diffOptions = {},
 }: Options): Promise<number> {
-  const fileBaseName = path.basename(outputDiffPath);
+  const outputPath = path.resolve(outputDiffPath, snapshotName);
   const outputMergedMaskPathA = path.resolve(
     outputMergedPath,
-    fileBaseName.replace('.png', '.a.png')
+    snapshotName.replace('.png', '.a.png')
   );
   const outputMergedMaskPathB = path.resolve(
     outputMergedPath,
-    fileBaseName.replace('.png', '.b.png')
+    snapshotName.replace('.png', '.b.png')
   );
 
-  const diffB = await getDiffODiff(
+  const {result: diffB} = await getDiffODiff(
     baseHead,
     branchHead,
     outputMergedMaskPathB,
     {
       outputDiffMask: true,
-      antialiasing: true,
-      ...diffOptions,
+      antialiasing: false,
     }
   );
 
   // Hot path for when baseHead and branchBase do not have any respective changes,
   // we can indue that there is nothing to merge and we can skip the 2nd image diff operation
   if (diffB === 0) {
-    unlinkSync(outputMergedMaskPathB);
     return 0;
   }
 
-  if (!existsSync(branchBase)) {
-    const withAlpha = await sharp(readFileSync(baseHead))
-      .composite(OVERLAY_COMPOSITE)
-      .toBuffer();
-
-    await sharp(withAlpha)
-      .composite([{input: outputMergedMaskPathB, blend: 'over'}])
-      .toFile(outputMergedPath);
-
-    return diffB;
-  }
-
-  const diffA = await getDiffODiff(
+  const {result: diffA} = await getDiffODiff(
     baseHead,
     branchBase,
     outputMergedMaskPathA,
     {
       outputDiffMask: true,
-      antialiasing: true,
-      ...diffOptions,
+      antialiasing: false,
     }
   );
 
@@ -100,13 +70,9 @@ export async function multiCompareODiff({
   const result = Math.abs(diffB - diffA);
 
   if (result > 0) {
-    const withAlpha = await sharp(readFileSync(baseHead))
-      .composite(OVERLAY_COMPOSITE)
-      .toBuffer();
-
-    await sharp(withAlpha)
+    await sharp(readFileSync(baseHead))
       .composite([{input: finalMask, blend: 'over'}])
-      .toFile(outputDiffPath);
+      .toFile(outputPath);
   }
 
   return result;

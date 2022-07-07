@@ -12,23 +12,14 @@
     "format": "yarn prettier --write **/*.ts",
     "format-check": "yarn prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
-    "dist": "yarn build-template && yarn build && yarn dist:worker && yarn ncc build -C -s --external [sharp]",
-    "dist:worker": "yarn ncc build ./lib/SnapshotDiffWorker.js -C -s --external [sharp] && mv ./dist/index.js ./dist/SnapshotDiffWorker.js",
-    "test": "yarn test:unit && yarn test:integration",
-    "test:unit": "yarn jest -c jest.config.js",
-    "test:integration": "yarn jest -c jest.config.integration.js",
+    "dist": "yarn build-template && yarn build && yarn dist:worker && yarn ncc build -C -s ",
+    "dist:worker": "yarn ncc build ./lib/SnapshotDiffWorker.js -C -s && mv ./dist/index.js ./dist/SnapshotDiffWorker.js",
+    "test": "yarn jest",
     "all": "yarn build && yarn format && yarn lint && yarn test && yarn dist"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/getsentry/action-visual-snapshot.git"
-  },
-  "os": [
-    "darwin",
-    "linux"
-  ],
-  "config": {
-    "libvips": "8.11.3"
   },
   "keywords": [
     "actions",
@@ -71,12 +62,14 @@
     "@types/async-retry": "^1.4.2",
     "@types/bent": "^7.3.0",
     "@types/ejs": "^3.0.4",
+    "@types/pixelmatch": "^5.2.2",
     "@types/pngjs": "^3.4.2",
     "@types/uuid": "^8.3.0",
     "async-retry": "^1.3.1",
     "bent": "^7.3.11",
     "ejs": "^3.1.5",
     "odiff-bin": "^2.5.0",
+    "pixelmatch": "^5.2.1",
     "pngjs": "^5.0.0",
     "sharp": "^0.30.6",
     "uuid": "^8.3.0"
