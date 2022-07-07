@@ -211,6 +211,8 @@ export async function diffSnapshots({
       const baseHead = path.resolve(basePath, file);
       const branchHead = path.resolve(currentPath, file);
 
+      core.debug(`Diffed file: ${file} - ${result}px changed`);
+
       if (typeof result === 'number' && result > 0) {
         changedSnapshots.add(file);
         // Copy original + new files to results/output dirs
