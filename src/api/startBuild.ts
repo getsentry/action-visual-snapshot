@@ -35,7 +35,7 @@ export async function startBuild({
     core.debug(`sha/ref: ${head_ref}, ${head_sha}`);
     const result = await post(
       '/build',
-      {owner, repo, head_sha, head_ref},
+      {owner, repo, head_sha, head_ref, github_check_name: name},
       {
         'x-padding-token': token,
       }
