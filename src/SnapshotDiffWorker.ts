@@ -24,6 +24,7 @@ export type InboundWorkerAction = MultiSnapshotDiff | BaseDiff;
 export interface OutboundWorkerAction {
   taskId: number;
   result?: number;
+  error?: any;
 }
 
 const isMultiDiffMessage = (
@@ -67,6 +68,7 @@ if (parentPort) {
     } catch (e) {
       const outboundMessage: OutboundWorkerAction = {
         taskId: message.taskId,
+        error: e,
       };
 
       if (parentPort) {

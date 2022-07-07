@@ -31,7 +31,11 @@ export class WorkerPool {
         this.availableWorkers.push(worker);
         const task = this.tasks.get(message.taskId);
         if (task) {
-          task.resolve(message);
+          if (message.error) {
+            task.reject(message.error);
+          } else {
+            task.resolve(message);
+          }
         }
       });
       worker.on('error', (message: any) => {
