@@ -31,6 +31,10 @@ export class WorkerPool {
         this.availableWorkers.push(worker);
         const task = this.tasks.get(message.taskId);
         if (task) {
+          if (message.error) {
+            task.reject(message.error);
+            return;
+          }
           task.resolve(message);
         }
       });

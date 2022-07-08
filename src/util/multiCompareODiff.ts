@@ -116,5 +116,12 @@ export async function multiCompareODiff({
     }
   }
 
+  if (existsSync(outputMergedMaskPathB)) {
+    unlinkSync(outputMergedMaskPathB);
+  }
+  if (existsSync(outputMergedMaskPathA)) {
+    unlinkSync(outputMergedMaskPathA);
+  }
+
   return result;
 }
