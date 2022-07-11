@@ -102,6 +102,10 @@ const multiCompareODiff_1 = __nccwpck_require__(654);
 const tmpMaskPath = '/tmp/mask.tmp.png';
 function getDiffODiff(file1, file2, diffPath, options = {}) {
     return __awaiter(this, void 0, void 0, function* () {
+        // Ensure we start clean in case something happened on a previous run.
+        if (fs_1.existsSync(tmpMaskPath)) {
+            fs_1.unlinkSync(tmpMaskPath);
+        }
         if (!fs_1.existsSync(file1)) {
             throw new Error('File does not exist: ' + file1);
         }
@@ -223,6 +227,7 @@ function multiCompareODiff({ baseHead, branchBase, branchHead, outputDiffPath, o
                 yield sharp_1.default(withAlpha)
                     .composite([{ input: outputMergedMaskPathB, blend: 'over' }])
                     .toFile(outputMergedPath);
+                fs_1.unlinkSync(outputMergedMaskPathB);
             }
             return diffB;
         }
