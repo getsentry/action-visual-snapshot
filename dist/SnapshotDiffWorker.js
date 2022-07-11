@@ -57,6 +57,7 @@ if (worker_threads_1.parentPort) {
         catch (e) {
             const outboundMessage = {
                 taskId: message.taskId,
+                error: e,
             };
             if (worker_threads_1.parentPort) {
                 worker_threads_1.parentPort.postMessage(outboundMessage);
@@ -243,6 +244,12 @@ function multiCompareODiff({ baseHead, branchBase, branchHead, outputDiffPath, o
                     .composite([{ input: finalMask, blend: 'over' }])
                     .toFile(outputDiffPath);
             }
+        }
+        if (fs_1.existsSync(outputMergedMaskPathB)) {
+            fs_1.unlinkSync(outputMergedMaskPathB);
+        }
+        if (fs_1.existsSync(outputMergedMaskPathA)) {
+            fs_1.unlinkSync(outputMergedMaskPathA);
         }
         return result;
     });
