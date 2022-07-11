@@ -211,7 +211,11 @@ export async function diffSnapshots({
       const baseHead = path.resolve(basePath, file);
       const branchHead = path.resolve(currentPath, file);
 
-      core.debug(`Diffed ${file}, changes: ${result}`);
+      core.debug(
+        `${
+          baseSnapshots.has(file) ? 'Multi diffed' : 'Diffed'
+        } ${file}, changes: ${result}`
+      );
       if (typeof result === 'number' && result > 0) {
         changedSnapshots.add(file);
         // Copy original + new files to results/output dirs
@@ -248,7 +252,7 @@ export async function diffSnapshots({
               );
             }
 
-            core.debug(`Error diffing: ${file} with ${err.message}`);
+            core.debug(`Error multi diffing: ${file} with ${err.message}`);
           });
       } else {
         promise = workerPool
