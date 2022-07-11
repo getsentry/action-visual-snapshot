@@ -78,6 +78,7 @@ export async function multiCompareODiff({
         .toFile(outputMergedPath);
     }
 
+    unlinkSync(outputMergedMaskPathB);
     return diffB;
   }
 
