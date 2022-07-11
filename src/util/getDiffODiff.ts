@@ -5,8 +5,6 @@ import {compare, ODiffOptions} from 'odiff-bin';
 
 import {OVERLAY_COMPOSITE} from './multiCompareODiff';
 
-const tmpMaskPath = '/tmp/mask.tmp.png';
-
 type Required<T> = {[K in keyof T]-?: T[K]};
 
 export async function getDiffODiff(
@@ -16,9 +14,8 @@ export async function getDiffODiff(
   options: ODiffOptions = {}
 ): Promise<number> {
   // Ensure we start clean in case something happened on a previous run.
-  if (existsSync(tmpMaskPath)) {
-    unlinkSync(tmpMaskPath);
-  }
+  const base = path.basename(diffPath);
+  const tmpMaskPath = `/tmp/${base.replace(/\.png$/, '-mask.png')}`;
   if (!existsSync(file1)) {
     throw new Error('File does not exist: ' + file1);
   }
