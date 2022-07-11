@@ -15,6 +15,10 @@ export async function getDiffODiff(
   diffPath: string,
   options: ODiffOptions = {}
 ): Promise<number> {
+  // Ensure we start clean in case something happened on a previous run.
+  if (existsSync(tmpMaskPath)) {
+    unlinkSync(tmpMaskPath);
+  }
   if (!existsSync(file1)) {
     throw new Error('File does not exist: ' + file1);
   }
