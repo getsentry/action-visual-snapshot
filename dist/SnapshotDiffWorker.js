@@ -209,6 +209,12 @@ function multiCompareODiff({ baseHead, branchBase, branchHead, outputDiffPath, o
         const fileBaseName = path_1.default.basename(outputDiffPath);
         const outputMergedMaskPathA = path_1.default.resolve(outputMergedPath, fileBaseName.replace('.png', '.a.png'));
         const outputMergedMaskPathB = path_1.default.resolve(outputMergedPath, fileBaseName.replace('.png', '.b.png'));
+        if (fs_1.existsSync(outputMergedMaskPathA)) {
+            fs_1.unlinkSync(outputMergedMaskPathA);
+        }
+        if (fs_1.existsSync(outputMergedMaskPathB)) {
+            fs_1.unlinkSync(outputMergedMaskPathB);
+        }
         const diffB = yield getDiffODiff_1.getDiffODiff(baseHead, branchHead, outputMergedMaskPathB, Object.assign({ outputDiffMask: true, antialiasing: true }, diffOptions));
         // Hot path for when baseHead and branchBase do not have any respective changes,
         // we can indue that there is nothing to merge and we can skip the 2nd image diff operation
