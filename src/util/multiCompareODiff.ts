@@ -46,6 +46,14 @@ export async function multiCompareODiff({
     fileBaseName.replace('.png', '.b.png')
   );
 
+  if (existsSync(outputMergedMaskPathA)) {
+    unlinkSync(outputMergedMaskPathA);
+  }
+
+  if (existsSync(outputMergedMaskPathB)) {
+    unlinkSync(outputMergedMaskPathB);
+  }
+
   const diffB = await getDiffODiff(
     baseHead,
     branchHead,
