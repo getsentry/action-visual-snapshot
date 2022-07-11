@@ -76,6 +76,8 @@ export async function multiCompareODiff({
       await sharp(withAlpha)
         .composite([{input: outputMergedMaskPathB, blend: 'over'}])
         .toFile(outputMergedPath);
+
+      unlinkSync(outputMergedMaskPathB);
     }
 
     return diffB;
