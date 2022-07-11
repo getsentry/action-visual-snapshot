@@ -15,6 +15,10 @@ export async function getDiffODiff(
   diffPath: string,
   options: ODiffOptions = {}
 ): Promise<number> {
+  if (existsSync(tmpMaskPath)) {
+    unlinkSync(tmpMaskPath);
+  }
+
   if (!existsSync(file1)) {
     throw new Error('File does not exist: ' + file1);
   }
@@ -84,9 +88,7 @@ export async function getDiffODiff(
     await sharp(withAlpha)
       .composite([{input: tmpMaskPath, blend: 'over'}])
       .toFile(diffPath);
-  }
 
-  if (existsSync(tmpMaskPath)) {
     unlinkSync(tmpMaskPath);
   }
 
