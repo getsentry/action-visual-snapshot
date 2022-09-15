@@ -1,7 +1,8 @@
 import {Worker} from 'worker_threads';
 import type {
-  InboundWorkerAction,
-  OutboundWorkerAction,
+  InboundWorkerDiffAction,
+  OutboundWorkerDiffAction,
+  TerminationAction,
 } from '../SnapshotDiffWorker';
 import * as Sentry from '@sentry/node';
 
@@ -11,10 +12,15 @@ type DistributiveOmit<T, K extends keyof any> = T extends any
   : never;
 
 type PromiseCallbacks = {
-  task: InboundWorkerAction;
+  task: InboundWorkerDiffAction;
   resolve: (value?: any) => void;
   reject: (reason?: any) => void;
 };
+
+const TERMINATION_ACTION: TerminationAction = {
+  type: 'terminate',
+};
+
 export class WorkerPool {
   workers: Worker[] = [];
   availableWorkers: Worker[] = [];
@@ -27,7 +33,7 @@ export class WorkerPool {
       this.workers.push(worker);
       this.availableWorkers.push(worker);
 
-      worker.on('message', (message: OutboundWorkerAction) => {
+      worker.on('message', (message: OutboundWorkerDiffAction) => {
         this.availableWorkers.push(worker);
         const task = this.tasks.get(message.taskId);
         if (task) {
@@ -61,7 +67,7 @@ export class WorkerPool {
     }
   }
 
-  process(taskId: InboundWorkerAction['taskId']) {
+  process(taskId: InboundWorkerDiffAction['taskId']) {
     const worker = this.availableWorkers.pop();
 
     if (!worker) {
@@ -78,13 +84,37 @@ export class WorkerPool {
     worker.postMessage(task.task);
   }
 
+  async maybeGracefulTermination(): Promise<any[]> {
+    const promises: Promise<number | undefined>[] = [];
+
+    for (const worker of this.workers) {
+      const promise = new Promise<number | undefined>(resolve => {
+        function onExit(code: number | undefined) {
+          resolve(code);
+        }
+        worker.postMessage(TERMINATION_ACTION);
+        worker.on('exit', onExit);
+      });
+
+      promises.push(promise);
+    }
+
+    const timeoutPromise = new Promise<any[]>(resolve => {
+      setTimeout(() => {
+        resolve([]);
+      }, 5000);
+    });
+
+    return Promise.race([Promise.all(promises), timeoutPromise]);
+  }
+
   async enqueue(
-    task: DistributiveOmit<InboundWorkerAction, 'taskId'>
-  ): Promise<OutboundWorkerAction> {
+    task: DistributiveOmit<InboundWorkerDiffAction, 'taskId'>
+  ): Promise<OutboundWorkerDiffAction> {
     const taskId = this.tasks.size;
 
-    const promise = new Promise<OutboundWorkerAction>((resolve, reject) => {
-      const t: InboundWorkerAction = {...task, taskId};
+    const promise = new Promise<OutboundWorkerDiffAction>((resolve, reject) => {
+      const t: InboundWorkerDiffAction = {...task, taskId};
       this.tasks.set(taskId, {task: t, resolve, reject});
     }).finally(() => {
       this.tasks.delete(taskId);
@@ -104,8 +134,10 @@ export class WorkerPool {
       task.reject('WorkerPool disposed');
       this.tasks.delete(taskId);
     }
+
+    await this.maybeGracefulTermination();
+
     for (const worker of this.workers) {
-      worker.removeAllListeners();
       await worker.terminate();
     }
   }
