@@ -6971,7 +6971,7 @@ module.exports = function (Sharp) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 function __ncc_wildcard$0 (arg) {
-  if (arg === "darwin-arm64v8") return __nccwpck_require__(80);
+  if (arg === "linux-x64") return __nccwpck_require__(460);
 }
 'use strict';
 
@@ -7973,10 +7973,10 @@ module.exports = function isArrayish(obj) {
 
 /***/ }),
 
-/***/ 80:
+/***/ 460:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-darwin-arm64v8.node")
+module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-linux-x64.node")
 
 /***/ }),
 
