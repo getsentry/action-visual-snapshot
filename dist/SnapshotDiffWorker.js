@@ -25,8 +25,16 @@ const multiCompareODiff_1 = __nccwpck_require__(654);
 const getDiffODiff_1 = __nccwpck_require__(524);
 const worker_threads_1 = __nccwpck_require__(267);
 const isMultiDiffMessage = (message) => 'snapshotName' in message;
-if (worker_threads_1.parentPort) {
-    worker_threads_1.parentPort.on('message', (message) => __awaiter(void 0, void 0, void 0, function* () {
+const isTerminationMessage = (action) => 'type' in action && action.type === 'terminate';
+function onInboundMessage(message) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (isTerminationMessage(message)) {
+            // stop receiving inbound messages
+            if (worker_threads_1.parentPort) {
+                worker_threads_1.parentPort.off('message', onInboundMessage);
+            }
+            process.exit(0);
+        }
         let result;
         const outputDiffPath = path_1.default.resolve(message.outputDiffPath, message.file);
         try {
@@ -66,7 +74,10 @@ if (worker_threads_1.parentPort) {
                 throw new Error('Failed to post to postMessage to parentPort.');
             }
         }
-    }));
+    });
+}
+if (worker_threads_1.parentPort) {
+    worker_threads_1.parentPort.on('message', onInboundMessage);
 }
 else {
     throw new Error("Can't find parent port");
@@ -6960,7 +6971,7 @@ module.exports = function (Sharp) {
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 function __ncc_wildcard$0 (arg) {
-  if (arg === "linux-x64") return __nccwpck_require__(460);
+  if (arg === "darwin-arm64v8") return __nccwpck_require__(80);
 }
 'use strict';
 
@@ -7962,10 +7973,10 @@ module.exports = function isArrayish(obj) {
 
 /***/ }),
 
-/***/ 460:
+/***/ 80:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-linux-x64.node")
+module.exports = require(__nccwpck_require__.ab + "build/Release/sharp-darwin-arm64v8.node")
 
 /***/ }),
 
