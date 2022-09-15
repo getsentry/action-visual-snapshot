@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - v*
+      - jb/feat/graceful-shutdown
 jobs:
   release:
     runs-on: ubuntu-latest
