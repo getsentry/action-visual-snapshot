@@ -34,6 +34,7 @@ function onInboundMessage(message) {
                 worker_threads_1.parentPort.off('message', onInboundMessage);
             }
             process.exit(0);
+            return;
         }
         let result;
         const outputDiffPath = path_1.default.resolve(message.outputDiffPath, message.file);
