@@ -6,6 +6,8 @@ import type {
 } from '../SnapshotDiffWorker';
 import * as Sentry from '@sentry/node';
 
+const WORKER_TIMEOUT_WAIT = 5000;
+
 // Unfortunately Omit does not work well across unions, so we need this
 type DistributiveOmit<T, K extends keyof any> = T extends any
   ? Omit<T, K>
@@ -84,30 +86,6 @@ export class WorkerPool {
     worker.postMessage(task.task);
   }
 
-  async maybeGracefulTermination(): Promise<any[]> {
-    const promises: Promise<number | undefined>[] = [];
-
-    for (const worker of this.workers) {
-      const promise = new Promise<number | undefined>(resolve => {
-        function onExit(code: number | undefined) {
-          resolve(code);
-        }
-        worker.postMessage(TERMINATION_ACTION);
-        worker.on('exit', onExit);
-      });
-
-      promises.push(promise);
-    }
-
-    const timeoutPromise = new Promise<any[]>(resolve => {
-      setTimeout(() => {
-        resolve([]);
-      }, 5000);
-    });
-
-    return Promise.race([Promise.all(promises), timeoutPromise]);
-  }
-
   async enqueue(
     task: DistributiveOmit<InboundWorkerDiffAction, 'taskId'>
   ): Promise<OutboundWorkerDiffAction> {
@@ -125,6 +103,30 @@ export class WorkerPool {
     return promise;
   }
 
+  private async maybeGracefulTermination(): Promise<any[]> {
+    const promises: Promise<number | undefined>[] = [];
+
+    for (const worker of this.workers) {
+      const promise = new Promise<number | undefined>(resolve => {
+        const workerExitTimeoutId = setTimeout(() => {
+          worker.terminate();
+          resolve(1);
+        }, WORKER_TIMEOUT_WAIT);
+
+        function onExit(code: number | undefined) {
+          clearTimeout(workerExitTimeoutId);
+          resolve(code);
+        }
+        worker.postMessage(TERMINATION_ACTION);
+        worker.on('exit', onExit);
+      });
+
+      promises.push(promise);
+    }
+
+    return Promise.all(promises);
+  }
+
   async dispose() {
     for (const taskId of this.tasks.keys()) {
       const task = this.tasks.get(taskId);
@@ -136,9 +138,5 @@ export class WorkerPool {
     }
 
     await this.maybeGracefulTermination();
-
-    for (const worker of this.workers) {
-      await worker.terminate();
-    }
   }
 }

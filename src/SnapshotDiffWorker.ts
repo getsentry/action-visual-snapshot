@@ -49,6 +49,7 @@ async function onInboundMessage(
       parentPort.off('message', onInboundMessage);
     }
     process.exit(0);
+    return;
   }
 
   let result: number;
