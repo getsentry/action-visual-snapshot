@@ -1,91 +1,102 @@
-const listWorkflowRunsMock = jest.fn(async () =>
-  Promise.resolve({
-    data: {
-      workflow_runs: [
-        {
-          id: 152081708,
-          node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
-          head_branch: 'main',
-          head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
-          run_number: 172,
-          event: 'push',
-          status: 'completed',
-          conclusion: 'success',
-          workflow_id: 1154499,
-          url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708',
-          html_url:
-            'https://github.com/getsentry/sentry/actions/runs/152081708',
-          pull_requests: [],
-          created_at: '2020-06-29T23:42:39Z',
-          updated_at: '2020-06-29T23:56:40Z',
-          jobs_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/jobs',
-          logs_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/logs',
-          check_suite_url:
-            'https://api.github.com/repos/getsentry/sentry/check-suites/856201749',
-          artifacts_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/artifacts',
-          cancel_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/cancel',
-          rerun_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/rerun',
-          workflow_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/workflows/1154499',
-          head_commit: {
-            id: '5e19cbbea129a173dc79d4634df0fdaece933b06',
-            tree_id: '332a699162888947ea062892169d9d81a9c906fe',
-            message: 'remove wait for animations',
-            timestamp: '2020-06-29T23:42:25Z',
-            author: {name: 'Billy Vong', email: 'billy@sentry.io'},
-            committer: {name: 'Billy Vong', email: 'billy@sentry.io'},
-          },
-          repository: {},
-          head_repository: {
-            full_name: 'getsentry/sentry',
-          },
-        },
-        {
-          id: 152081707,
-          node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
-          head_branch: 'main',
-          head_sha: '11111111l129a173dc79d4634df0fdaece933b06',
-          run_number: 171,
-          event: 'push',
-          status: 'completed',
-          conclusion: 'success',
-          workflow_id: 1154498,
-          url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708',
-          html_url:
-            'https://github.com/getsentry/sentry/actions/runs/152081708',
-          pull_requests: [],
-          created_at: '2020-06-29T23:42:39Z',
-          updated_at: '2020-06-29T23:56:40Z',
-          jobs_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/jobs',
-          logs_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/logs',
-          check_suite_url:
-            'https://api.github.com/repos/getsentry/sentry/check-suites/856201749',
-          artifacts_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/artifacts',
-          cancel_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/cancel',
-          rerun_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/rerun',
-          workflow_url:
-            'https://api.github.com/repos/getsentry/sentry/actions/workflows/1154499',
-          repository: {},
-          head_repository: {
-            full_name: 'getsentry/sentry',
-          },
-        },
-      ],
+const listWorkflowRunsMock = jest.fn(async opts => {
+  const workflowRuns = [
+    {
+      id: 152081708,
+      node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
+      head_branch: 'main',
+      head_sha: '5e19cbbea129a173dc79d4634df0fdaece933b06',
+      run_number: 172,
+      event: 'push',
+      status: 'completed',
+      conclusion: 'success',
+      workflow_id: 1154499,
+      url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708',
+      html_url: 'https://github.com/getsentry/sentry/actions/runs/152081708',
+      pull_requests: [],
+      created_at: '2020-06-29T23:42:39Z',
+      updated_at: '2020-06-29T23:56:40Z',
+      jobs_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/jobs',
+      logs_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/logs',
+      check_suite_url:
+        'https://api.github.com/repos/getsentry/sentry/check-suites/856201749',
+      artifacts_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/artifacts',
+      cancel_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/cancel',
+      rerun_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/rerun',
+      workflow_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/workflows/1154499',
+      head_commit: {
+        id: '5e19cbbea129a173dc79d4634df0fdaece933b06',
+        tree_id: '332a699162888947ea062892169d9d81a9c906fe',
+        message: 'remove wait for animations',
+        timestamp: '2020-06-29T23:42:25Z',
+        author: {name: 'Billy Vong', email: 'billy@sentry.io'},
+        committer: {name: 'Billy Vong', email: 'billy@sentry.io'},
+      },
+      repository: {},
+      head_repository: {
+        full_name: 'getsentry/sentry',
+      },
     },
-  })
-);
+    {
+      id: 152081707,
+      node_id: 'MDExOldvcmtmbG93UnVuMTUyMDgxNzA4',
+      head_branch: 'main',
+      head_sha: '11111111l129a173dc79d4634df0fdaece933b06',
+      run_number: 171,
+      event: 'push',
+      status: 'completed',
+      conclusion: 'success',
+      workflow_id: 1154498,
+      url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708',
+      html_url: 'https://github.com/getsentry/sentry/actions/runs/152081708',
+      pull_requests: [],
+      created_at: '2020-06-29T23:42:39Z',
+      updated_at: '2020-06-29T23:56:40Z',
+      jobs_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/jobs',
+      logs_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/logs',
+      check_suite_url:
+        'https://api.github.com/repos/getsentry/sentry/check-suites/856201749',
+      artifacts_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/artifacts',
+      cancel_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/cancel',
+      rerun_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/runs/152081708/rerun',
+      workflow_url:
+        'https://api.github.com/repos/getsentry/sentry/actions/workflows/1154499',
+      repository: {},
+      head_repository: {
+        full_name: 'getsentry/sentry',
+      },
+    },
+  ];
+  // TODO: Not great, too much mocking of octokit functionality here
+  const filtered = workflowRuns.filter(
+    workflowRun =>
+      (!opts.branch || opts.branch === workflowRun.head_branch) &&
+      (!opts.status ||
+        opts.status === workflowRun.conclusion ||
+        opts.status === workflowRun.status) &&
+      (!opts.head_sha || opts.head_sha === workflowRun.head_sha)
+  );
+
+  return Promise.resolve({
+    data: {
+      total_count: filtered.length, // Not totally accurate, depends on page limit etc
+      workflow_runs: filtered,
+    },
+  });
+});
+
 export const getOctokit = jest.fn(() => ({
   paginate: {
     // @ts-ignore
