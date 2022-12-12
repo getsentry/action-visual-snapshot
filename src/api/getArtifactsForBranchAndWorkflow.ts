@@ -24,10 +24,6 @@ export type GetArtifactsForBranchAndWorkflow = {
   commit?: string;
 };
 
-// max pages of workflows to pagination through
-const MAX_PAGES = 10;
-const PER_PAGE_LIMIT = 10;
-
 /**
  * Fetch artifacts from a workflow run from a branch
  *
@@ -51,62 +47,36 @@ export async function getArtifactsForBranchAndWorkflow(
     }`
   );
 
-  let currentPage = 0;
-  let completedWorkflowRuns: WorkflowRun[] = [];
+  const {
+    data: {workflow_runs: workflowRuns},
+  } = await octokit.rest.actions.listWorkflowRuns({
+    owner,
+    repo,
+    // Below is typed incorrectly, it needs to be a string but typed as number
+    workflow_id: (workflow_id as unknown) as number,
+    branch,
+    status: 'success',
+    head_sha: commit,
+  });
 
-  for await (const response of octokit.paginate.iterator(
-    octokit.rest.actions.listWorkflowRuns,
-    {
-      owner,
-      repo,
-      // Below is typed incorrectly, it needs to be a string but typed as number
-      workflow_id: (workflow_id as unknown) as number,
-      branch,
-      status: 'success',
-      per_page: PER_PAGE_LIMIT,
-    }
-  )) {
-    if (!response.data.length) {
-      core.warning(`Workflow ${workflow_id} not found in branch ${branch}`);
-      core.endGroup();
-      return null;
-    }
-
-    // XXX: This function is only used by `retrieveBaseSnapshots`, which means that base snapshots
-    // should only be used from the workflow org/repo and not from forks, as they can create
-    // a pull request that uses the base branch name.
-    //
-    // If this needs to be more generic, this should be an option.
-    const workflowRuns = response.data.filter(
-      workflowRun =>
-        workflowRun.head_repository.full_name === `${owner}/${repo}`
+  if (!workflowRuns.length) {
+    core.warning(
+      `Workflow ${workflow_id} not found in branch: ${branch}${
+        commit ? ` and commit: ${commit}` : ''
+      }`
     );
-
-    const workflowRunsForCommit = commit
-      ? workflowRuns.filter(
-          (run: typeof workflowRuns[number]) => run.head_sha === commit
-        )
-      : workflowRuns;
-
-    if (workflowRunsForCommit.length) {
-      completedWorkflowRuns = completedWorkflowRuns.concat(
-        workflowRunsForCommit
-      );
-      break;
-    }
-
-    if (currentPage > MAX_PAGES) {
-      core.warning(
-        `Workflow ${workflow_id} not found in branch: ${branch}${
-          commit ? ` and commit: ${commit}` : ''
-        }`
-      );
-      core.endGroup();
-      return null;
-    }
-
-    currentPage++;
+    core.endGroup();
+    return null;
   }
+
+  // XXX: This function is only used by `retrieveBaseSnapshots`, which means that base snapshots
+  // should only be used from the workflow org/repo and not from forks, as they can create
+  // a pull request that uses the base branch name.
+  //
+  // If this needs to be more generic, this should be an option.
+  const completedWorkflowRuns = workflowRuns.filter(
+    workflowRun => workflowRun.head_repository.full_name === `${owner}/${repo}`
+  );
 
   // Search through workflow artifacts until we find a workflow run w/ artifact name that we are looking for
   for (const workflowRun of completedWorkflowRuns) {
