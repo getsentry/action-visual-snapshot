@@ -53,7 +53,7 @@ export async function getArtifactsForBranchAndWorkflow(
     owner,
     repo,
     // Below is typed incorrectly, it needs to be a string but typed as number
-    workflow_id: (workflow_id as unknown) as number,
+    workflow_id,
     branch,
     status: 'success',
     head_sha: commit,
