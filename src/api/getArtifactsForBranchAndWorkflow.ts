@@ -54,7 +54,7 @@ export async function getArtifactsForBranchAndWorkflow(
     workflow_id,
     branch,
     status: 'success',
-    head_sha: commit,
+    ...(commit ? {head_sha: commit} : {}),
   });
 
   console.log(data);
