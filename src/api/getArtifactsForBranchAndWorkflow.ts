@@ -56,7 +56,10 @@ export async function getArtifactsForBranchAndWorkflow(
     workflow_id,
     branch,
     status: 'success',
-    head_sha: commit,
+
+    // GitHub API treats `head_sha` with explicit `undefined` value differently
+    // than when `head_sha` does not exist in object. Want the latter.
+    ...(commit ? {head_sha: commit} : {}),
   });
 
   if (!workflowRuns.length) {
