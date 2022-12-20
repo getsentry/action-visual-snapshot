@@ -47,9 +47,7 @@ export async function getArtifactsForBranchAndWorkflow(
     }`
   );
 
-  const {
-    data: {workflow_runs: workflowRuns},
-  } = await octokit.rest.actions.listWorkflowRuns({
+  const {data} = await octokit.rest.actions.listWorkflowRuns({
     owner,
     repo,
     // Below is typed incorrectly, it needs to be a string but typed as number
@@ -58,6 +56,10 @@ export async function getArtifactsForBranchAndWorkflow(
     status: 'success',
     head_sha: commit,
   });
+
+  console.log(data);
+
+  const {workflow_runs: workflowRuns} = data;
 
   if (!workflowRuns.length) {
     core.warning(
