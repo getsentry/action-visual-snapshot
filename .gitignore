@@ -101,3 +101,4 @@ lib/**/*
 __results
 example_gallery/index.html
 dist/index.js.map
+__tests__/util/diffSnapshots/imgs/diff/*
