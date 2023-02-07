@@ -309,7 +309,7 @@ async function run(): Promise<void> {
       op: 'upload',
       description: 'Upload to GCS',
     });
-    const gcsDestination = `${owner}/${repo}/${headSha}`;
+    const gcsDestination = `${owner}/${repo}/${artifactName}/${headSha}`;
     const resultsArtifactUrls = await uploadToGcs({
       files: resultsFiles,
       root: resultsPath,
