@@ -1,0 +1,39 @@
+# This makes it easy to push to a branch `test-me-*` and use it to
+# test changes against a PR.
+name: test build
+
+on:
+  push:
+    branches:
+      - test-me-*
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    env:
+      SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    - name: yarn install
+      run: |
+        echo "$(yarn global bin)" >> $GITHUB_PATH
+        yarn install --frozen-lockfile
+
+    - name: build
+      env:
+        SENTRY_VERSION: ${{ steps.get-version.outputs.version }}
+      run: |
+        yarn dist
+        node scripts/copy-odiff-binaries.js
+        cat scripts/copied-binaries.txt | xargs git add
+        git config user.email "github-actions-bot@sentry.io"
+        git config user.name "github-actions[bot]"
+        git add dist
+        git add src/template/index.ts
+        # This can fail if `dist` was already run in branch
+        (git commit -m "chore(release): Updating dist" && git push) || true
