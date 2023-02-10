@@ -317,11 +317,10 @@ async function run(): Promise<void> {
       destinationRoot: `${gcsDestination}/results`,
     });
     gcsSpan?.finish();
-    const changedArray = [...changedSnapshots];
     const results: BuildResults = {
       terminationReason,
       baseFilesLength: baseFiles.length,
-      changed: changedArray,
+      changed: [...changedSnapshots],
       missing: [...missingSnapshots],
       added: [...newSnapshots],
     };
@@ -332,6 +331,7 @@ async function run(): Promise<void> {
     } else {
       transaction?.setTag('snapshots.approvalRequired', 'false');
     }
+    core.info(`Results: ${JSON.stringify(results, null, 2)}`);
     core.endGroup();
 
     core.startGroup('Generating image gallery...');
