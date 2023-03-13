@@ -17,6 +17,10 @@ type Params = {
  * Fails a build due to another error
  */
 export async function failBuild({token, octokit, ...body}: Params) {
+  if (process.env.ACTION_LOCAL_RUN === 'true') {
+    return;
+  }
+
   const failureBody = {
     status: 'completed',
     conclusion: 'failure',

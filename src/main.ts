@@ -52,11 +52,12 @@ if (process.env.NODE_ENV !== 'test' && os.platform() !== 'linux') {
 
 const parallelism = getParallelismInput();
 const {owner, repo} = github.context.repo;
-const token = core.getInput('github-token');
+const token = process.env.ACTION_GITHUB_TOKEN || core.getInput('github-token');
 const octokit = token && github.getOctokit(token);
 const {GITHUB_WORKSPACE, GITHUB_WORKFLOW} = process.env;
 const pngGlob = '/**/*.png';
-const shouldSaveOnly = core.getInput('save-only');
+const shouldSaveOnly =
+  process.env.ACTION_SAVE_ONLY || core.getInput('save-only');
 
 Sentry.init({
   dsn: SENTRY_DSN,
@@ -116,17 +117,24 @@ function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
 }
 
 async function run(): Promise<void> {
-  const resultsRootPath: string = core.getInput('results-path');
+  const resultsRootPath: string =
+    process.env.ACTION_RESULTS_PATH || core.getInput('results-path');
   const baseBranch = core.getInput('base-branch');
-  const artifactName = core.getInput('artifact-name');
+  const baseArtifactName =
+    process.env.ACTION_BASE_ARTIFACT_NAME ||
+    core.getInput('base-artifact-name');
+  const artifactName =
+    process.env.ACTION_ARTIFACT_NAME || core.getInput('artifact-name');
   const gcsBucket = core.getInput('gcs-bucket');
-  const apiToken = core.getInput('api-token');
+  const apiToken =
+    process.env.ACTION_GITHUB_TOKEN || core.getInput('api-token');
   const actionName = core.getInput('action-name');
-  const snapshotPath: string = core.getInput('snapshot-path');
+  const snapshotPath: string =
+    process.env.ACTION_SNAPSHOT_PATH || core.getInput('snapshot-path');
 
   const resultsPath = path.resolve(resultsRootPath, 'visual-snapshots-results');
   const basePath = path.resolve('/tmp/visual-snapshots-base');
-  const mergeBasePath = path.resolve('/tmp/visual-snapshop-merge-base');
+  const mergeBasePath = path.resolve('/tmp/visual-snapshot-merge-base');
 
   const workflowRunPayload = github.context.payload.workflow_run;
   const pullRequestPayload = github.context.payload.pull_request;
@@ -157,7 +165,7 @@ async function run(): Promise<void> {
   core.endGroup();
 
   try {
-    if (snapshotPath) {
+    if (snapshotPath && !process.env.ACTION_LOCAL_RUN) {
       await saveSnapshots({
         artifactName,
         rootDirectory: snapshotPath,
@@ -206,7 +214,7 @@ async function run(): Promise<void> {
       repo,
       branch: baseBranch,
       workflow_id: `${workflowRunPayload?.name || GITHUB_WORKFLOW}.yml`,
-      artifactName,
+      artifactName: baseArtifactName || artifactName,
       basePath,
       mergeBasePath,
       mergeBaseSha,
@@ -398,6 +406,7 @@ async function run(): Promise<void> {
       headSha,
       token: apiToken,
     });
+    throw error;
   }
 }
 
