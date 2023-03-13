@@ -80,7 +80,12 @@ export async function retrieveBaseSnapshots(
 ${JSON.stringify(workflowRun, null, 2)}`);
   core.endGroup();
 
-  if (workflowRun.head_sha !== mergeBaseSha) {
+  console.log('<---------------------- 1');
+
+  console.log(`mergeBaseSha => ${mergeBaseSha} && head_sha => ${workflowRun.head_sha}`);
+
+  if (mergeBaseSha && workflowRun.head_sha !== mergeBaseSha) {
+    console.log('<---------------------- 2');
     mergeBaseArtifacts = await getArtifactsForBranchAndWorkflow(octokit, {
       owner,
       repo,
@@ -90,7 +95,11 @@ ${JSON.stringify(workflowRun, null, 2)}`);
       artifactName,
     });
 
+    console.log('<---------------------- 3', baseArtifacts.artifact.id);
+    console.log('<---------------------- 3', mergeBaseArtifacts?.artifact.id);
+
     if (mergeBaseArtifacts) {
+      console.log('<---------------------- 4');
       await retry(
         async () =>
           await downloadOtherWorkflowArtifact(octokit, {
@@ -107,11 +116,13 @@ ${JSON.stringify(workflowRun, null, 2)}`);
           },
         }
       );
+      console.log('<---------------------- 5');
     }
   } else {
     core.debug('Merge base is the same as base');
   }
 
+  console.log('<---------------------- 6');
   core.endGroup();
   return [baseArtifacts, mergeBaseArtifacts];
 }

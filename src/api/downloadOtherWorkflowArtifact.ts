@@ -69,6 +69,7 @@ export async function downloadOtherWorkflowArtifact(
   octokit: ReturnType<typeof github.getOctokit>,
   {owner, repo, artifactId, downloadPath}: DownloadArtifactParams
 ) {
+  console.log(`Requesting artifact download from GitHub....`);
   const artifact = await octokit.rest.actions.downloadArtifact({
     owner,
     repo,
@@ -77,6 +78,7 @@ export async function downloadOtherWorkflowArtifact(
   });
 
   // Make sure output path exists
+  console.log(`Download Path: ${downloadPath}....`);
   try {
     await io.mkdirP(downloadPath);
   } catch {
@@ -85,5 +87,6 @@ export async function downloadOtherWorkflowArtifact(
 
   const downloadFile = path.resolve(downloadPath, FILENAME);
 
+  console.log(`Downloading artifact: ${artifact.url}....`);
   return await download(artifact.url, downloadFile, downloadPath);
 }

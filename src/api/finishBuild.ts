@@ -28,6 +28,10 @@ type Params = {
 };
 
 export async function finishBuild({token, ...body}: Params) {
+  if (process.env.ACTION_LOCAL_RUN === 'true') {
+    return;
+  }
+
   try {
     if (!token) {
       throw new Error('No API token');

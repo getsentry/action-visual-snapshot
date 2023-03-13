@@ -24,6 +24,10 @@ export async function startBuild({
   headRef: head_ref,
   name = 'Visual Snapshot',
 }: Params): Promise<any> {
+  if (process.env.ACTION_LOCAL_RUN === 'true') {
+    return;
+  }
+
   try {
     if (!token) {
       throw new Error('No API token');

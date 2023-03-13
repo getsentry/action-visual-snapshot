@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import {ODiffOptions} from 'odiff-bin';
 
 export function getODiffOptionsFromWorkflowInputs(): ODiffOptions {
-  let threshold: string | number = core.getInput('threshold');
+  let threshold: string | number = process.env.ACTION_THRESHOLD || core.getInput('threshold');
   const antialiasing: string | boolean = core.getInput('antialiasing');
 
   if (typeof threshold === 'string') {
