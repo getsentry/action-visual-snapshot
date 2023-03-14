@@ -118,7 +118,7 @@ function getGithubHeadRefInfo(): {headRef: string; headSha: string} {
 async function run(): Promise<void> {
   const resultsRootPath: string = process.env.ACTION_RESULTS_PATH || core.getInput('results-path');
   const baseBranch = core.getInput('base-branch');
-  const baseArtifactName = process.env.ACTION_BASE_ARTIFACT_NAME || core.getInput('artifact-name');
+  const baseArtifactName = process.env.ACTION_BASE_ARTIFACT_NAME || core.getInput('base-artifact-name');
   const artifactName = process.env.ACTION_ARTIFACT_NAME || core.getInput('artifact-name');
   const gcsBucket = core.getInput('gcs-bucket');
   const apiToken = process.env.ACTION_GITHUB_TOKEN || core.getInput('api-token');

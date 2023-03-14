@@ -48,6 +48,9 @@ inputs:
     required: false
     description: 'name of the branch to use as base comparison'
     default: 'master'
+  base-artifact-name:
+    require: false
+    description: 'defining this artifact will diff from an artifact from the PR workflow instead of a branch'
   artifact-name:
     required: false
     description: 'the artifact name'
@@ -64,7 +67,7 @@ inputs:
   gcs-bucket:
     required: false
     description: 'if this is set, upload to google cloud storage'
-  parallelism: 
+  parallelism:
     required: false
     description: 'number of threads to use when diffing images'
 outputs:
