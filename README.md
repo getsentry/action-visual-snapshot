@@ -71,3 +71,33 @@ $ yarn dist
 $ git add dist
 $ git commit -a -m "prod dependencies"
 ```
+
+### Local Testing
+
+You can run this action locally with a script similar to the following:
+
+```bash
+#!/bin/bash
+set -e
+
+rm -rf /tmp/visual-snapshots-*
+rm -rf .tmp/snaps
+rm -rf "<< Results Path >>"
+
+yarn dist
+
+GITHUB_REPOSITORY="getsentry/sentry" \
+GITHUB_HEAD_SHA="<< Commit >>" \
+GITHUB_HEAD_REF="getsentry/sentry/master" \
+GITHUB_WORKFLOW="visual-snapshots" \
+GITHUB_WORKSPACE="." \
+ACTION_SAVE_ONLY="false" \
+ACTION_GITHUB_TOKEN="<< GitHub Token >>" \
+ACTION_ARTIFACT_NAME="visual-snapshots" \
+ACTION_BASE_ARTIFACT_NAME="visual-snapshots-base" \
+ACTION_THRESHOLD="0.05" \
+ACTION_SNAPSHOT_PATH="<< Snapshot Path >>" \
+ACTION_LOCAL_RUN="true" \
+ACTION_RESULTS_PATH="<< Results Path >>" \
+node ./dist/index.js
+```
