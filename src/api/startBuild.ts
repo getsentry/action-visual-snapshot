@@ -23,9 +23,9 @@ export async function startBuild({
   headSha: head_sha,
   headRef: head_ref,
   name = 'Visual Snapshot',
-}: Params): Promise<any> {
+}: Params): Promise<number | bent.ValidResponse | null> {
   if (process.env.ACTION_LOCAL_RUN === 'true') {
-    return;
+    return null;
   }
 
   try {

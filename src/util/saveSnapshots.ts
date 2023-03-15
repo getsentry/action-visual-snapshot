@@ -29,7 +29,7 @@ async function _save({rootDirectory, artifactName}: SaveSnapshotsParams) {
 
   const tarFiles = await tarGlobber.glob();
 
-  if (process.env.ACTION_LOCAL_RUN == 'true') {
+  if (process.env.ACTION_LOCAL_RUN === 'true') {
     return null;
   }
 
