@@ -27,9 +27,12 @@ type Params = {
   galleryUrl?: string;
 };
 
-export async function finishBuild({token, ...body}: Params) {
+export async function finishBuild({
+  token,
+  ...body
+}: Params): Promise<bent.ValidResponse | null> {
   if (process.env.ACTION_LOCAL_RUN === 'true') {
-    return;
+    return null;
   }
 
   try {

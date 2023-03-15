@@ -16,9 +16,13 @@ type Params = {
 /**
  * Fails a build due to another error
  */
-export async function failBuild({token, octokit, ...body}: Params) {
+export async function failBuild({
+  token,
+  octokit,
+  ...body
+}: Params): Promise<bent.ValidResponse | null> {
   if (process.env.ACTION_LOCAL_RUN === 'true') {
-    return;
+    return null;
   }
 
   const failureBody = {
