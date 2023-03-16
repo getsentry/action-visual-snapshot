@@ -218,6 +218,9 @@ async function run(): Promise<void> {
       basePath,
       mergeBasePath,
       mergeBaseSha,
+      // If we are getting our artifact from the current workflow
+      // we can't expect the success status as the action may be in progress.
+      status: baseArtifactName ? undefined : 'success',
     });
 
     if (!didDownloadLatest) {

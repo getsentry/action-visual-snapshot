@@ -22,6 +22,7 @@ export type GetArtifactsForBranchAndWorkflow = {
   workflow_id: string;
   artifactName: string;
   commit?: string;
+  status?: 'success' | undefined;
 };
 
 /**
@@ -39,6 +40,7 @@ export async function getArtifactsForBranchAndWorkflow(
     branch,
     commit,
     artifactName,
+    status,
   }: GetArtifactsForBranchAndWorkflow
 ): Promise<GetArtifactsForBranchAndWorkflowReturn> {
   core.startGroup(
@@ -55,7 +57,9 @@ export async function getArtifactsForBranchAndWorkflow(
     // Below is typed incorrectly, it needs to be a string but typed as number
     workflow_id,
     branch,
-    status: 'success',
+
+    // If we are using the current workflow it may not have finished.
+    ...(status ? {status} : {}),
 
     // GitHub API treats `head_sha` with explicit `undefined` value differently
     // than when `head_sha` does not exist in object. Want the latter.
