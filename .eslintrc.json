@@ -5,7 +5,7 @@
     "parserOptions": {
       "ecmaVersion": 9,
       "sourceType": "module",
-      "project": "./tsconfig.base.json"
+      "project": "./tsconfig.json"
     },
     "rules": {
       "eslint-comments/no-use": "off",

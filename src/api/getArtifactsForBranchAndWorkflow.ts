@@ -22,7 +22,7 @@ export type GetArtifactsForBranchAndWorkflow = {
   workflow_id: string;
   artifactName: string;
   commit?: string;
-  status?: 'success' | undefined;
+  status?: 'success' | null;
 };
 
 /**
@@ -40,7 +40,7 @@ export async function getArtifactsForBranchAndWorkflow(
     branch,
     commit,
     artifactName,
-    status,
+    status = 'success',
   }: GetArtifactsForBranchAndWorkflow
 ): Promise<GetArtifactsForBranchAndWorkflowReturn> {
   core.startGroup(
