@@ -22,7 +22,6 @@ export type GetArtifactsForBranchAndWorkflow = {
   workflow_id: string;
   artifactName: string;
   commit?: string;
-  status?: 'success' | null;
 };
 
 /**
@@ -40,7 +39,6 @@ export async function getArtifactsForBranchAndWorkflow(
     branch,
     commit,
     artifactName,
-    status = 'success',
   }: GetArtifactsForBranchAndWorkflow
 ): Promise<GetArtifactsForBranchAndWorkflowReturn> {
   core.startGroup(
@@ -58,8 +56,7 @@ export async function getArtifactsForBranchAndWorkflow(
     workflow_id,
     branch,
 
-    // If we are using the current workflow it may not have finished.
-    ...(status ? {status} : {}),
+    status: 'success',
 
     // GitHub API treats `head_sha` with explicit `undefined` value differently
     // than when `head_sha` does not exist in object. Want the latter.
@@ -87,7 +84,9 @@ export async function getArtifactsForBranchAndWorkflow(
 
   // Search through workflow artifacts until we find a workflow run w/ artifact name that we are looking for
   for (const workflowRun of completedWorkflowRuns) {
-    core.debug(`Checking artifacts for workflow run: ${workflowRun.html_url}`);
+    core.info(
+      `Checking artifacts for workflow run: ${workflowRun.html_url} (${workflowRun.id})`
+    );
 
     const {
       data: {artifacts},
@@ -98,13 +97,13 @@ export async function getArtifactsForBranchAndWorkflow(
     });
 
     if (!artifacts) {
-      core.debug(
+      core.info(
         `Unable to fetch artifacts for branch: ${branch}, workflow: ${workflow_id}, workflowRunId: ${workflowRun.id}`
       );
     } else {
       const foundArtifact = artifacts.find(({name}) => name === artifactName);
       if (foundArtifact) {
-        core.debug(`Found suitable artifact: ${foundArtifact.url}`);
+        core.info(`Found suitable artifact: ${foundArtifact.url}`);
         core.endGroup();
         return {
           artifact: foundArtifact,

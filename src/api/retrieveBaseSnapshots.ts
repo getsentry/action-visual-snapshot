@@ -32,7 +32,6 @@ export async function retrieveBaseSnapshots(
     basePath,
     mergeBasePath,
     mergeBaseSha,
-    status,
   }: RetrieveBaseSnapshotsParams
 ) {
   const baseArtifacts = await getArtifactsForBranchAndWorkflow(octokit, {
@@ -41,7 +40,6 @@ export async function retrieveBaseSnapshots(
     workflow_id,
     branch,
     artifactName,
-    status,
   });
 
   if (!baseArtifacts) {
