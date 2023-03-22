@@ -133,7 +133,7 @@ async function run(): Promise<void> {
     process.env.ACTION_SNAPSHOT_PATH || core.getInput('snapshot-path');
 
   const resultsPath = path.resolve(resultsRootPath, 'visual-snapshots-results');
-  const basePath = path.resolve('/tmp/visual-snapshots-base');
+  const tmpBasePath = path.resolve('/tmp/visual-snapshots-base');
   const mergeBasePath = path.resolve('/tmp/visual-snapshot-merge-base');
 
   const workflowRunPayload = github.context.payload.workflow_run;
@@ -155,7 +155,7 @@ async function run(): Promise<void> {
   // Forward `results-path` to outputs
   core.startGroup('Set outputs');
   core.setOutput('results-path', resultsRootPath);
-  core.setOutput('base-images-path', basePath);
+  core.setOutput('base-images-path', tmpBasePath);
   core.setOutput('merge-base-images-path', mergeBasePath);
   core.endGroup();
 
@@ -206,32 +206,38 @@ async function run(): Promise<void> {
 
   const transaction = Sentry.getCurrentHub().getScope()?.getTransaction();
   try {
-    const [
-      didDownloadLatest,
-      didDownloadMergeBase,
-    ] = await retrieveBaseSnapshots(octokit, {
-      owner,
-      repo,
-      branch: baseBranch,
-      workflow_id: `${workflowRunPayload?.name || GITHUB_WORKFLOW}.yml`,
-      artifactName: baseArtifactName || artifactName,
-      basePath,
-      mergeBasePath,
-      mergeBaseSha,
-      // If we are getting our artifact from the current workflow
-      // we can't expect the success status as the action may be in progress.
-      status: baseArtifactName ? null : 'success',
-    });
+    let basePath = tmpBasePath;
+    if (baseArtifactName) {
+      const resp = await downloadSnapshots({
+        artifactName: baseArtifactName,
+        rootDirectory: tmpBasePath,
+      });
+      basePath = resp.downloadPath;
+    } else {
+      const [
+        didDownloadLatest,
+        didDownloadMergeBase,
+      ] = await retrieveBaseSnapshots(octokit, {
+        owner,
+        repo,
+        branch: baseBranch,
+        workflow_id: `${workflowRunPayload?.name || GITHUB_WORKFLOW}.yml`,
+        artifactName,
+        basePath,
+        mergeBasePath,
+        mergeBaseSha,
+      });
 
-    if (!didDownloadLatest) {
-      // It's possible there are no base snapshots e.g. if these are all
-      // new snapshots.
-      core.warning('Unable to download artifact from base branch');
-    }
+      if (!didDownloadLatest) {
+        // It's possible there are no base snapshots e.g. if these are all
+        // new snapshots.
+        core.warning('Unable to download artifact from base branch');
+      }
 
-    if (!didDownloadMergeBase) {
-      // We can still diff against base
-      core.debug('Unable to download artifact from merge base sha');
+      if (!didDownloadMergeBase) {
+        // We can still diff against base
+        core.debug('Unable to download artifact from merge base sha');
+      }
     }
 
     let downloadResp: Await<ReturnType<typeof downloadSnapshots>> | null = null;
